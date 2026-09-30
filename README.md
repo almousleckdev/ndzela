@@ -28,7 +28,7 @@ npm install
 npm run dev
 ```
 
-Useful checks: `mvn test` (backend), `npm run lint && npm run typecheck` (frontend).
+Useful checks: `mvn test` (backend; needs Docker running, the tests start PostgreSQL and Redis with Testcontainers), `npm run lint && npm run typecheck` (frontend).
 
 ## Backend layout
 

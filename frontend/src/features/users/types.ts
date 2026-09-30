@@ -1,3 +1,5 @@
+import type { Country } from "@/features/auth/types";
+
 export type UserStatus = "ACTIVE" | "MFA_SETUP" | "LOCKED" | "DISABLED";
 
 export interface RoleRef {
@@ -15,5 +17,6 @@ export interface UserSummary {
   status: UserStatus;
   mfaEnabled: boolean;
   roles: RoleRef[];
+  country: Country | null;
   createdAt: string;
 }

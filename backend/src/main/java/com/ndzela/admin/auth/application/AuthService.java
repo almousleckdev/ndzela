@@ -124,7 +124,7 @@ public class AuthService {
     public Tokens refresh(String refreshToken) {
         RefreshTokenService.Rotation rotation = refreshTokens.rotate(refreshToken);
         User user = userRepository.findByEmail(rotation.email())
-                .filter(u -> u.getStatus() == UserStatus.ACTIVE)
+                .filter(u -> u.getStatus() == UserStatus.ACTIVE && u.isCountryActive())
                 .orElse(null);
         if (user == null) {
             refreshTokens.revokeAll(rotation.email());

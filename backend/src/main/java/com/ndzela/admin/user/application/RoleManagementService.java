@@ -3,6 +3,8 @@ package com.ndzela.admin.user.application;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.security.CurrentActor;
+import com.ndzela.admin.tenant.TenantContext;
+import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.user.api.dto.CreateRoleRequest;
 import com.ndzela.admin.user.api.dto.RoleSummary;
 import com.ndzela.admin.user.domain.Permission;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 public class RoleManagementService {
 
     static final String SUPER_ADMIN = "SUPER_ADMIN";
+    private static final Set<String> MANAGE_ROLES = Set.of("roles:create", "roles:update", "roles:delete");
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
@@ -40,6 +43,18 @@ public class RoleManagementService {
                 .sorted(Comparator.comparing(Role::getName))
                 .map(this::summarize)
                 .toList();
+    }
+
+    /** Role managers see every role; everyone else only the roles they hold. */
+    @Transactional(readOnly = true)
+    public List<RoleSummary> listVisible(CurrentActor actor) {
+        if (MANAGE_ROLES.stream().anyMatch(actor.permissions()::contains)) {
+            return list();
+        }
+        Set<String> own = userRepository.findByEmail(actor.email())
+                .map(user -> user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
+                .orElse(Set.of());
+        return list().stream().filter(role -> own.contains(role.name())).toList();
     }
 
     @Transactional(readOnly = true)
@@ -102,7 +117,17 @@ public class RoleManagementService {
 
     private RoleSummary summarize(Role role) {
         List<String> permissions = role.getPermissions().stream().map(Permission::getName).sorted().collect(Collectors.toList());
-        return new RoleSummary(role.getId(), role.getName(), permissions, userRepository.countByRolesId(role.getId()),
+        return new RoleSummary(role.getId(), role.getName(), permissions, countMembers(role.getId()),
                 SUPER_ADMIN.equals(role.getName()));
+    }
+
+    /** Role members counted in the caller's country (everyone in "all countries"). */
+    private long countMembers(UUID roleId) {
+        TenantContext context = TenantHolder.current();
+        return switch (context.mode()) {
+            case ALL -> userRepository.countByRolesId(roleId);
+            case COUNTRY -> userRepository.countByRolesIdAndCountryId(roleId, context.countryId());
+            case NONE -> 0;
+        };
     }
 }

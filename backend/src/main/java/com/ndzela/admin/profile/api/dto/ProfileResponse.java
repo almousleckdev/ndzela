@@ -1,5 +1,7 @@
 package com.ndzela.admin.profile.api.dto;
 
+import com.ndzela.admin.country.api.dto.CountryResponse;
+
 import java.util.Set;
 
 public record ProfileResponse(
@@ -10,5 +12,7 @@ public record ProfileResponse(
         String profilePictureUrl,
         boolean mfaEnabled,
         Set<String> roles,
-        Set<String> permissions
+        Set<String> permissions,
+        /** Null for a global user. */
+        CountryResponse country
 ) {}

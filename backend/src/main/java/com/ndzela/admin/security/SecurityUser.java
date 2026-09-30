@@ -55,7 +55,7 @@ public class SecurityUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.getStatus() != UserStatus.DISABLED;
+        return user.getStatus() != UserStatus.DISABLED && user.isCountryActive();
     }
 
     public User getUser() {

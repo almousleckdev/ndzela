@@ -6,6 +6,8 @@ export interface UserInput {
   lastName: string;
   phoneNumber: string;
   roleIds: string[];
+  /** Sent only by a global user working in "all countries". */
+  countryId?: string;
 }
 
 const blankToNull = (value: string) => value.trim() || null;
@@ -18,7 +20,7 @@ export const usersService = {
   list: () => apiClient<UserSummary[]>("/users"),
 
   create: (email: string, input: UserInput) =>
-    apiClient<UserSummary>("/users", { method: "POST", body: { email: email.trim(), ...toBody(input) } }),
+    apiClient<UserSummary>("/users", { method: "POST", body: { email: email.trim(), ...toBody(input), countryId: input.countryId ?? null } }),
 
   update: (id: string, input: UserInput) =>
     apiClient<UserSummary>(`/users/${id}`, { method: "PUT", body: toBody(input) }),

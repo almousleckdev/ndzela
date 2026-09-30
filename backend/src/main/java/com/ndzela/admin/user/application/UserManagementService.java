@@ -3,12 +3,17 @@ package com.ndzela.admin.user.application;
 import com.ndzela.admin.auth.application.PasswordResetService;
 import com.ndzela.admin.auth.application.RefreshTokenService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
+import com.ndzela.admin.common.exception.CountryRequiredException;
+import com.ndzela.admin.common.exception.InvalidCountryException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
+import com.ndzela.admin.country.domain.Country;
+import com.ndzela.admin.country.domain.CountryRepository;
 import com.ndzela.admin.infrastructure.storage.AvatarStorage;
-import com.ndzela.admin.notification.application.NotificationService;
 import com.ndzela.admin.notification.application.NotificationService;
 import com.ndzela.admin.security.CurrentActor;
 import com.ndzela.admin.security.OpaqueTokens;
+import com.ndzela.admin.tenant.TenantContext;
+import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.user.api.dto.CreateUserRequest;
 import com.ndzela.admin.user.api.dto.UpdateUserRequest;
 import com.ndzela.admin.user.api.dto.UserSummary;
@@ -42,10 +47,12 @@ public class UserManagementService {
     private final NotificationService notifications;
     private final AccessPolicy accessPolicy;
     private final AvatarStorage avatarStorage;
+    private final CountryRepository countries;
+    private final UserScope scope;
 
     @Transactional(readOnly = true)
     public List<UserSummary> list() {
-        return userRepository.findAll().stream()
+        return visibleUsers().stream()
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .map(UserSummary::from)
                 .toList();
@@ -60,6 +67,7 @@ public class UserManagementService {
         }
         Set<Role> roles = resolveRoles(request.roleIds());
         accessPolicy.assertCanAssignRoles(actor, roles);
+        Country country = countryForNewUser(request.countryId(), roles, actor);
 
         User user = userRepository.save(User.builder()
                 .email(email)
@@ -69,10 +77,11 @@ public class UserManagementService {
                 .phoneNumber(blankToNull(request.phoneNumber()))
                 .status(UserStatus.MFA_SETUP)
                 .roles(roles)
+                .country(country)
                 .build());
 
         passwordResetService.sendInvitation(email);
-        notifications.notifyHolders("users:read", actor.email(), "USER_CREATED", "Nouvel utilisateur",
+        notifications.notifyHolders("users:read", user.countryIdOrNull(), actor.email(), "USER_CREATED", "Nouvel utilisateur",
                 "Le compte " + email + " a été créé par " + actor.email() + ".");
         return UserSummary.from(user);
     }
@@ -83,6 +92,10 @@ public class UserManagementService {
         accessPolicy.assertCanManage(actor, user);
         Set<Role> newRoles = resolveRoles(request.roleIds());
         accessPolicy.assertCanAssignRoles(actor, newRoles);
+
+        if (user.isGlobal() && !holdsSuperAdmin(newRoles)) {
+            throw new CountryRequiredException("A user without a country must keep the SUPER_ADMIN role.");
+        }
 
         boolean rolesChanged = !newRoles.equals(user.getRoles());
         if (rolesChanged && actor.isSelf(user.getEmail())) {
@@ -191,8 +204,48 @@ public class UserManagementService {
         passwordResetService.sendInvitation(user.getEmail());
     }
 
+    /** Loads a user; another country's account answers "not found". */
     private User load(UUID id) {
-        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        return userRepository.findById(id)
+                .map(scope::requireVisible)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+    }
+
+    private List<User> visibleUsers() {
+        TenantContext context = TenantHolder.current();
+        return switch (context.mode()) {
+            case ALL -> userRepository.findAll();
+            case COUNTRY -> userRepository.findAllByCountryId(context.countryId());
+            case NONE -> List.of();
+        };
+    }
+
+    /** The country of a new account: a global user may pick any active country, country staff get their own. */
+    private Country countryForNewUser(UUID requestedCountryId, Set<Role> roles, CurrentActor actor) {
+        if (actor.global() && requestedCountryId != null) {
+            return countries.findById(requestedCountryId).filter(Country::isActive).orElseThrow(InvalidCountryException::new);
+        }
+        TenantContext context = TenantHolder.current();
+        return switch (context.mode()) {
+            case COUNTRY -> {
+                if (requestedCountryId != null && !requestedCountryId.equals(context.countryId())) {
+                    throw new BusinessRuleViolationException("COUNTRY_NOT_ALLOWED",
+                            "The country of a new user is the country you are working in.");
+                }
+                yield countries.findById(context.countryId()).orElseThrow(InvalidCountryException::new);
+            }
+            case ALL -> {
+                if (holdsSuperAdmin(roles)) {
+                    yield null;
+                }
+                throw new CountryRequiredException();
+            }
+            case NONE -> throw new CountryRequiredException();
+        };
+    }
+
+    private static boolean holdsSuperAdmin(Set<Role> roles) {
+        return roles.stream().anyMatch(role -> RoleManagementService.SUPER_ADMIN.equals(role.getName()));
     }
 
     private Set<Role> resolveRoles(Set<UUID> roleIds) {

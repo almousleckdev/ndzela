@@ -17,6 +17,10 @@ const CODE_MESSAGES: Record<string, string> = {
   IMAGE_TOO_LARGE: "L'image doit peser 2 Mo maximum.",
   INVALID_IMAGE: "Format non pris en charge. Utilisez une image PNG, JPEG ou WebP.",
   IMAGE_UNREADABLE: "Impossible de lire cette image. Essayez un fichier PNG, JPEG ou WebP.",
+  INVALID_COUNTRY: "Ce pays n'existe pas ou n'est pas actif.",
+  COUNTRY_REQUIRED: "Choisissez un pays pour effectuer cette action.",
+  COUNTRY_NOT_ALLOWED: "Vous ne pouvez créer un utilisateur que dans votre propre pays.",
+  COUNTRY_INACTIVE: "Votre pays n'est pas actif.",
   VALIDATION_ERROR: "Certaines données sont invalides.",
 };
 

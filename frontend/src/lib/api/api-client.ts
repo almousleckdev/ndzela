@@ -3,11 +3,21 @@ import { useAuthStore } from "@/features/auth/store/auth.store";
 import type { AuthResponse } from "@/features/auth/types";
 import { ApiException, type ApiErrorResponse } from "@/lib/api/api-error";
 
+/** Headers added to every authenticated request. */
+type HeaderProvider = () => Record<string, string>;
+const headerProviders: HeaderProvider[] = [];
+
+export function registerHeaderProvider(provider: HeaderProvider): void {
+  headerProviders.push(provider);
+}
+
 interface FetchOptions extends Omit<RequestInit, "body"> {
   /** Serialised as JSON, unless it is FormData (file upload). */
   body?: unknown;
   /** Set to false for public endpoints (login, reset...). */
   requiresAuth?: boolean;
+  /** Set to false to skip the registered context headers. */
+  sendContext?: boolean;
 }
 
 /** The single in-flight refresh. The refresh cookie is single-use, so concurrent callers must share one call. */
@@ -38,7 +48,7 @@ export function refreshSession(): Promise<boolean> {
 }
 
 function send(endpoint: string, options: FetchOptions, requestId: string): Promise<Response> {
-  const { body, requiresAuth = true, headers, ...init } = options;
+  const { body, requiresAuth = true, sendContext = true, headers, ...init } = options;
   const finalHeaders = new Headers(headers);
   finalHeaders.set("X-Request-ID", requestId);
   const isForm = body instanceof FormData;
@@ -46,6 +56,11 @@ function send(endpoint: string, options: FetchOptions, requestId: string): Promi
 
   const { accessToken } = useAuthStore.getState();
   if (requiresAuth && accessToken) finalHeaders.set("Authorization", `Bearer ${accessToken}`);
+  if (requiresAuth && sendContext) {
+    for (const provider of headerProviders) {
+      for (const [name, value] of Object.entries(provider())) finalHeaders.set(name, value);
+    }
+  }
 
   return fetch(`${env.NEXT_PUBLIC_API_URL}${endpoint}`, {
     ...init,

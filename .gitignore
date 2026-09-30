@@ -25,3 +25,9 @@ backend/uploads/
 .vscode/
 *.iml
 *.pem
+
+# AI planning artifacts (local only)
+docs/superpowers/
+
+# Execution ledger (local only)
+.superpowers/

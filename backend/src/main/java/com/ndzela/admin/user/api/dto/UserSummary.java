@@ -1,5 +1,6 @@
 package com.ndzela.admin.user.api.dto;
 
+import com.ndzela.admin.country.api.dto.CountryResponse;
 import com.ndzela.admin.user.domain.User;
 import com.ndzela.admin.user.domain.UserStatus;
 
@@ -18,6 +19,7 @@ public record UserSummary(
         UserStatus status,
         boolean mfaEnabled,
         List<RoleRef> roles,
+        CountryResponse country,
         OffsetDateTime createdAt
 ) {
     public static UserSummary from(User user) {
@@ -26,6 +28,7 @@ public record UserSummary(
                 .sorted(Comparator.comparing(RoleRef::name))
                 .toList();
         return new UserSummary(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
-                user.getPhoneNumber(), user.getProfilePictureUrl(), user.getStatus(), user.isMfaEnabled(), roles, user.getCreatedAt());
+                user.getPhoneNumber(), user.getProfilePictureUrl(), user.getStatus(), user.isMfaEnabled(), roles,
+                user.getCountry() == null ? null : CountryResponse.from(user.getCountry()), user.getCreatedAt());
     }
 }

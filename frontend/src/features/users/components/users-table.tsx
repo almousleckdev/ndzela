@@ -10,6 +10,7 @@ import { RoleChip } from "@/features/access/components/role-chip";
 import { Table, Td, Th } from "@/components/ui/table";
 import { displayName } from "@/features/profile/lib/user";
 import { cn } from "@/lib/utils";
+import { CountryFlag } from "@/features/tenancy/components/country-flag";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import type { UserStatus, UserSummary } from "@/features/users/types";
 import { UserActionsMenu, type UserAction } from "@/features/users/components/user-actions-menu";
@@ -34,6 +35,7 @@ export function UsersTable({ users, onAction, onInvite }: UsersTableProps) {
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
   const myEmail = useAuthStore((state) => state.user?.email);
+  const isGlobal = useAuthStore((state) => state.user?.country === null);
 
   const count = (key: Filter) => (key === "ALL" ? users.length : users.filter((u) => u.status === key).length);
   const needle = query.trim().toLowerCase();
@@ -63,7 +65,7 @@ export function UsersTable({ users, onAction, onInvite }: UsersTableProps) {
       ) : (
         <Table>
           <thead>
-            <tr><Th>Utilisateur</Th><Th>Rôles</Th><Th>Statut</Th><Th>Authentificateur</Th><Th><span className="sr-only">Actions</span></Th></tr>
+            <tr><Th>Utilisateur</Th><Th>Rôles</Th>{isGlobal && <Th>Pays</Th>}<Th>Statut</Th><Th>Authentificateur</Th><Th><span className="sr-only">Actions</span></Th></tr>
           </thead>
           <tbody>
             {visible.map((user) => (
@@ -78,6 +80,7 @@ export function UsersTable({ users, onAction, onInvite }: UsersTableProps) {
                   </div>
                 </Td>
                 <Td><div className="flex flex-wrap gap-1.5">{user.roles.map((role) => <RoleChip key={role.id} role={role.name} />)}</div></Td>
+                {isGlobal && <Td>{user.country ? <span className="inline-flex items-center gap-2"><CountryFlag code={user.country.code} />{user.country.name}</span> : "Global"}</Td>}
                 <Td><UserStatusBadge status={user.status} /></Td>
                 <Td>
                   <span className={cn("inline-flex items-center gap-1.5 text-sm", user.mfaEnabled ? "text-slate-700" : "text-slate-400")}>

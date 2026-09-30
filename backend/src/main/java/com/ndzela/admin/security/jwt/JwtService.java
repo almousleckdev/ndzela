@@ -1,6 +1,5 @@
 package com.ndzela.admin.security.jwt;
 
-import com.ndzela.admin.auth.application.RefreshTokenService;
 import com.ndzela.admin.config.AppProperties;
 
 import io.jsonwebtoken.Claims;

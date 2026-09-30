@@ -3,7 +3,6 @@ package com.ndzela.admin.security;
 import com.ndzela.admin.common.exception.AccountLockedException;
 import com.ndzela.admin.config.AppProperties;
 import com.ndzela.admin.notification.application.NotificationService;
-import com.ndzela.admin.notification.application.NotificationService;
 import com.ndzela.admin.user.domain.User;
 import com.ndzela.admin.user.domain.UserRepository;
 import com.ndzela.admin.user.domain.UserStatus;
@@ -47,7 +46,7 @@ public class LoginAttemptService {
                 user.setStatus(UserStatus.LOCKED);
                 user.setLockExpiration(OffsetDateTime.now().plus(props.bruteForce().lockDuration()));
                 log.warn("Account locked after {} failed attempts: {}", failures, email);
-                notifications.notifyHolders("users:update", email, "ACCOUNT_LOCKED", "Compte verrouillé",
+                notifications.notifyHolders("users:update", user.countryIdOrNull(), email, "ACCOUNT_LOCKED", "Compte verrouillé",
                         "Le compte " + email + " a été verrouillé après " + failures + " tentatives échouées.");
             }
             userRepository.save(user);
@@ -57,7 +56,7 @@ public class LoginAttemptService {
     /** Throws if the account may not authenticate right now; transparently releases an expired lock. */
     @Transactional
     public void assertCanAuthenticate(User user) {
-        if (user.getStatus() == UserStatus.DISABLED) {
+        if (user.getStatus() == UserStatus.DISABLED || !user.isCountryActive()) {
             throw new AccountLockedException("Account is disabled.");
         }
         if (user.getStatus() != UserStatus.LOCKED) {
