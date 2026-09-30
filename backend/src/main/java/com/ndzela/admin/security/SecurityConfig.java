@@ -2,6 +2,7 @@ package com.ndzela.admin.security;
 
 import com.ndzela.admin.config.AppProperties;
 import com.ndzela.admin.security.jwt.JwtAuthenticationFilter;
+import com.ndzela.admin.tenant.TenantContextResolver;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,6 +32,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AppProperties props;
+    private final TenantContextResolver tenantContextResolver;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -48,7 +50,9 @@ public class SecurityConfig {
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint((req, res, ex) -> exceptionResolver.resolveException(req, res, null, ex))
                         .accessDeniedHandler((req, res, ex) -> exceptionResolver.resolveException(req, res, null, ex)))
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                // Not a bean: it must run after authentication, inside the security chain.
+                .addFilterAfter(new TenantContextFilter(tenantContextResolver, exceptionResolver), JwtAuthenticationFilter.class);
         return http.build();
     }
 
@@ -57,7 +61,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(props.corsAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-ID"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-ID", TenantContextFilter.COUNTRY_HEADER));
         configuration.setAllowCredentials(true); // required for the refresh-token cookie
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

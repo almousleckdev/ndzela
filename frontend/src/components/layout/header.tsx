@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Settings, User as UserIcon } from "lucide-react";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
+import { CountrySwitch } from "@/features/tenancy/components/country-switch";
 import { Avatar } from "@/components/ui/avatar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ export function Header() {
   return (
     <>
       <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-        <div />
+        <CountrySwitch />
 
         <div className="flex items-center gap-4">
           <NotificationBell />

@@ -17,7 +17,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * The one password policy for the whole API: 8-128 chars with a digit, a lower-case letter,
- * an upper-case letter and a special character. Mirrored by {@code frontend/src/schemas/password.ts}.
+ * an upper-case letter and a special character. Mirrored by {@code frontend/src/features/auth/schemas/password.ts}.
  */
 @Documented
 @NotBlank(message = "Password is required")

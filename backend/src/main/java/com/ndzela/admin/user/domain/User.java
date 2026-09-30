@@ -1,5 +1,6 @@
 package com.ndzela.admin.user.domain;
 
+import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.infrastructure.crypto.MfaSecretConverter;
 
 import jakarta.persistence.*;
@@ -61,6 +62,11 @@ public class User {
     @Column(name = "lock_expiration")
     private OffsetDateTime lockExpiration;
 
+    /** The staff member's country; null means global (SUPER_ADMIN only). */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "country_id")
+    private Country country;
+
     @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -77,4 +83,22 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    public boolean isSuperAdmin() {
+        return roles.stream().anyMatch(role -> "SUPER_ADMIN".equals(role.getName()));
+    }
+
+    /** A user without a country is global. */
+    public boolean isGlobal() {
+        return country == null;
+    }
+
+    /** False when the user's country is switched off. */
+    public boolean isCountryActive() {
+        return country == null || country.isActive();
+    }
+
+    public UUID countryIdOrNull() {
+        return country == null ? null : country.getId();
+    }
 }

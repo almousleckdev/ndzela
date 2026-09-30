@@ -53,6 +53,17 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getCode(), ex.getMessage(), request, null);
     }
 
+    @ExceptionHandler(InvalidCountryException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidCountry(InvalidCountryException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "INVALID_COUNTRY", ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(CountryInactiveException.class)
+    public ResponseEntity<ApiErrorResponse> handleCountryInactive(CountryInactiveException ex, HttpServletRequest request) {
+        log.warn("Request from an inactive country: {}", ex.getMessage());
+        return buildResponse(HttpStatus.FORBIDDEN, "COUNTRY_INACTIVE", ex.getMessage(), request, null);
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
         log.warn("Invalid credentials: {}", ex.getMessage());

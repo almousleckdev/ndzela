@@ -29,6 +29,7 @@ export const PERMISSIONS = {
   REPORTS_READ: "reports:read",
   REPORTS_EXPORT: "reports:export",
   CASH_OPERATE: "cash:operate",
+  COUNTRIES_READ: "countries:read",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -71,10 +72,11 @@ const RESOURCE_LABELS: Record<string, string> = {
   reports: "Rapports",
   users: "Utilisateurs",
   roles: "Rôles",
+  countries: "Pays",
 };
 
 /** Business resources first, platform administration last. */
-const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles"];
+const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries"];
 
 const ACTION_LABELS: Record<string, string> = {
   read: "Consulter",

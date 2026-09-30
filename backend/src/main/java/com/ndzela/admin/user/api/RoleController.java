@@ -29,6 +29,12 @@ public class RoleController {
         return roles.list();
     }
 
+    @GetMapping("/roles/visible")
+    @PreAuthorize("hasAuthority('roles:read')")
+    public List<RoleSummary> visible(Authentication authentication) {
+        return roles.listVisible(CurrentActor.from(authentication));
+    }
+
     @GetMapping("/permissions")
     @PreAuthorize("hasAuthority('roles:read')")
     public List<String> permissions() {

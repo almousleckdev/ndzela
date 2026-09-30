@@ -21,7 +21,7 @@ function RolesContent() {
   const { can } = usePermissions();
   const { addToast } = useToast();
   const canListUsers = can(PERMISSIONS.USERS_READ);
-  const roles = useFetch(rolesService.list);
+  const roles = useFetch(rolesService.listVisible);
   const catalogue = useFetch(rolesService.permissions);
   const users = useFetch(() => (canListUsers ? usersService.list() : Promise.resolve([])));
 

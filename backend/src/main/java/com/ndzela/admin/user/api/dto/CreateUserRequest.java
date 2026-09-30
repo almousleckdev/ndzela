@@ -13,5 +13,7 @@ public record CreateUserRequest(
         @Size(max = 100) String firstName,
         @Size(max = 100) String lastName,
         @Size(max = 50) String phoneNumber,
-        @NotEmpty(message = "At least one role is required") Set<UUID> roleIds
+        @NotEmpty(message = "At least one role is required") Set<UUID> roleIds,
+        /** Sent only by a global user working in "all countries". */
+        UUID countryId
 ) {}

@@ -1,11 +1,11 @@
 package com.ndzela.admin.profile.application;
 
 import com.ndzela.admin.auth.application.MfaService;
+import com.ndzela.admin.country.api.dto.CountryResponse;
 import com.ndzela.admin.auth.application.RefreshTokenService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.InvalidCredentialsException;
 import com.ndzela.admin.infrastructure.storage.AvatarStorage;
-import com.ndzela.admin.notification.application.NotificationService;
 import com.ndzela.admin.notification.application.NotificationService;
 import com.ndzela.admin.profile.api.dto.ChangePasswordRequest;
 import com.ndzela.admin.profile.api.dto.ProfileResponse;
@@ -48,7 +48,8 @@ public class ProfileService {
                 .map(Permission::getName)
                 .collect(Collectors.toSet());
         return new ProfileResponse(user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhoneNumber(),
-                user.getProfilePictureUrl(), user.isMfaEnabled(), roles, permissions);
+                user.getProfilePictureUrl(), user.isMfaEnabled(), roles, permissions,
+                user.getCountry() == null ? null : CountryResponse.from(user.getCountry()));
     }
 
     @Transactional

@@ -19,6 +19,17 @@ export interface AuthResponse {
   expiresInSeconds: number;
 }
 
+/** A tenant (country). */
+export interface Country {
+  id: string;
+  code: string;
+  name: string;
+  currencyCode: string;
+  phoneCode: string;
+  timezone: string;
+  defaultLanguage: string;
+}
+
 export interface UserProfile {
   email: string;
   firstName: string | null;
@@ -30,4 +41,6 @@ export interface UserProfile {
   roles: string[];
   /** `resource:action` strings, e.g. users:read. */
   permissions: string[];
+  /** Null for a global user (the super admin). */
+  country: Country | null;
 }

@@ -27,10 +27,10 @@ public class NotificationService {
         notifications.save(Notification.builder().userId(user.getId()).type(type).title(title).message(message).build());
     }
 
-    /** Notifies every active user who holds {@code permission}, except {@code excludeEmail} (usually the actor). */
+    /** Notifies holders of a permission in the country plus global admins; a null country reaches global admins only. */
     @Transactional
-    public void notifyHolders(String permission, String excludeEmail, String type, String title, String message) {
-        userRepository.findActiveByPermission(permission).stream()
+    public void notifyHolders(String permission, UUID countryId, String excludeEmail, String type, String title, String message) {
+        userRepository.findActiveByPermission(permission, countryId).stream()
                 .filter(user -> !user.getEmail().equalsIgnoreCase(excludeEmail))
                 .forEach(user -> notify(user, type, title, message));
     }
