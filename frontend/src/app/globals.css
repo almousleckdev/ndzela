@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui;
+}
+
+@theme {
+  --color-primary: #F97316;
+  --color-primary-hover: #ea580c;
+  --color-sidebar: #0F172A;
+}
+

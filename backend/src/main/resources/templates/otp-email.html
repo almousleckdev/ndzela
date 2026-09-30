@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your OTP Code</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #eeeeee;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000000;
+        }
+        .logo span {
+            color: #F97316;
+        }
+        .content {
+            text-align: center;
+        }
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .otp-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 30px 0;
+        }
+        .otp-code {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: #0f172a;
+        }
+        .warning {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 30px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eeeeee;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">NDZela <span>Admin</span></div>
+        </div>
+        <div class="content">
+            <div class="title">Vérification de sécurité</div>
+            <p>Veuillez utiliser le mot de passe à usage unique (OTP) suivant pour finaliser votre connexion en toute sécurité. Ce code est valable pendant 3 minutes.</p>
+            
+            <div class="otp-box">
+                <div class="otp-code" th:text="${otp}">000000</div>
+            </div>
+            
+            <p class="warning">Si vous n'avez pas demandé ce code, veuillez ignorer cet e-mail et vous assurer que votre compte est sécurisé.</p>
+        </div>
+        <div class="footer">
+            &copy; <span th:text="${#dates.year(#dates.createNow())}"></span> NDZela. Tous droits réservés.
+        </div>
+    </div>
+</body>
+</html>
