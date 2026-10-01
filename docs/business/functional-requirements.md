@@ -11,14 +11,14 @@ Product overview: [README.md](README.md). Only the **admin foundation** exists (
 | # | Module | Phase | Status | Documents |
 | --- | --- | --- | --- | --- |
 | 1 | **Tenancy foundation** (countries, country-scoped staff, global super admin, header filter, isolation tests; Gabon as the first country) | Now | **Built** (tenancy foundation plan, tasks 1 to 9) | [multi-tenancy](../multi-tenancy/multi-tenancy.md) |
-| 2 | **Vehicles** (add car, recap, list, statuses) | Now | Decided | [vehicles.md](vehicles.md) |
-| 3 | **Drivers + contracts** (5-step wizard, financial recap, French contract PDF for Gabon, training-centre list) | Now | Decided; a few Proposed items | [drivers.md](drivers.md), [contracts.md](contracts.md) |
-| 4 | **Payments and arrears, phase 1** (ledger, staff-recorded cash/manual payments, arrears engine, 24/48/72 h levels, email warnings, automatic suspension state) | Now | Decided; open items below | [payments-and-arrears.md](payments-and-arrears.md) |
-| 5 | **Admin quick access** (Suivi paiements, Gérer impayés, Historique, Chauffeurs, Véhicules, Contrats, Rapports) | Now | Decided | [admin-quick-access.md](admin-quick-access.md) |
-| 6 | **Audit trail** (who did what and when; 5 years) | Now, from module 1 | Decided | see below |
+| 2 | **Vehicles** (add car, recap, list, statuses) | Now | **Built** | [vehicles.md](vehicles.md) |
+| 3 | **Drivers + contracts** (5-step wizard, financial recap, French contract PDF for Gabon, training-centre list) | Now | **Built**: drivers, assignment, training centres, contract terms, recap and the French Gabon PDF (Mali template pending) | [drivers.md](drivers.md), [contracts.md](contracts.md) |
+| 4 | **Payments and arrears, phase 1** (ledger, staff-recorded cash/manual payments, arrears engine, 24/48/72 h levels, email warnings, automatic suspension state) | Now | **Built for Gabon, phase 1** (ledger, staff-recorded payments, arrears engine, 24/48/72 h levels, email warnings, automatic suspension, screens); caution, terminated-contract debts and PVit later | [payments-and-arrears.md](payments-and-arrears.md) |
+| 5 | **Admin quick access** (Suivi paiements, Gérer impayés, Historique, Chauffeurs, Véhicules, Contrats, Rapports) | Now | Menu built: a "Finance" sidebar group (Suivi paiements, Gérer impayés, Historique) and "Recharge Énergie", as "Bientôt disponible" pages guarded by the provisional `transactions:read` until the payment permissions are created in round B; the audit page is now "Journal d'audit" | [admin-quick-access.md](admin-quick-access.md) |
+| 6 | **Audit trail** (who did what and when; kept at least 5 years) | Now | **Built** (users, roles, sign-in, vehicles, drivers, assignments, training centres) | [database](../database/database.md), [api](../api/conventions.md) |
 | 7 | **Driver mobile API and Flutter app**, in-app payments via **PVit** (Airtel Money, Moov Money Gabon), push notifications | Later | Decided (stack), design to be supplied | [mobile](../mobile/architecture.md) |
-| 8 | **Real dashboard and reports** | After the above | Open | |
-| 9 | **Charging billing and income** (drivers and public, day/week/month/year) via the OCPP platform's APIs | Later | Decided | [ocpp-integration.md](ocpp-integration.md) |
+| 8 | **Real dashboard and reports** | Dashboard now, reports later | **Dashboard built** (2026-09-30): cards Chauffeurs and Véhicules from the backend, each shown only to users who can read that module; Paiements journaliers and Gestion recharge énergie show real figures (rounds B and C). Reports open | [admin-quick-access.md](admin-quick-access.md) |
+| 9 | **Charging billing and income** (drivers and public, day/week/month/year) via the OCPP platform's APIs | Manual part now | **Built** (recharges recorded by staff, battery levels, stations, metrics, exports); OCPP import later | [ocpp-integration.md](ocpp-integration.md) |
 | 10 | **Mali** (Orange Money, Moov Mali, its own aggregator, contract template, legal entity) | Later | Decided | [contracts.md](contracts.md) |
 
 Design consequence: because the app comes later, driver records are created in phase 1 with their credentials (initial password hash, forced-change flag) but no driver sign-in API is built yet; rents are recorded by staff; warnings are **email only**.
@@ -30,7 +30,7 @@ Design consequence: because the app comes later, driver records are created in p
 - **Existing users belong to Gabon.** Country data: currency, phone code/format, timezone, language, active status, **payment providers, legal entity data and the contract template with country law**.
 
 **Drivers and vehicles**
-- Drivers **never self-register**: the **gestionnaire** creates them (5-step wizard, **all-or-nothing, no draft**), assigns a car and creates the contract; the driver later signs in with **email or phone + password only** and **must change the initial password** (min. 8 characters) at first login. The **ADMIN** suspends and reactivates drivers.
+- Drivers **never self-register**: the **gestionnaire** creates them (5-step wizard, **all-or-nothing, no draft**), assigns a car and creates the contract; the driver later signs in with **email or phone + password only** and **must change the initial password** (min. 8 characters) at first login. The **ADMIN** suspends, blocks and reactivates drivers (every restriction needs a reason); the driver photo is mandatory and documents are uploads.
 - Driver must be **18 or older** on the creation date. Civilité: Male/Female. ID type selected, then the number typed (no upload). Licence category: A, B, C or D. Training centre from a **managed list** (gestionnaire). ID number, licence number, phone, email **unique per country**. N° Certificat optional.
 - Vehicles: **Marque, Modèle, Année, Immatriculation, Couleur, Prix d'achat, Loyer journalier, Numéro du véhicule** required; **VIN optional**; vehicle number and plate **unique**; statuses `AVAILABLE`, `ASSIGNED`, `IN_MAINTENANCE`, `OUT_OF_SERVICE`; the daily rent is fixed on the car. One driver = one contract; one car = one driver. The **gestionnaire** manages vehicles, drivers and contracts.
 

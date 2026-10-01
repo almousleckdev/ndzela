@@ -1,7 +1,7 @@
 package com.ndzela.admin.security;
 
 import com.ndzela.admin.common.exception.AccountLockedException;
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.notification.application.NotificationService;
 import com.ndzela.admin.user.domain.User;
 import com.ndzela.admin.user.domain.UserRepository;
@@ -19,7 +19,6 @@ import java.time.OffsetDateTime;
 @Service
 @RequiredArgsConstructor
 public class LoginAttemptService {
-
     private final UserRepository userRepository;
     private final AppProperties props;
     private final NotificationService notifications;
@@ -53,7 +52,7 @@ public class LoginAttemptService {
         });
     }
 
-    /** Throws if the account may not authenticate right now; transparently releases an expired lock. */
+    // Throws if the account may not authenticate right now; transparently releases an expired lock.
     @Transactional
     public void assertCanAuthenticate(User user) {
         if (user.getStatus() == UserStatus.DISABLED || !user.isCountryActive()) {

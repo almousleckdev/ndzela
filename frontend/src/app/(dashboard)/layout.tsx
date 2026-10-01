@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!isReady) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-canvas">
         <Skeleton className="h-12 w-12 rounded-full" />
       </div>
     );
@@ -21,10 +21,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header />
         {/* Keyed by the selected country so every page reloads its data when the super admin switches country. */}
-        <main key={selectedCountry ?? "all"} className="flex-1 overflow-y-auto bg-slate-50 p-6">{children}</main>
+        <main key={selectedCountry ?? "all"} className="flex-1 overflow-y-auto bg-canvas p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </>
   );

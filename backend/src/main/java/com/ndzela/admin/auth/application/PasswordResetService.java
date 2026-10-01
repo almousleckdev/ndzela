@@ -1,7 +1,7 @@
 package com.ndzela.admin.auth.application;
 
 import com.ndzela.admin.common.exception.SessionExpiredException;
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.infrastructure.email.EmailProvider;
 import com.ndzela.admin.security.OpaqueTokens;
 import com.ndzela.admin.user.domain.User;
@@ -21,7 +21,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {
-
     private static final String KEY_PREFIX = "auth:reset:";
 
     private final UserRepository userRepository;

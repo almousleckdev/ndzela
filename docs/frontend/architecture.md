@@ -7,7 +7,7 @@ Next.js 16 (App Router), React 19, TypeScript `strict`, Tailwind 4, react-hook-f
 
 ```
 src/app/                 routes: (auth)/login, (auth)/reset-password, (dashboard)/{page,users,roles,profile,settings}; layouts; globals.css
-src/features/<feature>/  auth, users, roles, access, profile, notifications, settings, tenancy
+src/features/<feature>/  auth, users, roles, access, profile, notifications, settings, tenancy, audit, vehicles, drivers
     components/ hooks/ services/ schemas/ store/ lib/ types.ts      (only the folders a feature needs)
 src/components/ui/       Button, Input, FormField, Dialog, Dropdown, Table, Card, Badge, Avatar, Select, FilterTabs, ConfirmDialog, Toaster...
 src/components/layout/   Sidebar (collapsible), Header, nav-items.ts
@@ -37,7 +37,9 @@ Feature responsibilities: `auth` (login flow, session hook, auth store, reset pa
 
 ## Access control in the UI
 
-`usePermissions().can(PERMISSIONS.X)` and `<RequirePermission>` decide what to show; `nav-items.ts` filters the sidebar by permission.
+**Tables and design system:** see [ADR-0011](../adr/0011-tanstack-table-and-the-console-design-system.md). Pages are built from `components/layout/page.tsx` (`Page`, `PageHead`, `Panel`, `KpiBand`, `Toolbar`) and `components/data-table/` (`DataTable` on TanStack Table v9, `SearchField`, `FilterPill`, `DateRangePicker`, `ActiveFilters`, `useTableQuery`, `cells`); the sidebar is `NAV_SECTIONS` grouped by area with live counters (`useNavBadges`) and a mobile drawer (`useShellStore`). Server tables send `q`, filters, `from`/`to` and `sort` and display the page they get back.
+
+`usePermissions().can(PERMISSIONS.X)` and `<RequirePermission>` decide what to show; `nav-items.ts` (`NAV_SECTIONS`: optional heading plus items) filters the sidebar by permission and hides empty sections. The dashboard (`features/dashboard`) reads `GET /drivers/stats`, `GET /vehicles/counts` and `GET /payments/summary`, `GET /charging/summary` and shows each card only to users who hold that module's read permission.
 This is **usability only**; the backend enforces every rule. Never gate on role names.
 
 ## Styling and design system

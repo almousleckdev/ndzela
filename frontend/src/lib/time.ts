@@ -14,3 +14,8 @@ export function timeAgo(iso: string): string {
   }
   return "à l'instant";
 }
+
+/** "30/09/2026 14:32" */
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+}

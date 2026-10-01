@@ -14,7 +14,6 @@ import java.util.UUID;
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
-
     private final NotificationService notificationService;
 
     @GetMapping

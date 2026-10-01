@@ -1,6 +1,7 @@
 package com.ndzela.admin.user.api;
 
-import com.ndzela.admin.security.CurrentActor;
+import com.ndzela.admin.common.web.dto.ReasonRequest;
+import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.user.api.dto.CreateUserRequest;
 import com.ndzela.admin.user.api.dto.UpdateUserRequest;
 import com.ndzela.admin.user.api.dto.UserSummary;
@@ -20,7 +21,6 @@ import java.util.UUID;
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
-
     private final UserManagementService users;
 
     @GetMapping
@@ -44,20 +44,20 @@ public class UserController {
 
     @PostMapping("/{id}/disable")
     @PreAuthorize("hasAuthority('users:deactivate')")
-    public UserSummary disable(@PathVariable UUID id, Authentication authentication) {
-        return users.setDisabled(id, true, CurrentActor.from(authentication));
+    public UserSummary disable(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request, Authentication authentication) {
+        return users.setDisabled(id, true, request.reason(), CurrentActor.from(authentication));
     }
 
     @PostMapping("/{id}/enable")
     @PreAuthorize("hasAuthority('users:deactivate')")
     public UserSummary enable(@PathVariable UUID id, Authentication authentication) {
-        return users.setDisabled(id, false, CurrentActor.from(authentication));
+        return users.setDisabled(id, false, null, CurrentActor.from(authentication));
     }
 
     @PostMapping("/{id}/lock")
     @PreAuthorize("hasAuthority('users:lock')")
-    public UserSummary lock(@PathVariable UUID id, Authentication authentication) {
-        return users.lock(id, CurrentActor.from(authentication));
+    public UserSummary lock(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request, Authentication authentication) {
+        return users.lock(id, request.reason(), CurrentActor.from(authentication));
     }
 
     @DeleteMapping("/{id}")

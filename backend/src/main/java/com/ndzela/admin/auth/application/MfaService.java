@@ -2,7 +2,7 @@ package com.ndzela.admin.auth.application;
 
 import com.ndzela.admin.auth.api.dto.MfaSetupResponse;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.user.domain.User;
 import com.ndzela.admin.user.domain.UserRepository;
 import com.ndzela.admin.user.domain.UserStatus;
@@ -26,7 +26,6 @@ import java.util.Base64;
 @Service
 @RequiredArgsConstructor
 public class MfaService {
-
     private static final String REPLAY_PREFIX = "auth:totp-used:";
     private static final Duration REPLAY_TTL = Duration.ofSeconds(120);
 
@@ -62,10 +61,6 @@ public class MfaService {
         }
     }
 
-    /**
-     * Verifies a login code. For a user still enrolling, a valid code also confirms the enrolment
-     * and activates the account.
-     */
     @Transactional
     public boolean verifyLoginCode(User user, String code) {
         if (user.getMfaSecret() == null) {

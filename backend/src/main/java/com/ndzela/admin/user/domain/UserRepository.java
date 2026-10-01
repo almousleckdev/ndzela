@@ -21,7 +21,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     List<User> findAllByCountryId(UUID countryId);
 
-    /** Holders of a permission who are global or in countryId (null matches global only). */
     @Query("select distinct u from User u join u.roles r join r.permissions p "
             + "where p.name = :permission and u.status <> :excluded and (u.country is null or u.country.id = :countryId)")
     List<User> findByPermissionExcludingStatus(@Param("permission") String permission, @Param("excluded") UserStatus excluded,

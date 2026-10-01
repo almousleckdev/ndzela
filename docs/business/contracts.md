@@ -1,6 +1,6 @@
 # Contracts
 
-**Status: Decided (product owner's answers and the Gabon sample contract); a few items marked Proposed/Open. Not built. Focus country: Gabon.**
+**Status: Built for Gabon (2026-09-30)**: creation with the driver, recap, printable French PDF, termination and renewal on vehicle change. Lifecycle beyond active/terminated, amendments and ownership transfer remain open. Focus country: Gabon.
 Reference sample: [samples/contract-gabon.pdf](samples/contract-gabon.pdf) (10 pages, French, **test data**, contract `NDZ-77836447`). Analysis below is derived from it.
 
 ## What a contract is
@@ -8,6 +8,19 @@ Reference sample: [samples/contract-gabon.pdf](samples/contract-gabon.pdf) (10 p
 A **rental with ownership transfer**: NDZELA SARL (the *bailleur*) leases an electric car to a driver (the *locataire*) for a fixed number of **billable days**. If the driver pays all of them and respects the contract, **ownership of the car is transferred** to the driver. The car stays NDZELA's property during the contract. The car is for **VTC activity in Libreville only** under the NDZELA brand. A contract is created at the same time as the driver ([drivers.md](drivers.md)), and its PDF is generated right after successful creation.
 
 Rules confirmed by the product owner: **one contract per driver and one driver per car** at a time; the **daily rent cannot be changed** per contract (it comes from the car); the contract text is **in French**; the PDF is generated **after the driver account is created successfully**.
+
+## As built (2026-09-30)
+
+- **Wizard step 4 "Contrat"**: the gestionnaire enters the **caution** (prefilled 250 000 FCFA, editable, whole FCFA); the server computes the recap (`POST /contracts/preview`: start today in the country's timezone, 1 248 billable days, end date, rent from the car, total = rent x days). After the password pop-up the driver and the contract are created **in one transaction** and the app opens `/contracts/{id}`: the PDF with **Imprimer** and **Télécharger**. The contract is also reachable from the driver page.
+- **Tables (V14):** `contracts` (number `NDZ-` + 8 digits, sequential per country through a locked counter row `contract_counters`; partial unique indexes allow **one ACTIVE contract per driver and per vehicle**; financial terms; `snapshot` JSON of the parties as printed; `template_version`), and per-country legal-entity columns on `countries` (prefix, template, legal name and form, head office, RCCM, phone, email, signing city), seeded for Gabon from the sample. Mali has none: creating a Mali driver answers `CONTRACT_TEMPLATE_UNAVAILABLE` until Mali's text and entity data exist.
+- **Consequences for drivers:** creating a driver **requires a vehicle and a caution**; removing the vehicle **terminates** the active contract (with the removal reason); assigning a vehicle to a driver without one **opens a new contract** (the dialog asks for the caution). A driver or a vehicle can be **deleted while no money is recorded** (see below); suspend, block or retire instead once a payment or recharge exists.
+- **PDF:** [ADR-0010](../adr/0010-contract-pdf-with-openpdf-from-a-snapshot.md): OpenPDF, rendered on demand from the snapshot, audited (`CONTRACT_PRINTED`). Template `GA-1` reproduces the signed sample article by article (1 to 17, annexes, signature boxes, handwritten mention). The sample's figures come from the contract, the parties from the snapshot; "N° de série" prints "Non renseigné" and "N° certificat" prints "À compléter" when empty; article 3.3 lists the documents actually uploaded.
+- **Permissions (Implemented):** `contracts:read` (GESTIONNAIRE, ADMIN, COMPTABLE, VIEWER, SUPER_ADMIN), `contracts:print` (all but VIEWER); creation goes through `drivers:create` and the preview needs it too.
+- **API:** `GET /contracts?driverId=`, `GET /contracts/{id}`, `GET /contracts/{id}/pdf`, `POST /contracts/preview`. Audit: `CONTRACT_CREATED`, `CONTRACT_TERMINATED`, `CONTRACT_PRINTED`.
+
+## Updating a contract (Implemented, V17, 2026-10-01)
+
+A contract can be **updated while it is active**: editing a driver (Chauffeurs, Modifier) now has a 4th step "Contrat" for a driver who has one; with "Mettre à jour le contrat avec ces informations" ticked (default) the contract is refreshed after the driver is saved, and the updated contract opens for printing. `PUT /drivers/{id}/contract {deposit}` (permission `contracts:update`: GESTIONNAIRE, ADMIN, SUPER_ADMIN) **replaces the parties printed in the contract with the driver's and the vehicle's current details and may change the deposit**; the **number, the start and end dates, the rent, the total price and the bailleur stay as signed**. Each update increments `revision`, records `updated_at` and `updated_by`, writes `CONTRACT_UPDATED` to the audit trail (revision, old and new deposit) and prints "Contrat mis à jour le ... (révision N)" on page 1. Editing a driver **without** ticking the box leaves the signed contract untouched. A terminated contract cannot be updated (`CONTRACT_NOT_ACTIVE`); a driver without an active contract answers `NO_ACTIVE_CONTRACT`. This refines the earlier rule that a signed contract never changes: it now changes only by this explicit, counted update.
 
 ## Data of the contract (step 4 of the wizard)
 

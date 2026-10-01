@@ -8,7 +8,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** A tenant. Gabon today, Mali later. Countries are created by migrations, not through the API. */
 @Entity
 @Table(name = "countries")
 @Getter
@@ -17,19 +16,16 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class Country {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    /** ISO 3166-1 alpha-2, e.g. GA. Sent by the admin UI in the X-Country header. */
     @Column(nullable = false, unique = true)
     private String code;
 
     @Column(nullable = false)
     private String name;
 
-    /** ISO 4217 code of the currency amounts are expressed in (XAF, XOF). */
     @Column(name = "currency_code", nullable = false)
     private String currencyCode;
 
@@ -45,6 +41,41 @@ public class Country {
     @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(name = "contract_prefix")
+    private String contractPrefix;
+
+    @Column(name = "contract_template")
+    private String contractTemplate;
+
+    @Column(name = "legal_name")
+    private String legalName;
+
+    @Column(name = "legal_form")
+    private String legalForm;
+
+    @Column(name = "head_office")
+    private String headOffice;
+
+    @Column(name = "registry_number")
+    private String registryNumber;
+
+    @Column(name = "legal_phone")
+    private String legalPhone;
+
+    @Column(name = "legal_email")
+    private String legalEmail;
+
+    @Column(name = "signing_city")
+    private String signingCity;
+
+    @Builder.Default
+    @Column(name = "charging_critical_percent", nullable = false)
+    private int chargingCriticalPercent = 20;
+
+    @Builder.Default
+    @Column(name = "late_penalty", nullable = false)
+    private java.math.BigDecimal latePenalty = java.math.BigDecimal.ZERO;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

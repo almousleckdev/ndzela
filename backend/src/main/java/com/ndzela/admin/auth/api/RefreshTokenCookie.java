@@ -1,6 +1,7 @@
 package com.ndzela.admin.auth.api;
 
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.RefreshCookieProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +17,6 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class RefreshTokenCookie {
-
     private static final String PATH = "/api/v1/auth";
 
     private final AppProperties props;
@@ -43,7 +43,7 @@ public class RefreshTokenCookie {
     }
 
     private void add(HttpServletResponse response, String value, Duration maxAge) {
-        AppProperties.RefreshCookie config = props.auth().refreshCookie();
+        RefreshCookieProperties config = props.auth().refreshCookie();
         ResponseCookie cookie = ResponseCookie.from(config.name(), value)
                 .httpOnly(true)
                 .secure(config.secure())

@@ -19,7 +19,6 @@ import java.util.Map;
 @Service
 @ConditionalOnProperty(name = "app.mail.provider", havingValue = "resend")
 public class ResendEmailProvider implements EmailProvider {
-
     private final TemplateEngine templateEngine;
     private final RestClient client;
     private final String from;

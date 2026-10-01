@@ -25,9 +25,9 @@ export const usersService = {
   update: (id: string, input: UserInput) =>
     apiClient<UserSummary>(`/users/${id}`, { method: "PUT", body: toBody(input) }),
 
-  disable: (id: string) => apiClient<UserSummary>(`/users/${id}/disable`, { method: "POST" }),
+  disable: (id: string, reason: string) => apiClient<UserSummary>(`/users/${id}/disable`, { method: "POST", body: { reason } }),
   enable: (id: string) => apiClient<UserSummary>(`/users/${id}/enable`, { method: "POST" }),
-  lock: (id: string) => apiClient<UserSummary>(`/users/${id}/lock`, { method: "POST" }),
+  lock: (id: string, reason: string) => apiClient<UserSummary>(`/users/${id}/lock`, { method: "POST", body: { reason } }),
   remove: (id: string) => apiClient(`/users/${id}`, { method: "DELETE" }),
   unlock: (id: string) => apiClient<UserSummary>(`/users/${id}/unlock`, { method: "POST" }),
   resetMfa: (id: string) => apiClient<UserSummary>(`/users/${id}/reset-mfa`, { method: "POST" }),

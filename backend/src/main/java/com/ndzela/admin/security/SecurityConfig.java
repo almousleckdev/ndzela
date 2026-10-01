@@ -1,6 +1,6 @@
 package com.ndzela.admin.security;
 
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.security.jwt.JwtAuthenticationFilter;
 import com.ndzela.admin.tenant.TenantContextResolver;
 
@@ -29,7 +29,6 @@ import java.util.List;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AppProperties props;
     private final TenantContextResolver tenantContextResolver;
@@ -39,14 +38,13 @@ public class SecurityConfig {
             HttpSecurity http,
             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // stateless: no ambient credentials except the SameSite refresh cookie
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/health").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/media/**").permitAll()
                         .anyRequest().authenticated())
-                // Route 401/403 through GlobalExceptionHandler so every error has the same JSON shape.
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint((req, res, ex) -> exceptionResolver.resolveException(req, res, null, ex))
                         .accessDeniedHandler((req, res, ex) -> exceptionResolver.resolveException(req, res, null, ex)))
@@ -62,7 +60,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(props.corsAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-ID", TenantContextFilter.COUNTRY_HEADER));
-        configuration.setAllowCredentials(true); // required for the refresh-token cookie
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

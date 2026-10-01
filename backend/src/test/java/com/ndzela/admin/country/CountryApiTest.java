@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class CountryApiTest extends AbstractIntegrationTest {
-
     private User gabonAdmin;
     private User root;
 
@@ -44,10 +43,10 @@ class CountryApiTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void countryStaffReceiveOnlyTheirOwnCountry() throws Exception {
+    void countryStaffAlsoReceiveEveryActiveCountrySoPhoneCodesAreComplete() throws Exception {
         mvc.perform(get("/api/v1/countries").header("Authorization", bearer(gabonAdmin)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].code").value(contains("GA")));
+                .andExpect(jsonPath("$[*].code").value(contains("GA", "ML")));
     }
 
     @Test

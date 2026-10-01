@@ -1,6 +1,6 @@
 package com.ndzela.admin.bootstrap;
 
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.user.domain.Role;
 import com.ndzela.admin.user.domain.RoleRepository;
 import com.ndzela.admin.user.domain.User;
@@ -22,7 +22,6 @@ import java.util.Set;
 @Component
 @RequiredArgsConstructor
 public class SuperAdminBootstrap implements CommandLineRunner {
-
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;

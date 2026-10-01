@@ -2,7 +2,7 @@ package com.ndzela.admin.security;
 
 import com.ndzela.admin.common.exception.CountryInactiveException;
 import com.ndzela.admin.common.exception.InvalidCountryException;
-import com.ndzela.admin.tenant.TenantContext;
+import com.ndzela.admin.tenant.model.TenantContext;
 import com.ndzela.admin.tenant.TenantContextResolver;
 import com.ndzela.admin.tenant.TenantHolder;
 
@@ -19,7 +19,6 @@ import java.io.IOException;
 
 /** Sets the TenantContext for the request, right after the JWT filter has authenticated the caller. */
 public class TenantContextFilter extends OncePerRequestFilter {
-
     public static final String COUNTRY_HEADER = "X-Country";
 
     private final TenantContextResolver resolver;

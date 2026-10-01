@@ -4,6 +4,7 @@ import com.ndzela.admin.common.exception.CountryInactiveException;
 import com.ndzela.admin.common.exception.InvalidCountryException;
 import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
+import com.ndzela.admin.tenant.model.TenantContext;
 import com.ndzela.admin.user.domain.Role;
 import com.ndzela.admin.user.domain.User;
 
@@ -22,7 +23,6 @@ import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class TenantContextResolverTest {
-
     @Mock
     private CountryRepository countries;
 

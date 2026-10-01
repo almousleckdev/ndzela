@@ -12,7 +12,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "tenant_test_items")
 public class TenantTestItem extends TenantOwned {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

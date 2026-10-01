@@ -13,7 +13,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class Permission {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

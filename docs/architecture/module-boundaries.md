@@ -5,14 +5,17 @@ current deviations are listed in [findings](../findings/architecture-findings.md
 
 ## Backend (package by feature)
 
-Base package `com.ndzela.admin`. Features: `auth`, `user` (users and roles), `profile`, `notification`, `country`; future: `fleet`,
-`driver`, `contract`, `payment`, `report`. Shared: `security`, `tenant`, `common`, `config`, `infrastructure`, `bootstrap`.
+Base package `com.ndzela.admin`. Features: `auth`, `user` (users and roles), `profile`, `notification`, `country`, `audit`, `vehicle`, `driver`; future: `contract`, `payment`, `report`. `driver` uses `vehicle` and `country` only through their application services; `audit` is called by every feature. Shared: `security`, `tenant`, `common`, `config`, `infrastructure`, `bootstrap`.
 
 ```
 <feature>/api          controllers + request/response DTOs (api/dto)     -> may call: same feature's application, common
 <feature>/application  services / use cases, transactions, orchestration -> may call: same feature's domain, other features' *application services*, security (CurrentActor), common, infrastructure
-<feature>/domain       entities + Spring Data repositories               -> may depend on: nothing above it; references other features by ID
+<feature>/application/model  value records and flow enums of the services (results, inputs, tokens)
+<feature>/domain       entities, repositories, domain enums              -> may depend on: nothing above it; references other features by ID
+<feature>/domain/snapshot    records serialised as JSON snapshots (e.g. contract)
 ```
+
+Each file holds one top-level type; the full placement table is in [backend standards](../backend/standards.md#language-and-style).
 
 Rules:
 

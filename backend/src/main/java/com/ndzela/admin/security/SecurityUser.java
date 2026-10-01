@@ -15,7 +15,6 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 public class SecurityUser implements UserDetails {
-
     private final User user;
 
     @Override

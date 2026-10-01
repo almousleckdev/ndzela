@@ -10,7 +10,6 @@ import java.util.Map;
 @Service
 @ConditionalOnProperty(name = "app.mail.provider", havingValue = "log")
 public class LoggingEmailProvider implements EmailProvider {
-
     @Override
     public void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         log.warn("[DEV MAIL - not sent] to={} subject='{}' template={} variables={}", to, subject, templateName, variables);

@@ -9,12 +9,10 @@ import java.util.HexFormat;
 
 /** Helpers for random, unguessable tokens (refresh, reset, login challenge) that are only ever stored hashed. */
 public final class OpaqueTokens {
-
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private OpaqueTokens() {}
 
-    /** 256 bits of entropy, URL-safe. */
     public static String generate() {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);

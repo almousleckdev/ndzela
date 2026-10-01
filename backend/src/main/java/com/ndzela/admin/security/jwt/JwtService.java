@@ -1,6 +1,6 @@
 package com.ndzela.admin.security.jwt;
 
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -15,10 +15,9 @@ import java.util.Date;
 import java.util.UUID;
 import javax.crypto.SecretKey;
 
-/** Issues and validates short-lived HS256 access tokens. Refresh tokens are opaque, see {@code RefreshTokenService}. */
+/** Issues and validates short-lived HS256 access tokens. */
 @Service
 public class JwtService {
-
     private static final int MIN_KEY_BYTES = 32;
 
     private final SecretKey signingKey;
@@ -51,7 +50,7 @@ public class JwtService {
         return accessTokenTtl.toSeconds();
     }
 
-    /** Verifies signature, issuer and expiry; throws {@link io.jsonwebtoken.JwtException} otherwise. */
+    // Verifies signature, issuer and expiry; throws io.jsonwebtoken.JwtException otherwise.
     public String extractUsername(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(signingKey)

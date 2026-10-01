@@ -1,6 +1,6 @@
 package com.ndzela.admin.profile.api;
 
-import com.ndzela.admin.common.web.MessageResponse;
+import com.ndzela.admin.common.web.dto.MessageResponse;
 import com.ndzela.admin.profile.api.dto.ChangePasswordRequest;
 import com.ndzela.admin.profile.api.dto.ProfileResponse;
 import com.ndzela.admin.profile.api.dto.ResetMfaRequest;
@@ -19,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/v1/profile")
 @RequiredArgsConstructor
 public class ProfileController {
-
     private final ProfileService profileService;
 
     @GetMapping("/me")

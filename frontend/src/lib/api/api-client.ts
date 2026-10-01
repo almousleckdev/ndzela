@@ -85,11 +85,8 @@ async function toApiException(response: Response, endpoint: string, requestId: s
   }
 }
 
-/**
- * Fetch wrapper: JSON in/out, cookie credentials, and a transparent one-time refresh
- * when the access token has expired.
- */
-export async function apiClient<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+/** Sends the request, retrying once after a token refresh; throws an ApiException when the answer is an error. */
+async function request(endpoint: string, options: FetchOptions): Promise<Response> {
   const requestId = crypto.randomUUID();
   let response = await send(endpoint, options, requestId);
 
@@ -110,7 +107,20 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
   }
 
   if (!response.ok) throw await toApiException(response, endpoint, requestId);
+  return response;
+}
 
+/**
+ * Fetch wrapper: JSON in/out, cookie credentials, and a transparent one-time refresh
+ * when the access token has expired.
+ */
+export async function apiClient<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+  const response = await request(endpoint, options);
   const text = response.status === 204 ? "" : await response.text();
   return (text ? JSON.parse(text) : undefined) as T;
+}
+
+/** Downloads a protected file (photo, document) as a Blob. */
+export async function apiBlob(endpoint: string): Promise<Blob> {
+  return (await request(endpoint, {})).blob();
 }

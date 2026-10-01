@@ -21,14 +21,12 @@ import java.util.Map;
 @ConditionalOnProperty(name = "app.mail.provider", havingValue = "smtp", matchIfMissing = true)
 @RequiredArgsConstructor
 public class SmtpEmailProvider implements EmailProvider {
-
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    /** Sent asynchronously so SMTP latency never delays (or reveals anything about) the login response. */
     @Override
     @Async
     public void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {

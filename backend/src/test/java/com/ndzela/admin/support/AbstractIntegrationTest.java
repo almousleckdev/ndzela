@@ -29,7 +29,6 @@ import java.util.Set;
 @SpringBootTest
 @AutoConfigureMockMvc
 public abstract class AbstractIntegrationTest {
-
     public static final String PASSWORD = "Str0ng!Pass";
 
     protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine");
@@ -48,6 +47,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.flyway.locations", () -> "classpath:db/migration,classpath:db/test-migration");
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
+        registry.add("app.arrears.job-enabled", () -> "false");
         registry.add("app.jwt.secret", () -> "dGVzdC1vbmx5LWp3dC1zZWNyZXQtdGVzdC1vbmx5LWp3dC1zZWNyZXQ=");
         registry.add("app.mfa.encryption-key", () -> "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=");
         registry.add("app.mail.provider", () -> "log");
@@ -67,15 +67,14 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void resetData() {
-        jdbc.execute("TRUNCATE TABLE tenant_test_items, notifications, user_roles, users CASCADE");
-        jdbc.update("UPDATE countries SET active = TRUE");
+        jdbc.execute("TRUNCATE TABLE tenant_test_items, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
+        jdbc.update("UPDATE countries SET active = TRUE, late_penalty = 0, charging_critical_percent = 20");
     }
 
     protected Country country(String code) {
         return countries.findByCode(code).orElseThrow();
     }
 
-    /** A staff member with an active, MFA-enrolled account. {@code countryCode} null makes the user global. */
     protected User staff(String email, String countryCode, String... roleNames) {
         Set<Role> assigned = new HashSet<>();
         for (String roleName : roleNames) {

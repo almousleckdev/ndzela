@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Alerts about one country's staff reach that country and the global admins only. */
 class NotificationCountryScopeTest extends AbstractIntegrationTest {
-
     @Autowired private LoginAttemptService loginAttempts;
 
     private User gabonAdmin;

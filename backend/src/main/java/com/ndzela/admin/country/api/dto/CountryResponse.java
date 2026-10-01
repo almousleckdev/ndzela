@@ -11,8 +11,7 @@ public record CountryResponse(
         String currencyCode,
         String phoneCode,
         String timezone,
-        String defaultLanguage
-) {
+        String defaultLanguage) {
     public static CountryResponse from(Country country) {
         return new CountryResponse(country.getId(), country.getCode(), country.getName(), country.getCurrencyCode(),
                 country.getPhoneCode(), country.getTimezone(), country.getDefaultLanguage());

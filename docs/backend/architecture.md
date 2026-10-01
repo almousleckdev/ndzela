@@ -10,13 +10,16 @@ Java 21, Spring Boot 4.1.1, Maven. Modular monolith, **package by feature**, eac
 | `auth/` | `api` (AuthController, RefreshTokenCookie, dto), `application` (AuthService, LoginChallengeService, OtpService, MfaService, RefreshTokenService, PasswordResetService) |
 | `user/` | `api` (UserController, RoleController, dto), `application` (UserManagementService, RoleManagementService, AccessPolicy), `domain` (User, Role, Permission, UserStatus + repositories) |
 | `profile/` | `api` (ProfileController, dto), `application` (ProfileService) |
+| `audit/` | `api` (AuditController, dto), `application` (AuditService writes, AuditQueryService reads), `domain` (AuditLog + repository): append-only, country-scoped explicitly |
+| `vehicle/` | `api`, `application` (VehicleService), `domain` (Vehicle extends TenantOwned, VehicleStatus): company cars |
+| `driver/` | `api`, `application` (DriverService, DriverAssignmentService, TrainingCenterService), `domain` (Driver, TrainingCenter, VehicleAssignment, enums): drivers, the one-vehicle-per-driver rule, training centres |
 | `notification/` | `api`, `application` (NotificationService), `domain` (Notification, repository): in-app only |
 | `country/` | `api` (CountryController, dto), `application` (CountryService), `domain` (Country + repository): read-only country list |
 | `tenant/` | Country context: TenantContext, TenantHolder, TenantContextResolver, TenantIdentifierResolver (Hibernate), TenantOwned base class and its listener |
 | `security/` | SecurityConfig, `jwt/` (JwtService, JwtAuthenticationFilter), TenantContextFilter, CurrentActor, SecurityUser, CustomUserDetailsService, LoginAttemptService, OpaqueTokens |
 | `common/` | `exception` (typed exceptions, GlobalExceptionHandler, ApiErrorResponse), `web` (RequestCorrelationFilter, MessageResponse), `validation` (StrongPassword) |
 | `config/` | AppProperties (typed `app.*` properties), MediaConfig, TotpConfig |
-| `infrastructure/` | `email` (EmailProvider + smtp/resend/log), `storage` (AvatarStorage), `crypto` (SecretEncryptor, MfaSecretConverter) |
+| `infrastructure/` | `email` (EmailProvider + smtp/resend/log), `storage` (AvatarStorage, DocumentStorage for private driver files), `crypto` (SecretEncryptor, MfaSecretConverter) |
 | `bootstrap/` | SuperAdminBootstrap (creates the first SUPER_ADMIN from env on empty DB) |
 
 Resources: `application.yml`, `db/migration/V*.sql`, `templates/*.html` (Thymeleaf email templates).

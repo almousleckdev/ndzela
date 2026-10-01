@@ -1,5 +1,7 @@
 package com.ndzela.admin.tenant;
 
+import com.ndzela.admin.tenant.model.TenantContext;
+
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
 import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
@@ -11,7 +13,6 @@ import java.util.UUID;
 /** Gives Hibernate the session's country: a country id, ALL (root tenant) or NONE (matches nothing). */
 @Component
 public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver<UUID>, HibernatePropertiesCustomizer {
-
     static final UUID ALL = new UUID(0L, 0L);
     static final UUID NONE = new UUID(-1L, -1L);
 

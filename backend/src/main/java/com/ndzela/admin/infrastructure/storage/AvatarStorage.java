@@ -1,7 +1,7 @@
 package com.ndzela.admin.infrastructure.storage;
 
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -13,14 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
-/**
- * Stores profile pictures on disk. The file type is decided from the file's own bytes (never from the
- * client-supplied name or content type), only PNG/JPEG/WebP are accepted, and each file gets an unguessable name.
- */
+/** Stores profile pictures on disk. */
 @Slf4j
 @Component
 public class AvatarStorage {
-
     public static final String URL_PREFIX = "/media/avatars/";
     private static final long MAX_BYTES = 2 * 1024 * 1024;
 
@@ -39,7 +35,6 @@ public class AvatarStorage {
         return directory.getParent();
     }
 
-    /** @return the public URL path of the stored picture, e.g. /media/avatars/3f2a....png */
     public String save(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BusinessRuleViolationException("INVALID_IMAGE", "No file received.");

@@ -1,38 +1,26 @@
 package com.ndzela.admin;
 
 import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import com.ndzela.admin.support.AbstractIntegrationTest;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Runs the real migrations in two steps to prove existing users move to Gabon. */
-class MigrationV7Test {
-
-    private static PostgreSQLContainer postgres;
-
-    @BeforeAll
-    static void startDatabase() {
-        postgres = new PostgreSQLContainer("postgres:16-alpine");
-        postgres.start();
-    }
-
-    @AfterAll
-    static void stopDatabase() {
-        postgres.stop();
-    }
-
+/** Runs the real migrations on a scratch database in two steps to prove existing users move to Gabon. */
+class MigrationV7Test extends AbstractIntegrationTest {
     private Flyway flywayUpTo(String version, DriverManagerDataSource dataSource) {
         return Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").target(version).load();
     }
 
     @Test
     void existingUsersBecomeGabonAndSuperAdminsStayGlobal() {
-        var dataSource = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        jdbc.execute("DROP DATABASE IF EXISTS migration_v7");
+        jdbc.execute("CREATE DATABASE migration_v7");
+        String url = POSTGRES.getJdbcUrl().replace("/" + POSTGRES.getDatabaseName(), "/migration_v7");
+        var dataSource = new DriverManagerDataSource(url, POSTGRES.getUsername(), POSTGRES.getPassword());
         flywayUpTo("6", dataSource).migrate();
 
         var db = new JdbcTemplate(dataSource);

@@ -1,6 +1,6 @@
 package com.ndzela.admin.user.api;
 
-import com.ndzela.admin.security.CurrentActor;
+import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.user.api.dto.CreateRoleRequest;
 import com.ndzela.admin.user.api.dto.RoleSummary;
 import com.ndzela.admin.user.api.dto.UpdateRolePermissionsRequest;
@@ -20,7 +20,6 @@ import java.util.UUID;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class RoleController {
-
     private final RoleManagementService roles;
 
     @GetMapping("/roles")

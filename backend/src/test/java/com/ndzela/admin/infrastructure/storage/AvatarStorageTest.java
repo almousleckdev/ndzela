@@ -1,8 +1,9 @@
 package com.ndzela.admin.infrastructure.storage;
 
+import com.ndzela.admin.config.properties.StorageProperties;
 import com.ndzela.admin.TestProperties;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,6 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AvatarStorageTest {
-
     @TempDir
     Path tmp;
 
@@ -26,7 +26,7 @@ class AvatarStorageTest {
     void setUp() {
         AppProperties base = TestProperties.create();
         storage = new AvatarStorage(new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), base.jwt(), base.auth(),
-                base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), new AppProperties.Storage(tmp.toString())));
+                base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), new StorageProperties(tmp.toString())));
     }
 
     private static byte[] png() {

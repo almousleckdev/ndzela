@@ -1,6 +1,15 @@
 # Charging billing and OCPP integration (future)
 
-**Status: Decided as a later module. Nothing to build now.**
+**Status: the manual part is built (2026-09-30, "Recharge Énergie"); the OCPP import is still later.**
+
+## As built: recharges recorded by staff (migration V16)
+
+- **Decided by the product owner:** nobody has a prepaid balance. **Drivers and the public pay for each recharge at once, at the station, with their own money**; NDZELA gives no credit and no card balance. The charging cost never enters the rent or the arrears rules.
+- **Record** (`charging_entries`, country-owned, **append-only by trigger**): `RECHARGE` (an NDZELA vehicle, whose driver is filled in from its current assignment, **or** a public car given as plate or description, never both; an NDZELA vehicle without a driver is refused), the amount paid (whole FCFA), the method (cash, Airtel Money, Moov Money, other; a reference except for cash), the **battery level before and after** ("Solde après" is the battery percentage; after is not below before), optional kWh, the station and who recorded it. `REVERSAL` cancels one recharge with a reason (once only, admin). A client `requestId` and an advisory lock make a double submit record once.
+- **Stations** (`stations`): a managed list per country (`charging:manage`); a station with records cannot be deleted.
+- **Screen "Recharge Énergie":** metrics Recharges du jour, FCFA du jour, de la semaine (Monday to Sunday) and du mois (money received, cancelled recharges excluded, each country measured in its own timezone), **Comptes critiques** (distinct vehicles that arrived today at or below the critical battery level, `countries.charging_critical_percent`, default 20), **Régularisations** (recharges cancelled this month) and **Gestionnaires** (distinct staff who recorded recharges today); the table Heure, Véhicule, Chauffeur, Montant, Solde après, Gestionnaire, Station, Référence, Actions for a chosen day (critical arrivals tinted red); Exporter for a day, week, month or year as CSV with totals (audited); and the dashboard card.
+- **Permissions:** `charging:read` (all finance roles and VIEWER), `charging:create` (GESTIONNAIRE, CAISSIER), `charging:reverse` (ADMIN), `charging:export` (ADMIN, COMPTABLE), `charging:manage` (GESTIONNAIRE, ADMIN); SUPER_ADMIN has all. **API:** `/api/v1/charging/recharges`, `/recharges/{id}/reverse`, `/summary`, `/export`, `/vehicles`, `/stations`. Audit: `CHARGING_RECORDED`, `CHARGING_REVERSED`, `CHARGING_EXPORTED`, `STATION_*`.
+- **Still later:** the OCPP import (the optional kWh and reference fields are where it will land), tariffs and kWh pricing, taxes, invoices, a link to rent arrears, and the questions below that concern the import.
 
 ## Business context (clarified)
 

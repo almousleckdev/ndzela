@@ -1,7 +1,7 @@
 package com.ndzela.admin.user.application;
 
 import com.ndzela.admin.common.exception.InsufficientPrivilegesException;
-import com.ndzela.admin.security.CurrentActor;
+import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.user.domain.Permission;
 import com.ndzela.admin.user.domain.Role;
 import com.ndzela.admin.user.domain.User;
@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AccessPolicyTest {
-
     private final AccessPolicy policy = new AccessPolicy();
     private final CurrentActor admin = new CurrentActor("admin@x.com",
             Set.of("users:create", "users:read", "users:update", "users:deactivate", "users:lock", "users:delete", "roles:read"));

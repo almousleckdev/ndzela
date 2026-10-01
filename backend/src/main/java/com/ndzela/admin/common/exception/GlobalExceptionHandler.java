@@ -10,11 +10,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.OffsetDateTime;
@@ -24,11 +27,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
-        
         List<ValidationError> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -96,9 +97,29 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "HTTP method not supported for this resource.", request, null);
     }
 
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "The content type of the request is not supported.", request, null);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingPart(MissingServletRequestPartException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "A required part of the request is missing.", request, null);
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleUploadTooLarge(MaxUploadSizeExceededException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "IMAGE_TOO_LARGE", "The image must be 2 MB or smaller.", request, null);
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "IMAGE_TOO_LARGE", "The file is too large.", request, null);
+    }
+
+    @ExceptionHandler(InvalidParameterException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidParameter(InvalidParameterException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "INVALID_PARAMETER", ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadParameter(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "INVALID_PARAMETER", "The parameter '" + ex.getName() + "' has an invalid value.", request, null);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -125,9 +146,8 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ApiErrorResponse> buildResponse(HttpStatus status, String code, String message, HttpServletRequest request, List<ValidationError> errors) {
-        
         String requestId = MDC.get(RequestCorrelationFilter.REQUEST_ID_MDC_KEY);
-        
+
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .timestamp(OffsetDateTime.now())
                 .status(status.value())
@@ -137,7 +157,7 @@ public class GlobalExceptionHandler {
                 .requestId(requestId)
                 .errors(errors)
                 .build();
-                
+
         return new ResponseEntity<>(response, status);
     }
 }

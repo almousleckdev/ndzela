@@ -20,7 +20,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Country staff never see or change another country's staff; only the global super admin crosses. */
 class UserIsolationTest extends AbstractIntegrationTest {
-
     private User gabonAdmin;
     private User gabonViewer;
     private User maliAdmin;
@@ -79,15 +78,17 @@ class UserIsolationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.code").value("INVALID_COUNTRY"));
     }
 
+    private static final String REASON = "{\"reason\":\"Motif de test\"}";
+
     @Test
     void countryStaffCannotReachAUserOfAnotherCountryByAnyAction() throws Exception {
         UUID id = maliViewer.getId();
         UUID viewerRole = roles.findByName("VIEWER").orElseThrow().getId();
         List<MockHttpServletRequestBuilder> attempts = List.of(
                 put("/api/v1/users/" + id).contentType(MediaType.APPLICATION_JSON).content("{\"firstName\":\"X\",\"roleIds\":[\"" + viewerRole + "\"]}"),
-                post("/api/v1/users/" + id + "/disable"),
+                post("/api/v1/users/" + id + "/disable").contentType(MediaType.APPLICATION_JSON).content(REASON),
                 post("/api/v1/users/" + id + "/enable"),
-                post("/api/v1/users/" + id + "/lock"),
+                post("/api/v1/users/" + id + "/lock").contentType(MediaType.APPLICATION_JSON).content(REASON),
                 post("/api/v1/users/" + id + "/unlock"),
                 post("/api/v1/users/" + id + "/reset-mfa"),
                 post("/api/v1/users/" + id + "/resend-invitation"),
@@ -106,13 +107,13 @@ class UserIsolationTest extends AbstractIntegrationTest {
 
     @Test
     void countryStaffCannotReachAGlobalUser() throws Exception {
-        call(post("/api/v1/users/" + root.getId() + "/disable"), gabonAdmin)
+        call(post("/api/v1/users/" + root.getId() + "/disable").contentType(MediaType.APPLICATION_JSON).content(REASON), gabonAdmin)
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void theGlobalSuperAdminCanManageAUserOfAnyCountryWithoutSelectingOne() throws Exception {
-        call(post("/api/v1/users/" + maliViewer.getId() + "/disable"), root)
+        call(post("/api/v1/users/" + maliViewer.getId() + "/disable").contentType(MediaType.APPLICATION_JSON).content(REASON), root)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("DISABLED"));
     }

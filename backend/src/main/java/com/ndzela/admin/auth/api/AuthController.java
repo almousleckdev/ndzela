@@ -1,5 +1,6 @@
 package com.ndzela.admin.auth.api;
 
+import com.ndzela.admin.auth.application.model.AuthTokens;
 import com.ndzela.admin.auth.api.dto.AuthResponse;
 import com.ndzela.admin.auth.api.dto.ForgotPasswordRequest;
 import com.ndzela.admin.auth.api.dto.LoginRequest;
@@ -12,7 +13,7 @@ import com.ndzela.admin.auth.api.dto.TotpVerifyRequest;
 import com.ndzela.admin.auth.application.AuthService;
 import com.ndzela.admin.auth.application.PasswordResetService;
 import com.ndzela.admin.common.exception.SessionExpiredException;
-import com.ndzela.admin.common.web.MessageResponse;
+import com.ndzela.admin.common.web.dto.MessageResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,7 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
     private final RefreshTokenCookie refreshCookie;
@@ -90,7 +90,7 @@ public class AuthController {
         return new MessageResponse("Password reset successfully.");
     }
 
-    private AuthResponse respondWithSession(AuthService.Tokens tokens, HttpServletResponse response) {
+    private AuthResponse respondWithSession(AuthTokens tokens, HttpServletResponse response) {
         refreshCookie.write(response, tokens.refreshToken());
         return AuthResponse.bearer(tokens.accessToken(), tokens.expiresInSeconds());
     }

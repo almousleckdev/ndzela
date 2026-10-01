@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @Converter
 @RequiredArgsConstructor
 public class MfaSecretConverter implements AttributeConverter<String, String> {
-
     private final SecretEncryptor encryptor;
 
     @Override

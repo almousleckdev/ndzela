@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ProfileService {
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokens;
@@ -61,7 +60,6 @@ public class ProfileService {
         userRepository.save(user);
     }
 
-    // Replaces the profile picture and removes the previous file.
     @Transactional
     public String updatePicture(String email, MultipartFile file) {
         User user = load(email);
@@ -81,7 +79,6 @@ public class ProfileService {
         avatarStorage.delete(previous);
     }
 
-    // Changes the password and signs the user out of every session.
     @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = load(email);
@@ -97,11 +94,6 @@ public class ProfileService {
         notifications.notify(user, "PASSWORD_CHANGED", "Mot de passe modifié", "Votre mot de passe a été modifié.");
     }
 
-    /**
-     * Replaces the authenticator (new phone). Needs the password AND a current code, so a stolen access token
-     * alone can never weaken the account. The user re-enrols at the next login. Not @Transactional on purpose:
-     * a failed attempt must be committed before the request is rejected.
-     */
     public void resetMfa(String email, ResetMfaRequest request) {
         User user = load(email);
         if (!user.isMfaEnabled()) {

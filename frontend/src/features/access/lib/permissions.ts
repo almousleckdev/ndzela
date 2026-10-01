@@ -30,6 +30,33 @@ export const PERMISSIONS = {
   REPORTS_EXPORT: "reports:export",
   CASH_OPERATE: "cash:operate",
   COUNTRIES_READ: "countries:read",
+  AUDIT_READ: "audit:read",
+  VEHICLES_READ: "vehicles:read",
+  VEHICLES_CREATE: "vehicles:create",
+  VEHICLES_UPDATE: "vehicles:update",
+  VEHICLES_DELETE: "vehicles:delete",
+  VEHICLES_EXPORT: "vehicles:export",
+  DRIVERS_READ: "drivers:read",
+  DRIVERS_CREATE: "drivers:create",
+  DRIVERS_UPDATE: "drivers:update",
+  DRIVERS_SUSPEND: "drivers:suspend",
+  DRIVERS_BLOCK: "drivers:block",
+  DRIVERS_EXPORT: "drivers:export",
+  DRIVERS_DELETE: "drivers:delete",
+  PAYMENTS_READ: "payments:read",
+  PAYMENTS_CREATE: "payments:create",
+  PAYMENTS_REVERSE: "payments:reverse",
+  PAYMENTS_EXPORT: "payments:export",
+  ARREARS_MANAGE: "arrears:manage",
+  CHARGING_READ: "charging:read",
+  CHARGING_CREATE: "charging:create",
+  CHARGING_REVERSE: "charging:reverse",
+  CHARGING_EXPORT: "charging:export",
+  CHARGING_MANAGE: "charging:manage",
+  CONTRACTS_READ: "contracts:read",
+  CONTRACTS_PRINT: "contracts:print",
+  CONTRACTS_UPDATE: "contracts:update",
+  TRAINING_CENTERS_MANAGE: "training_centers:manage",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -73,10 +100,14 @@ const RESOURCE_LABELS: Record<string, string> = {
   users: "Utilisateurs",
   roles: "Rôles",
   countries: "Pays",
+  audit: "Historique",
+  vehicles: "Véhicules",
+  drivers: "Chauffeurs",
+  training_centers: "Centres de formation",
 };
 
 /** Business resources first, platform administration last. */
-const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries"];
+const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries", "audit", "vehicles", "drivers", "training_centers"];
 
 const ACTION_LABELS: Record<string, string> = {
   read: "Consulter",
@@ -88,6 +119,9 @@ const ACTION_LABELS: Record<string, string> = {
   export: "Exporter",
   deactivate: "Suspendre",
   lock: "Bloquer",
+  block: "Bloquer",
+  suspend: "Suspendre",
+  manage: "Gérer",
   delete: "Supprimer",
 };
 

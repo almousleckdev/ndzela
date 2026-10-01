@@ -1,7 +1,8 @@
 package com.ndzela.admin.security.jwt;
 
+import com.ndzela.admin.config.properties.JwtProperties;
 import com.ndzela.admin.TestProperties;
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 
 import io.jsonwebtoken.JwtException;
 import org.junit.jupiter.api.Test;
@@ -15,10 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JwtServiceTest {
-
     private final UserDetails user = new User("test@ndzela.com", "password", Collections.emptyList());
 
-    private static JwtService serviceWith(AppProperties.Jwt jwt) {
+    private static JwtService serviceWith(JwtProperties jwt) {
         AppProperties base = TestProperties.create();
         return new JwtService(new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), jwt, base.auth(),
                 base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), base.storage()));
@@ -32,14 +32,14 @@ class JwtServiceTest {
 
     @Test
     void expiredTokenIsRejected() {
-        JwtService service = serviceWith(new AppProperties.Jwt(TestProperties.JWT_SECRET, "ndzela-test", Duration.ofMillis(-1000)));
+        JwtService service = serviceWith(new JwtProperties(TestProperties.JWT_SECRET, "ndzela-test", Duration.ofMillis(-1000)));
         String token = service.generateAccessToken(user);
         assertThrows(JwtException.class, () -> service.extractUsername(token));
     }
 
     @Test
     void tokenFromAnotherIssuerIsRejected() {
-        String foreign = serviceWith(new AppProperties.Jwt(TestProperties.JWT_SECRET, "someone-else", Duration.ofMinutes(5)))
+        String foreign = serviceWith(new JwtProperties(TestProperties.JWT_SECRET, "someone-else", Duration.ofMinutes(5)))
                 .generateAccessToken(user);
         JwtService service = new JwtService(TestProperties.create());
         assertThrows(JwtException.class, () -> service.extractUsername(foreign));
@@ -56,6 +56,6 @@ class JwtServiceTest {
     @Test
     void shortSecretFailsFast() {
         assertThrows(IllegalStateException.class,
-                () -> serviceWith(new AppProperties.Jwt("c2hvcnQ=", "ndzela-test", Duration.ofMinutes(5))));
+                () -> serviceWith(new JwtProperties("c2hvcnQ=", "ndzela-test", Duration.ofMinutes(5))));
     }
 }

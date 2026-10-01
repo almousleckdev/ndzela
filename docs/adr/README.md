@@ -14,5 +14,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0007](0007-frontend-feature-folders.md) | Frontend organised by feature | Accepted |
 | [0008](0008-driver-accounts-separate-from-staff.md) | Driver accounts separate from staff, created by staff only | Decided |
 | [0009](0009-tenant-id-for-business-data-explicit-scope-for-staff.md) | `@TenantId` for country-owned data, explicit scoping for staff accounts | Accepted |
+| [0010](0010-contract-pdf-with-openpdf-from-a-snapshot.md) | Contract PDFs rendered on demand with OpenPDF from a frozen snapshot | Accepted |
+| [0011](0011-tanstack-table-and-the-console-design-system.md) | TanStack Table v9 for every table and one console design system | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

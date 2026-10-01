@@ -1,9 +1,12 @@
 package com.ndzela.admin.auth.application;
 
+import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.auth.api.dto.LoginStep;
 import com.ndzela.admin.auth.api.dto.LoginStepResponse;
-import com.ndzela.admin.auth.application.LoginChallengeService.Challenge;
-import com.ndzela.admin.auth.application.LoginChallengeService.Stage;
+import com.ndzela.admin.auth.application.model.AuthTokens;
+import com.ndzela.admin.auth.application.model.LoginChallenge;
+import com.ndzela.admin.auth.application.model.LoginStage;
+import com.ndzela.admin.auth.application.model.TokenRotation;
 import com.ndzela.admin.common.exception.InvalidCredentialsException;
 import com.ndzela.admin.common.exception.SessionExpiredException;
 import com.ndzela.admin.infrastructure.email.EmailProvider;
@@ -31,7 +34,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
-
     private static final String EMAIL = "test@ndzela.com";
 
     @Mock private UserRepository userRepository;
@@ -43,6 +45,7 @@ class AuthServiceTest {
     @Mock private EmailProvider emailProvider;
     @Mock private LoginAttemptService loginAttempts;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private AuditService audit;
 
     private AuthService authService;
     private User user;
@@ -51,7 +54,7 @@ class AuthServiceTest {
     void setUp() {
         when(passwordEncoder.encode(anyString())).thenReturn("decoy-hash");
         authService = new AuthService(userRepository, challenges, otpService, mfaService, jwtService,
-                refreshTokens, emailProvider, loginAttempts, passwordEncoder);
+                refreshTokens, emailProvider, loginAttempts, passwordEncoder, audit);
         user = User.builder().email(EMAIL).password("hash").status(UserStatus.ACTIVE).mfaEnabled(true).build();
     }
 
@@ -92,22 +95,22 @@ class AuthServiceTest {
 
     @Test
     void verifyOtpAdvancesToMfaVerifyForEnrolledUser() {
-        Challenge challenge = new Challenge("c", EMAIL, Stage.PASSWORD_VERIFIED);
-        when(challenges.require("c", Stage.PASSWORD_VERIFIED)).thenReturn(challenge);
+        LoginChallenge challenge = new LoginChallenge("c", EMAIL, LoginStage.PASSWORD_VERIFIED);
+        when(challenges.require("c", LoginStage.PASSWORD_VERIFIED)).thenReturn(challenge);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(otpService.verify(EMAIL, "123456")).thenReturn(true);
 
         LoginStepResponse response = authService.verifyOtp("c", "123456");
 
         assertEquals(LoginStep.MFA_VERIFY, response.nextStep());
-        verify(challenges).advance(challenge, Stage.OTP_VERIFIED);
+        verify(challenges).advance(challenge, LoginStage.OTP_VERIFIED);
     }
 
     @Test
     void verifyOtpRoutesUnenrolledUserToMfaSetup() {
         user.setMfaEnabled(false);
-        Challenge challenge = new Challenge("c", EMAIL, Stage.PASSWORD_VERIFIED);
-        when(challenges.require("c", Stage.PASSWORD_VERIFIED)).thenReturn(challenge);
+        LoginChallenge challenge = new LoginChallenge("c", EMAIL, LoginStage.PASSWORD_VERIFIED);
+        when(challenges.require("c", LoginStage.PASSWORD_VERIFIED)).thenReturn(challenge);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(otpService.verify(EMAIL, "123456")).thenReturn(true);
 
@@ -116,8 +119,8 @@ class AuthServiceTest {
 
     @Test
     void wrongOtpCountsFailureAndDoesNotAdvance() {
-        Challenge challenge = new Challenge("c", EMAIL, Stage.PASSWORD_VERIFIED);
-        when(challenges.require("c", Stage.PASSWORD_VERIFIED)).thenReturn(challenge);
+        LoginChallenge challenge = new LoginChallenge("c", EMAIL, LoginStage.PASSWORD_VERIFIED);
+        when(challenges.require("c", LoginStage.PASSWORD_VERIFIED)).thenReturn(challenge);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(otpService.verify(EMAIL, "000000")).thenReturn(false);
 
@@ -129,7 +132,7 @@ class AuthServiceTest {
 
     @Test
     void totpStepRequiresCompletedOtpStage() {
-        when(challenges.require("c", Stage.OTP_VERIFIED)).thenThrow(new SessionExpiredException("expired"));
+        when(challenges.require("c", LoginStage.OTP_VERIFIED)).thenThrow(new SessionExpiredException("expired"));
 
         assertThrows(SessionExpiredException.class, () -> authService.completeLogin("c", "123456"));
 
@@ -138,26 +141,27 @@ class AuthServiceTest {
 
     @Test
     void validTotpIssuesTokensAndClosesChallenge() {
-        Challenge challenge = new Challenge("c", EMAIL, Stage.OTP_VERIFIED);
-        when(challenges.require("c", Stage.OTP_VERIFIED)).thenReturn(challenge);
+        LoginChallenge challenge = new LoginChallenge("c", EMAIL, LoginStage.OTP_VERIFIED);
+        when(challenges.require("c", LoginStage.OTP_VERIFIED)).thenReturn(challenge);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(mfaService.verifyLoginCode(user, "123456")).thenReturn(true);
         when(jwtService.generateAccessToken(any())).thenReturn("access");
         when(jwtService.accessTokenTtlSeconds()).thenReturn(900L);
         when(refreshTokens.issue(EMAIL)).thenReturn("refresh");
 
-        AuthService.Tokens tokens = authService.completeLogin("c", "123456");
+        AuthTokens tokens = authService.completeLogin("c", "123456");
 
         assertEquals("access", tokens.accessToken());
         assertEquals("refresh", tokens.refreshToken());
         verify(challenges).finish("c");
         verify(loginAttempts).loginSucceeded(EMAIL);
+        verify(audit).recordSignIn(EMAIL, true, null, null);
     }
 
     @Test
     void invalidTotpCountsFailureAndIssuesNothing() {
-        Challenge challenge = new Challenge("c", EMAIL, Stage.OTP_VERIFIED);
-        when(challenges.require("c", Stage.OTP_VERIFIED)).thenReturn(challenge);
+        LoginChallenge challenge = new LoginChallenge("c", EMAIL, LoginStage.OTP_VERIFIED);
+        when(challenges.require("c", LoginStage.OTP_VERIFIED)).thenReturn(challenge);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(mfaService.verifyLoginCode(user, "111111")).thenReturn(false);
 
@@ -171,7 +175,7 @@ class AuthServiceTest {
     @Test
     void refreshForInactiveUserRevokesEverything() {
         user.setStatus(UserStatus.DISABLED);
-        when(refreshTokens.rotate("old")).thenReturn(new RefreshTokenService.Rotation(EMAIL, "new"));
+        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "new"));
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
 
         assertThrows(SessionExpiredException.class, () -> authService.refresh("old"));
@@ -181,7 +185,7 @@ class AuthServiceTest {
 
     @Test
     void refreshRotatesToken() {
-        when(refreshTokens.rotate("old")).thenReturn(new RefreshTokenService.Rotation(EMAIL, "new"));
+        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "new"));
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(jwtService.generateAccessToken(any())).thenReturn("access2");
 

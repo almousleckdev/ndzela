@@ -17,22 +17,20 @@ import java.util.UUID;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class RequestCorrelationFilter extends OncePerRequestFilter {
-
     public static final String REQUEST_ID_HEADER = "X-Request-ID";
     public static final String REQUEST_ID_MDC_KEY = "requestId";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
         String requestId = request.getHeader(REQUEST_ID_HEADER);
         if (!StringUtils.hasText(requestId)) {
             requestId = UUID.randomUUID().toString();
         }
-        
+
         MDC.put(REQUEST_ID_MDC_KEY, requestId);
         response.setHeader(REQUEST_ID_HEADER, requestId);
-        
+
         try {
             filterChain.doFilter(request, response);
         } finally {

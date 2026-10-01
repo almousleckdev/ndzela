@@ -2,6 +2,7 @@ package com.ndzela.admin.tenant;
 
 import com.ndzela.admin.common.exception.CountryRequiredException;
 import com.ndzela.admin.support.AbstractIntegrationTest;
+import com.ndzela.admin.tenant.model.TenantContext;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,9 +15,8 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** The automatic country isolation that every country-owned entity gets by extending {@link TenantOwned}. */
+/** The automatic country isolation that every country-owned entity gets by extending TenantOwned. */
 class TenantMechanismTest extends AbstractIntegrationTest {
-
     @Autowired private TenantTestItemRepository items;
     @Autowired private TransactionTemplate transaction;
 

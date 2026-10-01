@@ -15,6 +15,7 @@ export interface UserSummary {
   phoneNumber: string | null;
   profilePictureUrl: string | null;
   status: UserStatus;
+  statusReason: string | null;
   mfaEnabled: boolean;
   roles: RoleRef[];
   country: Country | null;

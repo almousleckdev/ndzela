@@ -1,6 +1,6 @@
 # Admin quick access (Accès rapide)
 
-**Status: Decided as a concept; the complete list is Open. Not built.**
+**Status: Suivi paiements, Gérer impayés and Historique are built (2026-09-30, see [payments-and-arrears.md](payments-and-arrears.md)); the rest of the list is Open.**
 
 A quick-access area of the web admin to **follow up the drivers**. The product owner named:
 

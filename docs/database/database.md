@@ -3,14 +3,25 @@
 PostgreSQL 16 (dev: Docker on port 5433, database `ndzela_admin`). Access via Spring Data JPA/Hibernate. **The schema is owned by Flyway**
 (`backend/src/main/resources/db/migration`); Hibernate runs with `ddl-auto: validate` and must never create or alter tables.
 
-## Current schema (Implemented, migrations V1-V6)
+## Current schema (Implemented, migrations V1-V18)
 
 | Table | Purpose | Notes |
 | --- | --- | --- |
 | `users` | Staff accounts | `email` unique; `status`; failed attempts and lock expiry; `mfa_secret` stored encrypted; profile fields (V2) |
 | `roles`, `permissions`, `role_permissions`, `user_roles` | RBAC | UUID keys; role and permission `name` unique; `ON DELETE CASCADE` on the link tables |
 | `notifications` | In-app notifications | `user_id` FK (cascade), `is_read`, index `(user_id, created_at DESC)` |
-| `audit_logs` | Intended audit trail | Created in V1, **no entity and nothing writes to it** (see findings) |
+| `countries` | Tenants | V7, Mali added by V8; `code` unique |
+| `audit_logs` | Append-only audit trail | V9: a trigger refuses `UPDATE` and `DELETE`; `country_id` null for global events |
+| `vehicles` | Company cars (country-owned) | V10: `UNIQUE (country_id, fleet_number)` and `(country_id, plate)`; amounts `NUMERIC(19,4)` |
+| `training_centers`, `drivers` | Driver data (country-owned) | V11: ID and licence numbers unique per country; email and primary phone unique across countries |
+| (V12) | Reasons, files, statuses | `status_reason` on vehicles, drivers and users; `end_reason` on assignments; driver file columns (`photo_file`, `licence_file`, `id_file`, `address_proof_file`) replace the `docs_*` booleans; permission `drivers:block` |
+| `stations`, `charging_entries` | Charging stations and the append-only record of recharges and their cancellations (country-owned) | V16: a record is for a vehicle or a public car, battery levels 0 to 100, one reversal per recharge, request id unique per country; `charging_critical_percent` on `countries` |
+| (V18) | Deletable derived data | `arrears_events` cascade with their contract and driver; contracts, assignments and leaves are deleted by the application when a driver or vehicle is deleted, and the ledger and charging foreign keys refuse the deletion when money is recorded |
+| (V17) | Contract revisions | `revision`, `updated_at`, `updated_by` on `contracts`; permission `contracts:update` |
+| `ledger_entries`, `arrears_events` | Payment ledger (append-only by trigger) and the idempotent escalation steps (country-owned) | V15: reversal unique per entry, one penalty per day, request id unique per country; arrears columns on `drivers`, `late_penalty` on `countries` |
+| `contracts`, `contract_counters` | Rental contracts (country-owned) and the per-country number counter | V14: one ACTIVE contract per driver and per vehicle (partial unique indexes), JSON snapshot of the printed parties; legal-entity columns on `countries` |
+| `driver_leaves` | Declared days off (country-owned) | V13: single day or range, cancelled leaves kept; permissions `drivers:export`, `vehicles:export` |
+| `vehicle_assignments` | Driver to vehicle history | V11: partial unique indexes allow one open assignment per driver and per vehicle |
 
 Ephemeral auth data (challenges, OTP, refresh tokens, reset links) is in **Redis**, not in PostgreSQL.
 

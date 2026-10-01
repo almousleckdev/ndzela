@@ -13,6 +13,5 @@ public record ProfileResponse(
         boolean mfaEnabled,
         Set<String> roles,
         Set<String> permissions,
-        /** Null for a global user. */
         CountryResponse country
 ) {}

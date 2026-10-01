@@ -1,9 +1,10 @@
 package com.ndzela.admin.user.application;
 
+import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
-import com.ndzela.admin.security.CurrentActor;
-import com.ndzela.admin.tenant.TenantContext;
+import com.ndzela.admin.security.model.CurrentActor;
+import com.ndzela.admin.tenant.model.TenantContext;
 import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.user.api.dto.CreateRoleRequest;
 import com.ndzela.admin.user.api.dto.RoleSummary;
@@ -24,11 +25,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** Roles are named bundles of permissions. The permission catalogue itself is fixed by migrations. */
+/** Roles are named bundles of permissions. */
 @Service
 @RequiredArgsConstructor
 public class RoleManagementService {
-
     static final String SUPER_ADMIN = "SUPER_ADMIN";
     private static final Set<String> MANAGE_ROLES = Set.of("roles:create", "roles:update", "roles:delete");
 
@@ -36,6 +36,7 @@ public class RoleManagementService {
     private final PermissionRepository permissionRepository;
     private final UserRepository userRepository;
     private final AccessPolicy accessPolicy;
+    private final AuditService audit;
 
     @Transactional(readOnly = true)
     public List<RoleSummary> list() {
@@ -45,7 +46,6 @@ public class RoleManagementService {
                 .toList();
     }
 
-    /** Role managers see every role; everyone else only the roles they hold. */
     @Transactional(readOnly = true)
     public List<RoleSummary> listVisible(CurrentActor actor) {
         if (MANAGE_ROLES.stream().anyMatch(actor.permissions()::contains)) {
@@ -70,20 +70,23 @@ public class RoleManagementService {
         Set<String> names = request.permissions() == null ? Set.of() : request.permissions();
         accessPolicy.assertCanGrantPermissions(actor, names);
         Role role = Role.builder().name(request.name()).permissions(resolvePermissions(names)).build();
-        return summarize(roleRepository.save(role));
+        Role saved = roleRepository.save(role);
+        record("ROLE_CREATED", saved, names.size() + " permissions");
+        return summarize(saved);
     }
 
     @Transactional
     public RoleSummary updatePermissions(UUID id, Set<String> permissionNames, CurrentActor actor) {
         Role role = load(id);
         assertEditable(role);
-        // The actor must hold everything being added AND everything being kept, so a weaker admin cannot edit a stronger role.
         Set<String> touched = new HashSet<>(permissionNames);
         role.getPermissions().forEach(permission -> touched.add(permission.getName()));
         accessPolicy.assertCanGrantPermissions(actor, touched);
 
         role.setPermissions(resolvePermissions(permissionNames));
-        return summarize(roleRepository.save(role));
+        Role saved = roleRepository.save(role);
+        record("ROLE_PERMISSIONS_UPDATED", saved, permissionNames.size() + " permissions");
+        return summarize(saved);
     }
 
     @Transactional
@@ -94,7 +97,12 @@ public class RoleManagementService {
         if (userRepository.countByRolesId(id) > 0) {
             throw new BusinessRuleViolationException("ROLE_IN_USE", "This role is still assigned to users.");
         }
+        record("ROLE_DELETED", role, null);
         roleRepository.delete(role);
+    }
+
+    private void record(String action, Role role, String details) {
+        audit.record(action, "ROLE", role.getId().toString(), role.getName(), null, details);
     }
 
     private void assertEditable(Role role) {
@@ -121,7 +129,6 @@ public class RoleManagementService {
                 SUPER_ADMIN.equals(role.getName()));
     }
 
-    /** Role members counted in the caller's country (everyone in "all countries"). */
     private long countMembers(UUID roleId) {
         TenantContext context = TenantHolder.current();
         return switch (context.mode()) {

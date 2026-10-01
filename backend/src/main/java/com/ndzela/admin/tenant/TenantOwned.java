@@ -13,7 +13,6 @@ import java.util.UUID;
 @EntityListeners(TenantOwnedListener.class)
 @Getter
 public abstract class TenantOwned {
-
     @TenantId
     @Column(name = "country_id", nullable = false, updatable = false)
     private UUID countryId;

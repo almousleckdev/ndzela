@@ -15,10 +15,7 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.RECORD_COMPONENT;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-/**
- * The one password policy for the whole API: 8-128 chars with a digit, a lower-case letter,
- * an upper-case letter and a special character. Mirrored by {@code frontend/src/features/auth/schemas/password.ts}.
- */
+/** The one password policy for the whole API: 8-128 chars with a digit, a lower-case letter. */
 @Documented
 @NotBlank(message = "Password is required")
 @Pattern(regexp = StrongPassword.REGEX, message = StrongPassword.MESSAGE)
@@ -27,7 +24,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({FIELD, PARAMETER, RECORD_COMPONENT})
 @Retention(RUNTIME)
 public @interface StrongPassword {
-
     String REGEX = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,128}$";
     String MESSAGE = "Password must be 8-128 characters and contain a digit, a lowercase letter, an uppercase letter and a special character";
 

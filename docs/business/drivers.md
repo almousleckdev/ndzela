@@ -1,6 +1,6 @@
 # Drivers (chauffeurs)
 
-**Status: Decided from the product owner's description (2026-09-30). Not built.**
+**Status: Implemented for steps 1, 2, 3 and the password pop-up (2026-09-30)**: `driver` feature, migration `V11`, screens "Chauffeurs" (list, detail, edit, 3-step creation wizard) and the training-centre list. **Update (V17):** the edit screen has a contract step to refresh the active contract (see [contracts.md](contracts.md)). **Update (V14):** the creation wizard has a 4th step, the contract (see [contracts.md](contracts.md)), and a vehicle and a caution are now required. **Update (V12):** photo and document uploads, reasons, blocking and a row menu (see "Files, reasons and blocking" below). **Step 4 (contract terms, recap, PDF) is the next round** and will be inserted before the password pop-up. The API accepts a driver without a vehicle (`vehicleId` optional; the wizard requires one), which also allows assigning later and deleting a driver who never had a vehicle.
 
 ## Who creates drivers
 
@@ -57,4 +57,23 @@ The next page shows the **contract as a printable PDF** containing all the infor
 
 ## Permissions (Proposed)
 
-`drivers:read`, `drivers:create`, `drivers:update`, `drivers:suspend`, `drivers:delete`. **Only the gestionnaire role creates, edits and deletes drivers** (Decided); the **ADMIN** role suspends and reactivates them (Decided). The contract also prints the **documents provided** (licence, ID, justificatif de domicile under 3 months): a simple **checklist of checkboxes in step 3** (no upload) (Decided).
+`drivers:read`, `drivers:create`, `drivers:update`, `drivers:suspend`, `drivers:block`, `drivers:delete`. **Only the gestionnaire role creates, edits and deletes drivers** (Decided); the **ADMIN** role suspends and reactivates them (Decided). The contract also prints the **documents provided** (licence, ID, justificatif de domicile under 3 months): an **upload in step 3** (Decided 2026-09-30, replaces the earlier checkbox idea).
+
+## Screens, leaves and exports (Implemented, V13, 2026-09-30)
+
+- **Table:** metrics (total, actifs, en arrêt, suspendus, assignés / sans véhicule) from `GET /drivers/stats`; tabs Actif, En arrêt, Inactif, Suspendu, Bloqué (Actif excludes drivers on leave); search; per-row icons to view details and "Gérer les arrêts", plus the three-dots menu; **Exporter** (CSV, `drivers:export`, same filters, audited). **"En retard"** (built with payments, [payments-and-arrears.md](payments-and-arrears.md)) filters the drivers with unpaid rent and tints their row by level.
+- **States:** `INACTIVE` is a manual "not working for now" state (reason required, set and lifted by `drivers:update`, not a sanction). **"En arrêt"** is derived: an active driver with a non-cancelled leave covering today in the country's timezone.
+- **Leaves (arrêts):** `driver_leaves`; type `SINGLE_DAY` or `DATE_RANGE` (max 90 days), reason among vehicle breakdown, accident, maintenance, public holiday, weather, administrative, personal, other (note required for "other"). Only today and future days can be declared; overlaps are refused (the driver row is locked so two requests cannot both pass); a leave that has not started can be cancelled, one that has cannot. Declarations and cancellations are audited and kept as history. **Rent is waived on declared days** (Decided; applied by the arrears computation in Round B). Endpoints `GET/POST /drivers/{id}/leaves`, `POST /drivers/{id}/leaves/{leaveId}/cancel`; declaring needs `drivers:update`.
+- **Reactivating** needs the permission of the state being lifted: `drivers:suspend` (suspended), `drivers:block` (blocked), `drivers:update` (inactive).
+
+## Deleting a driver or a vehicle (Implemented, V18, 2026-10-01)
+
+Decided: **deletion is allowed only while no money was ever recorded.** Deleting a driver erases the driver with their contracts, assignments, leaves and files, frees their car (back to available) and writes `DRIVER_DELETED` and `CONTRACT_DELETED` (with the contract numbers) to the audit trail. It is refused when a **payment, a waiver or a recharge** exists (`DRIVER_HAS_HISTORY`, enforced by the database foreign keys) or when the driver **owes rent** (`DRIVER_HAS_ARREARS`); then suspend or block the driver. Deleting a **vehicle** (`DELETE /vehicles/{id}`, served by the driver feature because it touches contracts and assignments) erases its ended contracts and assignments, but is refused for a rented vehicle (`VEHICLE_ASSIGNED`) and when money is recorded on those contracts or recharges exist (`VEHICLE_HAS_HISTORY`); put it out of service instead. Both are **all or nothing**: a refused deletion leaves everything as it was. Contract numbers of deleted contracts are not reused. `arrears_events` follow their contract (`ON DELETE CASCADE`).
+
+## Files, reasons and blocking (Implemented, V12)
+
+- **Profile photo: required** at creation (step 1); replaceable on the driver page, never removable. **Documents** (licence, ID, proof of address): optional uploads in step 3, replaceable and removable on the driver page. Accepted: JPG, PNG, WebP (photo) and also PDF (documents), **5 MB** maximum, the type is checked from the file bytes.
+- **Storage:** local disk under `<UPLOAD_DIR>/private`, never served statically; read only through `GET /api/v1/drivers/{id}/files/{photo|licence|id|address-proof}` (needs `drivers:read`, tenant-scoped, so another country answers 404). Creation is one multipart request (`data` JSON part, `photo`, `licence`, `id`, `addressProof`); files written by a failed creation are deleted. Object storage is a deployment task (see infrastructure).
+- **States:** `ACTIVE`, `SUSPENDED` (temporary, `drivers:suspend`), `BLOCKED` (durable, `drivers:block`, ADMIN and SUPER_ADMIN). A blocked driver is reactivated only by a holder of `drivers:block`. Blocking does not free the car; "Retirer le véhicule" does.
+- **Reasons (Decided):** suspending, blocking and removing the vehicle all **require a reason** (max 255 characters), stored (`status_reason`, `vehicle_assignments.end_reason`), shown in the screens and written to the audit trail. The same rule applies to disabling or blocking a staff account.
+- **Menu:** each row of the drivers table has a three-dots menu: Voir, Modifier, Suspendre, Réactiver, Bloquer, Retirer le véhicule, Supprimer, each shown only when allowed.

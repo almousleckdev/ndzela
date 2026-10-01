@@ -21,7 +21,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -55,6 +54,9 @@ public class User {
     @Column(name = "status", nullable = false)
     private UserStatus status;
 
+    @Column(name = "status_reason")
+    private String statusReason;
+
     @Builder.Default
     @Column(name = "failed_attempts", nullable = false)
     private int failedAttempts = 0;
@@ -62,7 +64,6 @@ public class User {
     @Column(name = "lock_expiration")
     private OffsetDateTime lockExpiration;
 
-    /** The staff member's country; null means global (SUPER_ADMIN only). */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "country_id")
     private Country country;
@@ -88,12 +89,10 @@ public class User {
         return roles.stream().anyMatch(role -> "SUPER_ADMIN".equals(role.getName()));
     }
 
-    /** A user without a country is global. */
     public boolean isGlobal() {
         return country == null;
     }
 
-    /** False when the user's country is switched off. */
     public boolean isCountryActive() {
         return country == null || country.isActive();
     }

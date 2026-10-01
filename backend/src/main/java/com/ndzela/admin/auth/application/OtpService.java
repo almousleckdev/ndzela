@@ -1,7 +1,7 @@
 package com.ndzela.admin.auth.application;
 
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.security.OpaqueTokens;
 
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,6 @@ import java.security.SecureRandom;
 @Service
 @RequiredArgsConstructor
 public class OtpService {
-
     public static final String COOLDOWN_CODE = "OTP_COOLDOWN";
 
     private static final String OTP_PREFIX = "auth:otp:";

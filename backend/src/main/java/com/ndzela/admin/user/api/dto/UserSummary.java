@@ -17,6 +17,7 @@ public record UserSummary(
         String phoneNumber,
         String profilePictureUrl,
         UserStatus status,
+        String statusReason,
         boolean mfaEnabled,
         List<RoleRef> roles,
         CountryResponse country,
@@ -28,7 +29,7 @@ public record UserSummary(
                 .sorted(Comparator.comparing(RoleRef::name))
                 .toList();
         return new UserSummary(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
-                user.getPhoneNumber(), user.getProfilePictureUrl(), user.getStatus(), user.isMfaEnabled(), roles,
+                user.getPhoneNumber(), user.getProfilePictureUrl(), user.getStatus(), user.getStatusReason(), user.isMfaEnabled(), roles,
                 user.getCountry() == null ? null : CountryResponse.from(user.getCountry()), user.getCreatedAt());
     }
 }

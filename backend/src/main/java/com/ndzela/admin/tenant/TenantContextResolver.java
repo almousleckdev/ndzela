@@ -4,6 +4,7 @@ import com.ndzela.admin.common.exception.CountryInactiveException;
 import com.ndzela.admin.common.exception.InvalidCountryException;
 import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
+import com.ndzela.admin.tenant.model.TenantContext;
 import com.ndzela.admin.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
@@ -15,10 +16,8 @@ import java.util.Locale;
 @Service
 @RequiredArgsConstructor
 public class TenantContextResolver {
-
     private final CountryRepository countries;
 
-    /** The X-Country header is honoured only for a global user. */
     public TenantContext resolve(User user, String countryHeader) {
         if (user.getCountry() != null) {
             if (!user.getCountry().isActive()) {

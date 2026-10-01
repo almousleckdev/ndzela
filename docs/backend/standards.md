@@ -5,7 +5,27 @@
 - Lombok is allowed: `@RequiredArgsConstructor` for constructor injection, `@Getter/@Setter` on entities, `@Slf4j`. Do not stack
   `@Data` on entities. A class with non-trivial construction logic (e.g. `AuthService`) may use an explicit constructor.
 - Constructor injection only. No field `@Autowired`.
-- Code, names and messages in English. No comments that restate the code; comment the *why* and non-obvious constraints.
+- Code, names and messages in English.
+- **Comments are rare.** One short line of class doc at most (`/** ... */`), and a `//` note only for a non-obvious *why*
+  (a lock, a constraint, an ordering that matters). No multi-line Javadoc, no comments that restate the code. Applied
+  migrations are never touched, comments included.
+- **One top-level type per file.** Never group several records, enums or classes in a holder class (`FooDtos`) and never nest
+  unrelated types. A small private helper type used by one class alone may stay nested.
+- **Do not mix kinds of types in a package.** Where each kind lives:
+
+  | Kind | Package |
+  | --- | --- |
+  | Controllers | `<feature>/api` |
+  | Request/response records | `<feature>/api/dto` |
+  | Entities, repositories, domain enums | `<feature>/domain` |
+  | Value records and flow enums used by services (inputs, results, tokens, states) | `<feature>/application/model` |
+  | JSON snapshot records stored in a column | `<feature>/domain/snapshot` |
+  | Services and use cases | `<feature>/application` |
+  | `@ConfigurationProperties` records | `config/properties` |
+  | Shared response/request records | `common/web/dto` |
+  | Tenant and security value types | `tenant/model`, `security/model` |
+
+  A record or enum used by several layers belongs to the lowest layer that owns it (`domain` before `application/model`).
 - Files stay small and single-purpose (target under ~200 lines). A service growing past that is doing too much: split by use case.
 
 ## Layers

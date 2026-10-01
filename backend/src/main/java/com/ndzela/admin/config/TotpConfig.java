@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class TotpConfig {
-
     @Bean
     public SecretGenerator secretGenerator() {
         return new DefaultSecretGenerator();

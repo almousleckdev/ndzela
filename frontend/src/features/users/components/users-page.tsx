@@ -7,9 +7,9 @@ import { UserFormDialog } from "@/features/users/components/user-form-dialog";
 import type { UserAction } from "@/features/users/components/user-actions-menu";
 import { UsersTable } from "@/features/users/components/users-table";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { PageHeader } from "@/components/ui/page-header";
+import { KpiBand, Page, PageHead, Panel } from "@/components/layout/page";
+import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFetch } from "@/hooks/use-fetch";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
@@ -24,7 +24,7 @@ import type { UserSummary } from "@/features/users/types";
 type ConfirmableAction = "suspend" | "block" | "delete" | "reset-mfa";
 type Confirmation = { action: ConfirmableAction; user: UserSummary };
 
-const CONFIRMATIONS: Record<ConfirmableAction, { title: string; text: (name: string) => string; confirm: string; success: string; run: (id: string) => Promise<unknown> }> = {
+const CONFIRMATIONS: Record<ConfirmableAction, { title: string; text: (name: string) => string; confirm: string; success: string; run: (id: string, reason: string) => Promise<unknown> }> = {
   suspend: {
     title: "Suspendre cet utilisateur ?",
     text: (n) => `${n} ne pourra plus se connecter et ses sessions seront fermées. Vous pourrez le réactiver à tout moment.`,
@@ -91,28 +91,43 @@ function UsersContent() {
     if (!confirming) return;
     const { action, user } = confirming;
     setConfirming(null);
-    await run(() => CONFIRMATIONS[action].run(user.id), CONFIRMATIONS[action].success);
+    await run(() => CONFIRMATIONS[action].run(user.id, ""), CONFIRMATIONS[action].success);
   };
 
   const copy = confirming ? CONFIRMATIONS[confirming.action] : null;
+  const needsReason = confirming?.action === "suspend" || confirming?.action === "block";
+
+  const confirmedWithReason = async (reason: string) => {
+    if (!confirming || !copy) return;
+    await copy.run(confirming.user.id, reason);
+    setConfirming(null);
+    addToast({ title: "Succès", description: copy.success, type: "success" });
+    users.reload();
+  };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
-      <PageHeader
+    <Page>
+      <PageHead
         title="Utilisateurs"
         description="Qui a accès à NDZela Admin, avec quel rôle, et dans quel état est son compte."
-        action={can(PERMISSIONS.USERS_CREATE) && (
+        actions={can(PERMISSIONS.USERS_CREATE) && (
           <Button onClick={() => setEditing("new")} disabled={!roles.data}>
             <Plus className="mr-2 h-4 w-4" /> Inviter un utilisateur
           </Button>
         )}
       />
+      <KpiBand items={[
+        { label: "Utilisateurs", value: users.data?.length ?? "-" },
+        { label: "Actifs", value: users.data ? users.data.filter((u) => u.status === "ACTIVE").length : "-" },
+        { label: "Invitations en attente", value: users.data ? users.data.filter((u) => u.status === "MFA_SETUP").length : "-" },
+        { label: "Verrouillés ou désactivés", value: users.data ? users.data.filter((u) => u.status === "LOCKED" || u.status === "DISABLED").length : "-" },
+      ]} />
 
-      <Card className="overflow-hidden p-0">
+      <Panel>
         {users.isLoading
           ? <Skeleton className="h-64 w-full rounded-none" />
           : <UsersTable users={users.data ?? []} onAction={handleAction} onInvite={can(PERMISSIONS.USERS_CREATE) ? () => setEditing("new") : undefined} />}
-      </Card>
+      </Panel>
 
       {editing && roles.data && (
         <UserFormDialog
@@ -123,8 +138,12 @@ function UsersContent() {
         />
       )}
 
+      {confirming && copy && needsReason && (
+        <ReasonDialog title={copy.title} description={copy.text(displayName(confirming.user))} confirmText={copy.confirm} destructive
+          onClose={() => setConfirming(null)} onConfirm={confirmedWithReason} />
+      )}
       <ConfirmDialog
-        isOpen={confirming !== null}
+        isOpen={confirming !== null && !needsReason}
         onClose={() => setConfirming(null)}
         onConfirm={confirmed}
         title={copy?.title ?? ""}
@@ -133,7 +152,7 @@ function UsersContent() {
         cancelText="Annuler"
         destructive
       />
-    </div>
+    </Page>
   );
 }
 

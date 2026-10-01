@@ -1,7 +1,8 @@
 package com.ndzela.admin.auth.application;
 
+import com.ndzela.admin.auth.application.model.TokenRotation;
 import com.ndzela.admin.common.exception.SessionExpiredException;
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.security.OpaqueTokens;
 
 import lombok.RequiredArgsConstructor;
@@ -13,9 +14,6 @@ import java.time.Duration;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
-
-    public record Rotation(String email, String newToken) {}
-
     private static final String TOKEN_PREFIX = "auth:rt:";
     private static final String USER_INDEX_PREFIX = "auth:rt-user:";
 
@@ -32,14 +30,14 @@ public class RefreshTokenService {
         return token;
     }
 
-    public Rotation rotate(String token) {
+    public TokenRotation rotate(String token) {
         String hash = OpaqueTokens.hash(token);
         String email = redis.opsForValue().getAndDelete(TOKEN_PREFIX + hash);
         if (email == null) {
             throw new SessionExpiredException("Invalid or expired session.");
         }
         redis.opsForSet().remove(USER_INDEX_PREFIX + email, hash);
-        return new Rotation(email, issue(email));
+        return new TokenRotation(email, issue(email));
     }
 
     public void revoke(String token) {

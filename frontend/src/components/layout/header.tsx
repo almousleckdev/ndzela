@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Settings, User as UserIcon } from "lucide-react";
+import { LogOut, Menu, Settings, User as UserIcon } from "lucide-react";
+import { useShellStore } from "@/features/layout/shell-store";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { CountrySwitch } from "@/features/tenancy/components/country-switch";
 import { Avatar } from "@/components/ui/avatar";
@@ -16,6 +17,7 @@ import { useAuthStore } from "@/features/auth/store/auth.store";
 export function Header() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const setMobileOpen = useShellStore((state) => state.setMobileOpen);
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -27,10 +29,13 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-        <CountrySwitch />
+      <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-line bg-white px-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2">
+          <button type="button" aria-label="Ouvrir le menu" onClick={() => setMobileOpen(true)} className="-ml-1 rounded-md p-2 text-muted hover:bg-slate-100 hover:text-ink lg:hidden"><Menu className="h-5 w-5" /></button>
+          <CountrySwitch />
+        </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <NotificationBell />
 
           <Dropdown

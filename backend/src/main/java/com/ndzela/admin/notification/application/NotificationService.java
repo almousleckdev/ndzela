@@ -18,7 +18,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
-
     private final NotificationRepository notifications;
     private final UserRepository userRepository;
 
@@ -27,7 +26,6 @@ public class NotificationService {
         notifications.save(Notification.builder().userId(user.getId()).type(type).title(title).message(message).build());
     }
 
-    /** Notifies holders of a permission in the country plus global admins; a null country reaches global admins only. */
     @Transactional
     public void notifyHolders(String permission, UUID countryId, String excludeEmail, String type, String title, String message) {
         userRepository.findActiveByPermission(permission, countryId).stream()

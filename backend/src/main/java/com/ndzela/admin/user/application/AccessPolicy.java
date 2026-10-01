@@ -1,7 +1,7 @@
 package com.ndzela.admin.user.application;
 
 import com.ndzela.admin.common.exception.InsufficientPrivilegesException;
-import com.ndzela.admin.security.CurrentActor;
+import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.user.domain.Permission;
 import com.ndzela.admin.user.domain.Role;
 import com.ndzela.admin.user.domain.User;
@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 @Component
 public class AccessPolicy {
-
     private static final Set<String> ADMINISTRATIVE_RESOURCES = Set.of("users", "roles");
 
     public void assertCanGrantPermissions(CurrentActor actor, Collection<String> permissionNames) {
@@ -27,7 +26,7 @@ public class AccessPolicy {
         assertCanGrantPermissions(actor, permissionNames(roles));
     }
 
-    /** The target's current roles must not carry administrative permissions beyond the actor's own. */
+    // The target's current roles must not carry administrative permissions beyond the actor's own.
     public void assertCanManage(CurrentActor actor, User target) {
         if (!actor.permissions().containsAll(administrative(permissionNames(target.getRoles())))) {
             throw new InsufficientPrivilegesException("You cannot manage a user who has more administrative permissions than you.");

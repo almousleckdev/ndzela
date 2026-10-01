@@ -1,5 +1,6 @@
 package com.ndzela.admin.user.application;
 
+import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.auth.application.PasswordResetService;
 import com.ndzela.admin.auth.application.RefreshTokenService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
@@ -10,9 +11,9 @@ import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
 import com.ndzela.admin.infrastructure.storage.AvatarStorage;
 import com.ndzela.admin.notification.application.NotificationService;
-import com.ndzela.admin.security.CurrentActor;
+import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.security.OpaqueTokens;
-import com.ndzela.admin.tenant.TenantContext;
+import com.ndzela.admin.tenant.model.TenantContext;
 import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.user.api.dto.CreateUserRequest;
 import com.ndzela.admin.user.api.dto.UpdateUserRequest;
@@ -34,11 +35,10 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-/** Administration of user accounts. Callers must already hold the endpoint's permission; this adds the finer rules. */
+/** Administration of user accounts. */
 @Service
 @RequiredArgsConstructor
 public class UserManagementService {
-
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -49,6 +49,7 @@ public class UserManagementService {
     private final AvatarStorage avatarStorage;
     private final CountryRepository countries;
     private final UserScope scope;
+    private final AuditService audit;
 
     @Transactional(readOnly = true)
     public List<UserSummary> list() {
@@ -58,7 +59,6 @@ public class UserManagementService {
                 .toList();
     }
 
-    /** Creates the account with an unusable password and emails an invitation to choose a real one. */
     @Transactional
     public UserSummary create(CreateUserRequest request, CurrentActor actor) {
         String email = request.email().trim().toLowerCase(Locale.ROOT);
@@ -83,6 +83,7 @@ public class UserManagementService {
         passwordResetService.sendInvitation(email);
         notifications.notifyHolders("users:read", user.countryIdOrNull(), actor.email(), "USER_CREATED", "Nouvel utilisateur",
                 "Le compte " + email + " a été créé par " + actor.email() + ".");
+        record("USER_CREATED", user, "roles: " + roleNames(roles));
         return UserSummary.from(user);
     }
 
@@ -106,6 +107,7 @@ public class UserManagementService {
         user.setPhoneNumber(blankToNull(request.phoneNumber()));
         user.setRoles(newRoles);
         userRepository.save(user);
+        record("USER_UPDATED", user, "roles: " + roleNames(newRoles));
 
         if (rolesChanged) {
             notifications.notify(user, "ROLES_CHANGED", "Vos rôles ont changé",
@@ -115,7 +117,7 @@ public class UserManagementService {
     }
 
     @Transactional
-    public UserSummary setDisabled(UUID id, boolean disabled, CurrentActor actor) {
+    public UserSummary setDisabled(UUID id, boolean disabled, String reason, CurrentActor actor) {
         User user = load(id);
         accessPolicy.assertCanManage(actor, user);
         if (disabled) {
@@ -123,17 +125,20 @@ public class UserManagementService {
                 throw new BusinessRuleViolationException("CANNOT_MODIFY_SELF", "You cannot disable your own account.");
             }
             user.setStatus(UserStatus.DISABLED);
+            user.setStatusReason(reason.trim());
             refreshTokens.revokeAll(user.getEmail());
+            record("USER_DISABLED", user, "reason: " + reason.trim());
         } else if (user.getStatus() == UserStatus.DISABLED) {
             user.setStatus(user.isMfaEnabled() ? UserStatus.ACTIVE : UserStatus.MFA_SETUP);
             user.setFailedAttempts(0);
+            user.setStatusReason(null);
+            record("USER_ENABLED", user, null);
         }
         return UserSummary.from(userRepository.save(user));
     }
 
-    /** Blocks sign-in until somebody unblocks the account (unlike an automatic lock, it never expires). */
     @Transactional
-    public UserSummary lock(UUID id, CurrentActor actor) {
+    public UserSummary lock(UUID id, String reason, CurrentActor actor) {
         User user = load(id);
         accessPolicy.assertCanManage(actor, user);
         if (actor.isSelf(user.getEmail())) {
@@ -144,12 +149,13 @@ public class UserManagementService {
         }
         user.setStatus(UserStatus.LOCKED);
         user.setLockExpiration(null);
+        user.setStatusReason(reason.trim());
         userRepository.save(user);
         refreshTokens.revokeAll(user.getEmail());
+        record("USER_LOCKED", user, "reason: " + reason.trim());
         return UserSummary.from(user);
     }
 
-    /** Permanently removes the account, its notifications and its picture. Suspending is the reversible alternative. */
     @Transactional
     public void delete(UUID id, CurrentActor actor) {
         User user = load(id);
@@ -158,6 +164,7 @@ public class UserManagementService {
             throw new BusinessRuleViolationException("CANNOT_MODIFY_SELF", "You cannot delete your own account.");
         }
         refreshTokens.revokeAll(user.getEmail());
+        record("USER_DELETED", user, null);
         userRepository.delete(user);
         avatarStorage.delete(user.getProfilePictureUrl());
     }
@@ -168,13 +175,15 @@ public class UserManagementService {
         accessPolicy.assertCanManage(actor, user);
         if (user.getStatus() == UserStatus.LOCKED) {
             user.setStatus(user.isMfaEnabled() ? UserStatus.ACTIVE : UserStatus.MFA_SETUP);
+            user.setStatusReason(null);
         }
         user.setFailedAttempts(0);
         user.setLockExpiration(null);
+        record("USER_UNLOCKED", user, null);
         return UserSummary.from(userRepository.save(user));
     }
 
-    /** For a lost or replaced phone: the user must enrol a new authenticator at their next login. */
+    // For a lost or replaced phone: the user must enrol a new authenticator at their next login.
     @Transactional
     public UserSummary resetMfa(UUID id, CurrentActor actor) {
         User user = load(id);
@@ -191,10 +200,11 @@ public class UserManagementService {
         refreshTokens.revokeAll(user.getEmail());
         notifications.notify(user, "MFA_RESET", "Authentificateur réinitialisé",
                 "Un administrateur a réinitialisé votre authentificateur. Vous le configurerez à la prochaine connexion.");
+        record("USER_MFA_RESET", user, null);
         return UserSummary.from(user);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public void resendInvitation(UUID id, CurrentActor actor) {
         User user = load(id);
         accessPolicy.assertCanManage(actor, user);
@@ -202,9 +212,17 @@ public class UserManagementService {
             throw new BusinessRuleViolationException("This account is disabled.");
         }
         passwordResetService.sendInvitation(user.getEmail());
+        record("USER_INVITATION_RESENT", user, null);
     }
 
-    /** Loads a user; another country's account answers "not found". */
+    private void record(String action, User user, String details) {
+        audit.record(action, "USER", user.getId().toString(), user.getEmail(), user.countryIdOrNull(), details);
+    }
+
+    private static String roleNames(Set<Role> roles) {
+        return roles.stream().map(Role::getName).sorted().collect(java.util.stream.Collectors.joining(", "));
+    }
+
     private User load(UUID id) {
         return userRepository.findById(id)
                 .map(scope::requireVisible)
@@ -220,7 +238,6 @@ public class UserManagementService {
         };
     }
 
-    /** The country of a new account: a global user may pick any active country, country staff get their own. */
     private Country countryForNewUser(UUID requestedCountryId, Set<Role> roles, CurrentActor actor) {
         if (actor.global() && requestedCountryId != null) {
             return countries.findById(requestedCountryId).filter(Country::isActive).orElseThrow(InvalidCountryException::new);

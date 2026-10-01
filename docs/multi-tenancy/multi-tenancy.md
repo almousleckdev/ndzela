@@ -21,7 +21,8 @@
 - **Rules on staff:** a country user creates users in their own country (`COUNTRY_NOT_ALLOWED` otherwise); a global user may send any active `countryId` whatever country is selected in the header, and must send one when working in "all countries" (`COUNTRY_REQUIRED`) unless the new user is a SUPER_ADMIN (then global); a user without a country must keep the SUPER_ADMIN role; email stays unique across all countries.
 - **Fail closed:** a user without a country who does not hold `SUPER_ADMIN` gets an empty context (sees and creates nothing).
 - **Inactive country:** its staff cannot sign in (`423 ACCOUNT_LOCKED`, same as a disabled account), existing tokens stop working (`401`) and refresh is refused; global users are unaffected.
-- **API and UI:** `GET /api/v1/countries`, `country` in `/profile/me` and in user summaries; the admin header shows a country selector for the super admin and a label for country staff; `features/tenancy` in the frontend.
+- **Country-owned tables built on it:** `vehicles`, `training_centers`, `drivers`, `vehicle_assignments` (all extend `TenantOwned`); `audit_logs` is scoped explicitly (global events have no country).
+- **API and UI:** `GET /api/v1/countries` (all active countries for every user, needed for phone codes; data stays scoped), `country` in `/profile/me` and in user summaries; the admin header shows a country selector for the super admin and a label for country staff; `features/tenancy` in the frontend.
 
 ## Which data is tenant-owned
 

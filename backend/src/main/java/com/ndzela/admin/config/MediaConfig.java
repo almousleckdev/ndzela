@@ -13,13 +13,12 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @RequiredArgsConstructor
 public class MediaConfig implements WebMvcConfigurer {
-
     private final AvatarStorage avatarStorage;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/media/**")
-                .addResourceLocations(avatarStorage.rootDirectory().toUri().toString())
+        registry.addResourceHandler("/media/avatars/**")
+                .addResourceLocations(avatarStorage.rootDirectory().resolve("avatars").toUri().toString() + "/")
                 .setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic().immutable());
     }
 }

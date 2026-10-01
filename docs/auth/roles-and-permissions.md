@@ -13,6 +13,13 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 | `accounts` | read, create, update | **Seeded only** |
 | `cash` | operate | **Seeded only** |
 | `reports` | read, export | **Seeded only** |
+| `audit` | read | Implemented (SUPER_ADMIN, ADMIN) |
+| `vehicles` | read, create, update, delete | Implemented (GESTIONNAIRE all four; ADMIN, COMPTABLE, VIEWER read) |
+| `payments`, `arrears` | payments: read, create, reverse, export; arrears: manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse and export: ADMIN, export also COMPTABLE; arrears:manage: ADMIN) |
+| `charging` | read, create, reverse, export, manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse: ADMIN; export: ADMIN, COMPTABLE; manage stations: GESTIONNAIRE, ADMIN) |
+| `contracts` | read, print, update | Implemented (GESTIONNAIRE, ADMIN, COMPTABLE: read and print; VIEWER: read; GESTIONNAIRE and ADMIN also update) |
+| `drivers` | read, create, update, suspend, block, export, delete | Implemented (GESTIONNAIRE: read, create, update, delete; ADMIN: read, suspend, block; COMPTABLE, VIEWER read) |
+| `training_centers` | manage | Implemented (GESTIONNAIRE) |
 | `countries` | read | Implemented (granted to every role by migration V7; lists countries for the super admin's selector) |
 
 `users`/`roles` are the **administrative resources** subject to anti-escalation in `AccessPolicy`.
@@ -43,8 +50,6 @@ Role names are `UPPER_SNAKE_CASE` (`^[A-Z][A-Z0-9_]{2,49}$`, same rule on backen
 
 | Resource | Actions |
 | --- | --- |
-| `vehicles` | read, create, update, delete |
-| `drivers` | read, create, update, suspend, delete |
 | `contracts` | read, create, update, terminate, print |
 | `payments` | read, record (manual), reverse |
 | `arrears` | read, manage |

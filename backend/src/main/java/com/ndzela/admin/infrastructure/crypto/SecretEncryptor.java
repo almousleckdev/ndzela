@@ -1,6 +1,6 @@
 package com.ndzela.admin.infrastructure.crypto;
 
-import com.ndzela.admin.config.AppProperties;
+import com.ndzela.admin.config.properties.AppProperties;
 
 import org.springframework.stereotype.Component;
 
@@ -12,14 +12,9 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-/**
- * AES-256-GCM encryption for secrets stored at rest (TOTP seeds).
- * Values without the {@link #PREFIX} are treated as legacy plaintext so existing rows keep working
- * and are transparently re-encrypted the next time they are written.
- */
+/** AES-256-GCM encryption for secrets stored at rest (TOTP seeds). */
 @Component
 public class SecretEncryptor {
-
     static final String PREFIX = "enc:v1:";
     private static final int IV_BYTES = 12;
     private static final int TAG_BITS = 128;
