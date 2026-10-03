@@ -8,7 +8,7 @@ import lombok.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** A driver holding a vehicle; open while endedAt is null. */
+// A driver holding a vehicle; open while endedAt is null.
 @Entity
 @Table(name = "vehicle_assignments")
 @Getter

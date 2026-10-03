@@ -13,7 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
-/** Stores profile pictures on disk. */
+// Stores profile pictures on disk.
 @Slf4j
 @Component
 public class AvatarStorage {

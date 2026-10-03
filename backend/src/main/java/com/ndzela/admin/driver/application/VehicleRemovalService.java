@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/** Deleting a vehicle also erases its ended contracts and assignments. */
+// Deleting a vehicle also erases its ended contracts and assignments.
 @Service
 @RequiredArgsConstructor
 public class VehicleRemovalService {

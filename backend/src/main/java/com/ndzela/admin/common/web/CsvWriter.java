@@ -3,7 +3,7 @@ package com.ndzela.admin.common.web;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-/** Excel-friendly CSV (UTF-8 with BOM, semicolon separated). */
+// Excel-friendly CSV (UTF-8 with BOM, semicolon separated).
 public final class CsvWriter {
     private CsvWriter() {}
 

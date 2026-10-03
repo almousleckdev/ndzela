@@ -7,13 +7,10 @@ import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.SortParam;
 import com.ndzela.admin.contract.api.dto.ContractResponse;
 import com.ndzela.admin.contract.application.ContractService;
-import com.ndzela.admin.country.application.CountryService;
 import com.ndzela.admin.driver.api.dto.CreateDriverRequest;
 import com.ndzela.admin.driver.api.dto.DriverResponse;
 import com.ndzela.admin.driver.api.dto.DriverStats;
-import com.ndzela.admin.driver.api.dto.EmergencyContact;
 import com.ndzela.admin.driver.api.dto.PersonalInfo;
-import com.ndzela.admin.driver.api.dto.TrainingInfo;
 import com.ndzela.admin.driver.api.dto.UpdateDriverRequest;
 import com.ndzela.admin.driver.application.model.DriverUploads;
 import com.ndzela.admin.driver.domain.Driver;
@@ -27,8 +24,6 @@ import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.vehicle.api.dto.VehicleResponse;
 import com.ndzela.admin.vehicle.application.VehicleService;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -40,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -48,7 +42,7 @@ import java.util.stream.Collectors;
 
 import static com.ndzela.admin.driver.application.DriverAssignmentService.label;
 
-/** Drivers, created by staff only. */
+// Drivers, created by staff only.
 @Service
 @RequiredArgsConstructor
 public class DriverService {
@@ -66,12 +60,9 @@ public class DriverService {
     private final DriverFilters filters;
     private final DriverFileService fileService;
     private final VehicleService vehicleService;
-    private final CountryService countryService;
+    private final DriverRecords records;
     private final PasswordEncoder passwordEncoder;
     private final AuditService audit;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public PageResponse<DriverResponse> list(DriverStatus status, Boolean onLeave, Boolean late, String q, LocalDate from, LocalDate to, String sort, int page, int size) {
@@ -113,16 +104,16 @@ public class DriverService {
     public DriverResponse create(CreateDriverRequest request, DriverUploads uploads) {
         UUID countryId = TenantHolder.requireCountry();
         PersonalInfo personal = request.personal();
-        assertAdult(personal.birthDate(), countryId);
-        assertUnique(countryId, null, personal);
+        records.assertAdult(personal.birthDate(), countryId);
+        records.assertUnique(countryId, null, personal);
         TrainingCenter center = trainingCenter(request.training().trainingCenterId());
 
         Driver driver = Driver.builder().status(DriverStatus.ACTIVE).mustChangePassword(true).build();
-        apply(driver, personal, request.emergency(), request.training(), center);
+        records.apply(driver, personal, request.emergency(), request.training(), center);
         driver.setPasswordHash(passwordEncoder.encode(request.password()));
         List<String> written = fileService.attach(driver, uploads.photo(), uploads.licence(), uploads.id(), uploads.addressProof());
         try {
-            Driver saved = saveChecked(driver);
+            Driver saved = records.saveChecked(driver);
             audit.record("DRIVER_CREATED", "DRIVER", saved.getId().toString(), label(saved), saved.getCountryId(), null);
             assignmentService.assign(saved, request.vehicleId(), request.contract().deposit());
             return response(saved);
@@ -135,14 +126,14 @@ public class DriverService {
     @Transactional
     public DriverResponse update(UUID id, UpdateDriverRequest request) {
         Driver driver = load(id);
-        assertAdult(request.personal().birthDate(), driver.getCountryId());
-        assertUnique(driver.getCountryId(), id, request.personal());
+        records.assertAdult(request.personal().birthDate(), driver.getCountryId());
+        records.assertUnique(driver.getCountryId(), id, request.personal());
         TrainingCenter center = trainingCenter(request.training().trainingCenterId());
         if (!center.getCountryId().equals(driver.getCountryId())) {
             throw new ResourceNotFoundException("Training centre not found.");
         }
-        apply(driver, request.personal(), request.emergency(), request.training(), center);
-        Driver saved = saveChecked(driver);
+        records.apply(driver, request.personal(), request.emergency(), request.training(), center);
+        Driver saved = records.saveChecked(driver);
         audit.record("DRIVER_UPDATED", "DRIVER", id.toString(), label(saved), saved.getCountryId(), null);
         return response(saved);
     }
@@ -221,84 +212,5 @@ public class DriverService {
         Map<UUID, VehicleResponse> vehicles = vehicleService.responsesByIds(open.stream().map(VehicleAssignment::getVehicleId).toList());
         return open.stream().filter(a -> vehicles.containsKey(a.getVehicleId()))
                 .collect(Collectors.toMap(VehicleAssignment::getDriverId, a -> vehicles.get(a.getVehicleId()), (first, second) -> first));
-    }
-
-    private void assertAdult(LocalDate birthDate, UUID countryId) {
-        LocalDate today = LocalDate.now(countryService.zoneOf(countryId));
-        if (birthDate.plusYears(18).isAfter(today)) {
-            throw new BusinessRuleViolationException("DRIVER_TOO_YOUNG", "A driver must be at least 18 years old.");
-        }
-    }
-
-    // Checked before the entity is modified, so Hibernate cannot flush a half-applied change first.
-    private void assertUnique(UUID countryId, UUID selfId, PersonalInfo p) {
-        UUID self = selfId == null ? new UUID(0L, 0L) : selfId;
-        if (drivers.existsByCountryIdAndIdNumberAndIdNot(countryId, normalizeCode(p.idNumber()), self)) {
-            throw new BusinessRuleViolationException("DRIVER_ID_TAKEN", "A driver with this identity document number already exists.");
-        }
-        if (drivers.existsByCountryIdAndLicenceNumberAndIdNot(countryId, normalizeCode(p.licenceNumber()), self)) {
-            throw new BusinessRuleViolationException("DRIVER_LICENCE_TAKEN", "A driver with this licence number already exists.");
-        }
-        if (drivers.emailExists(p.email().trim(), self)) {
-            throw new BusinessRuleViolationException("DRIVER_EMAIL_TAKEN", "A driver with this email already exists.");
-        }
-        if (drivers.phoneExists(PhoneNumbers.normalize(p.phonePrimary()), self)) {
-            throw new BusinessRuleViolationException("DRIVER_PHONE_TAKEN", "A driver with this phone number already exists.");
-        }
-    }
-
-    private static String normalizeCode(String value) {
-        return value.replaceAll("\\s+", "").toUpperCase(Locale.ROOT);
-    }
-
-    private void apply(Driver d, PersonalInfo p, EmergencyContact e, TrainingInfo t, TrainingCenter center) {
-        d.setCivility(p.civility());
-        d.setLastName(p.lastName().trim());
-        d.setFirstName(p.firstName().trim());
-        d.setBirthDate(p.birthDate());
-        d.setBirthPlace(p.birthPlace().trim());
-        d.setNationality(p.nationality().trim());
-        d.setIdType(p.idType());
-        d.setIdNumber(normalizeCode(p.idNumber()));
-        d.setIdIssueDate(p.idIssueDate());
-        d.setIdIssuePlace(p.idIssuePlace().trim());
-        d.setAddress(p.address().trim());
-        d.setDistrict(p.district().trim());
-        d.setCity(p.city().trim());
-        d.setPhonePrimary(PhoneNumbers.normalize(p.phonePrimary()));
-        d.setPhoneSecondary(PhoneNumbers.normalizeOrNull(p.phoneSecondary()));
-        d.setEmail(p.email().trim().toLowerCase(Locale.ROOT));
-        d.setLicenceNumber(normalizeCode(p.licenceNumber()));
-        d.setLicenceIssueDate(p.licenceIssueDate());
-        d.setLicenceCategory(p.licenceCategory());
-        d.setEmergencyLastName(e.lastName().trim());
-        d.setEmergencyFirstName(e.firstName().trim());
-        d.setEmergencyPhone(PhoneNumbers.normalize(e.phone()));
-        d.setEmergencyRelationship(e.relationship());
-        d.setEmergencyAddress(e.address().trim());
-        d.setTrainingCenter(center);
-        d.setTrainingDate(t.trainingDate());
-        d.setCertificateNumber(t.certificateNumber() == null || t.certificateNumber().isBlank() ? null : t.certificateNumber().trim());
-    }
-
-    // The unique constraints are the last line of defence against two requests racing.
-    private Driver saveChecked(Driver driver) {
-        try {
-            Driver saved = drivers.saveAndFlush(driver);
-            entityManager.refresh(saved);
-            return saved;
-        } catch (DataIntegrityViolationException e) {
-            String message = String.valueOf(e.getMostSpecificCause().getMessage());
-            if (message.contains("uq_drivers_id_number")) {
-                throw new BusinessRuleViolationException("DRIVER_ID_TAKEN", "A driver with this identity document number already exists.");
-            }
-            if (message.contains("uq_drivers_licence")) {
-                throw new BusinessRuleViolationException("DRIVER_LICENCE_TAKEN", "A driver with this licence number already exists.");
-            }
-            if (message.contains("uq_drivers_email")) {
-                throw new BusinessRuleViolationException("DRIVER_EMAIL_TAKEN", "A driver with this email already exists.");
-            }
-            throw new BusinessRuleViolationException("DRIVER_PHONE_TAKEN", "A driver with this phone number already exists.");
-        }
     }
 }

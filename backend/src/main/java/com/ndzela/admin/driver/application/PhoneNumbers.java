@@ -2,7 +2,7 @@ package com.ndzela.admin.driver.application;
 
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 
-/** Phone numbers are stored as "+" and digits only, so the same number always compares equal. */
+// Phone numbers are stored as "+" and digits only, so the same number always compares equal.
 final class PhoneNumbers {
     private PhoneNumbers() {}
 

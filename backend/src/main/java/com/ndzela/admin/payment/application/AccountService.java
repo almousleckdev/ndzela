@@ -6,9 +6,11 @@ import com.ndzela.admin.driver.application.DriverArrearsService;
 import com.ndzela.admin.driver.application.model.DriverRef;
 import com.ndzela.admin.driver.application.DriverLeaveService;
 import com.ndzela.admin.payment.application.model.AccountEntry;
+import com.ndzela.admin.payment.application.model.AccountIncident;
 import com.ndzela.admin.payment.application.model.AccountInput;
 import com.ndzela.admin.payment.application.model.AccountLeave;
 import com.ndzela.admin.payment.application.model.AccountState;
+import com.ndzela.admin.payment.domain.DayIncidentRepository;
 import com.ndzela.admin.payment.domain.LedgerEntry;
 import com.ndzela.admin.payment.domain.LedgerEntryRepository;
 
@@ -22,7 +24,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/** Computes a contract's account state and keeps the figures shown on the driver row up to date. */
+// Computes a contract's account state and keeps the figures shown on the driver row up to date.
 @Service
 @RequiredArgsConstructor
 public class AccountService {
@@ -30,21 +32,23 @@ public class AccountService {
     private final DriverLeaveService leaveService;
     private final DriverArrearsService driverArrears;
     private final CountryRepository countries;
+    private final DayIncidentRepository incidents;
 
     @Transactional(readOnly = true)
     public AccountState state(UUID countryId, ContractResponse contract, Instant now) {
         ZoneId zone = zoneOf(countryId);
         List<AccountEntry> entries = ledger.findAllByContractIdOrderByCreatedAtAscIdAsc(contract.id()).stream().map(AccountService::entry).toList();
         List<AccountLeave> leaves = leaveService.activeRanges(contract.driverId()).stream().map(r -> new AccountLeave(r[0], r[1])).toList();
+        List<AccountIncident> declared = incidents.findAllByContractIdAndCancelledAtIsNull(contract.id()).stream().map(i -> new AccountIncident(i.getDay(), i.getKind())).toList();
         return AccountCalculator.compute(new AccountInput(contract.startDate(), contract.endDate(),
-                contract.endedAt() == null ? null : contract.endedAt().atZoneSameInstant(zone).toLocalDate(), contract.dailyRent(), leaves, entries, zone, now));
+                contract.endedAt() == null ? null : contract.endedAt().atZoneSameInstant(zone).toLocalDate(), contract.dailyRent(), leaves, declared, entries, zone, now));
     }
 
     @Transactional
     public AccountState refresh(DriverRef driver, ContractResponse contract, Instant now) {
         AccountState state = state(driver.countryId(), contract, now);
         OffsetDateTime since = state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zoneOf(driver.countryId())).toOffsetDateTime();
-        driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), since);
+        driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), since, state.unpaid(), state.paidOnTime() + state.paidLate());
         return state;
     }
 

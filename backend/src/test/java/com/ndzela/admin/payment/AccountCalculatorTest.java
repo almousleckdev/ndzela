@@ -5,9 +5,11 @@ import com.ndzela.admin.driver.domain.ArrearsLevel;
 import com.ndzela.admin.payment.application.AccountCalculator;
 import com.ndzela.admin.payment.domain.DayStatus;
 import com.ndzela.admin.payment.application.model.AccountEntry;
+import com.ndzela.admin.payment.application.model.AccountIncident;
 import com.ndzela.admin.payment.application.model.AccountInput;
 import com.ndzela.admin.payment.application.model.AccountLeave;
 import com.ndzela.admin.payment.application.model.AccountState;
+import com.ndzela.admin.payment.domain.DayIncidentKind;
 import com.ndzela.admin.payment.domain.LedgerEntryType;
 
 import org.junit.jupiter.api.Test;
@@ -39,11 +41,42 @@ class AccountCalculatorTest {
     }
 
     private static AccountState stateAt(String now, List<AccountLeave> leaves, List<AccountEntry> entries) {
-        return AccountCalculator.compute(new AccountInput(START, START.plusDays(2000), null, RENT, leaves, entries, ZONE, at(now)));
+        return AccountCalculator.compute(new AccountInput(START, START.plusDays(2000), null, RENT, leaves, List.of(), entries, ZONE, at(now)));
+    }
+
+    private static AccountState stateWith(String now, List<AccountIncident> incidents, AccountEntry... entries) {
+        return AccountCalculator.compute(new AccountInput(START, START.plusDays(2000), null, RENT, List.of(), incidents, List.of(entries), ZONE, at(now)));
     }
 
     private static AccountState stateAt(String now, AccountEntry... entries) {
         return stateAt(now, List.of(), List.of(entries));
+    }
+
+    @Test
+    void aHalfDayCostsHalfTheRentAndAStopCostsNothing() {
+        // Thursday 1, Friday 2 and Saturday 3 are due by Sunday 4 at noon: 23 000 + 11 500 (half) + 0 (stop).
+        AccountState state = stateWith("2026-10-04T13:00:00", List.of(new AccountIncident(LocalDate.of(2026, 10, 2), DayIncidentKind.HALF_DAY), new AccountIncident(LocalDate.of(2026, 10, 3), DayIncidentKind.STOP)));
+
+        assertEquals(0, new BigDecimal("34500").compareTo(state.overdueAmount()));
+        assertEquals(2, state.unpaid());
+    }
+
+    @Test
+    void payingWhatIsLeftAfterAnIncidentClearsTheAccount() {
+        AccountState state = stateWith("2026-10-04T13:00:00", List.of(new AccountIncident(LocalDate.of(2026, 10, 2), DayIncidentKind.HALF_DAY), new AccountIncident(LocalDate.of(2026, 10, 3), DayIncidentKind.STOP)),
+                payment("2026-10-04T14:00:00", 34500));
+
+        assertEquals(0, state.overdueAmount().signum());
+        assertEquals(ArrearsLevel.NONE, state.level());
+        assertEquals(2, state.paidOnTime() + state.paidLate());
+    }
+
+    @Test
+    void anIncidentOnASundayChangesNothingBecauseSundayIsAlreadyFree() {
+        AccountState with = stateWith("2026-10-05T13:00:00", List.of(new AccountIncident(LocalDate.of(2026, 10, 4), DayIncidentKind.STOP)));
+        AccountState without = stateWith("2026-10-05T13:00:00", List.of());
+
+        assertEquals(0, without.overdueAmount().compareTo(with.overdueAmount()));
     }
 
     @Test
@@ -65,7 +98,7 @@ class AccountCalculatorTest {
 
     @Test
     void sundayIsNotBilledAndSaturdaysRentIsDueOnSunday() {
-        AccountState state = AccountCalculator.compute(new AccountInput(LocalDate.of(2026, 10, 2), START.plusDays(2000), null, RENT, List.of(), List.of(), ZONE, at("2026-10-07T13:00:00")));
+        AccountState state = AccountCalculator.compute(new AccountInput(LocalDate.of(2026, 10, 2), START.plusDays(2000), null, RENT, List.of(), List.of(), List.of(), ZONE, at("2026-10-07T13:00:00")));
         List<LocalDate> days = state.days().stream().map(AccountDay::day).toList();
         assertEquals(List.of(LocalDate.of(2026, 10, 3), LocalDate.of(2026, 10, 5), LocalDate.of(2026, 10, 6)), days, "Saturday, Monday and Tuesday; no Sunday");
         assertEquals(at("2026-10-04T12:00:00"), state.days().get(0).dueAt(), "Saturday's rent is due Sunday at noon");
@@ -132,7 +165,7 @@ class AccountCalculatorTest {
 
     @Test
     void aTerminatedContractStopsBillingOnItsEndDay() {
-        AccountState state = AccountCalculator.compute(new AccountInput(START, START.plusDays(2000), LocalDate.of(2026, 10, 2), RENT, List.of(), List.of(), ZONE, at("2026-10-20T10:00:00")));
+        AccountState state = AccountCalculator.compute(new AccountInput(START, START.plusDays(2000), LocalDate.of(2026, 10, 2), RENT, List.of(), List.of(), List.of(), ZONE, at("2026-10-20T10:00:00")));
         assertEquals(2, state.days().size(), "1 and 2 October only");
     }
 
@@ -142,6 +175,6 @@ class AccountCalculatorTest {
         assertEquals(1, state.paidOnTime());
         assertEquals(1, state.paidLate());
         assertEquals(2, state.unpaid());
-        assertNull(AccountCalculator.compute(new AccountInput(START, START.plusDays(5), null, RENT, List.of(), List.of(), ZONE, at("2026-10-01T10:00:00"))).oldestUnpaidDueAt());
+        assertNull(AccountCalculator.compute(new AccountInput(START, START.plusDays(5), null, RENT, List.of(), List.of(), List.of(), ZONE, at("2026-10-01T10:00:00"))).oldestUnpaidDueAt());
     }
 }

@@ -15,7 +15,7 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.RECORD_COMPONENT;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-/** The one password policy for the whole API: 8-128 chars with a digit, a lower-case letter. */
+// The one password policy for the whole API
 @Documented
 @NotBlank(message = "Password is required")
 @Pattern(regexp = StrongPassword.REGEX, message = StrongPassword.MESSAGE)

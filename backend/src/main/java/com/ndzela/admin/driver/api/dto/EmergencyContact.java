@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/** Step 2 of the wizard. */
+// Step 2 of the wizard.
 public record EmergencyContact(
         @NotBlank @Size(max = 100) String lastName,
         @NotBlank @Size(max = 100) String firstName,

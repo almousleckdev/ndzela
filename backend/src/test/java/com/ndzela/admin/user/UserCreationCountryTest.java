@@ -15,7 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Which country a newly created staff account receives, and the rule that only a SUPER_ADMIN may be global. */
+// Which country a newly created staff account receives, and the rule that only a SUPER_ADMIN may be global.
 class UserCreationCountryTest extends AbstractIntegrationTest {
     private User gabonAdmin;
     private User root;

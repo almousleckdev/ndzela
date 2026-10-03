@@ -25,7 +25,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Integration test base: real PostgreSQL and Redis, full context, MockMvc; countries come from the migrations. */
+// Integration test base
 @SpringBootTest
 @AutoConfigureMockMvc
 public abstract class AbstractIntegrationTest {
@@ -48,9 +48,12 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
         registry.add("app.arrears.job-enabled", () -> "false");
+        registry.add("app.pvit.reconcile-enabled", () -> "false");
+        registry.add("app.pvit.sandbox-amount", () -> "");
         registry.add("app.jwt.secret", () -> "dGVzdC1vbmx5LWp3dC1zZWNyZXQtdGVzdC1vbmx5LWp3dC1zZWNyZXQ=");
         registry.add("app.mfa.encryption-key", () -> "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=");
         registry.add("app.mail.provider", () -> "log");
+        registry.add("app.ocpp.webhook-secret", () -> "whsecret");
         registry.add("spring.mail.username", () -> "test@ndzela.test");
         registry.add("spring.mail.password", () -> "unused");
         registry.add("app.storage.upload-dir", () -> System.getProperty("java.io.tmpdir") + "/ndzela-it-uploads");
@@ -58,6 +61,7 @@ public abstract class AbstractIntegrationTest {
     }
 
     @Autowired protected JdbcTemplate jdbc;
+    @Autowired protected org.springframework.data.redis.core.StringRedisTemplate redis;
     @Autowired protected MockMvc mvc;
     @Autowired protected UserRepository users;
     @Autowired protected RoleRepository roles;
@@ -67,8 +71,12 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void resetData() {
-        jdbc.execute("TRUNCATE TABLE tenant_test_items, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
+        jdbc.execute("TRUNCATE TABLE tenant_test_items, charging_sessions, ocpp_events, driver_applications, contact_messages, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
         jdbc.update("UPDATE countries SET active = TRUE, late_penalty = 0, charging_critical_percent = 20");
+        var limits = redis.keys("public:*");
+        if (limits != null && !limits.isEmpty()) {
+            redis.delete(limits);
+        }
     }
 
     protected Country country(String code) {

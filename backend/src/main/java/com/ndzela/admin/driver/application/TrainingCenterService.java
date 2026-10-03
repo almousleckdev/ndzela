@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-/** The managed list of training centres, per country. */
+// The managed list of training centres, per country.
 @Service
 @RequiredArgsConstructor
 public class TrainingCenterService {

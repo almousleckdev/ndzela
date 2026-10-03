@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Every table list accepts a whitelisted sort and a day range. */
+// Every table list accepts a whitelisted sort and a day range.
 class ListSortAndRangeTest extends AbstractDriverTest {
     private final LocalDate today = LocalDate.now(ZoneId.of("Africa/Libreville"));
     private String center;
@@ -58,7 +58,7 @@ class ListSortAndRangeTest extends AbstractDriverTest {
     void theFollowUpTableSortsFiltersByLateDayAndSumsWhatWasCollected() throws Exception {
         String first = driverNamed("ZAMBO", "Paul");
         driverNamed("ABOGHE", "Luc");
-        postJson("/api/v1/payments", "{\"driverId\":\"" + first + "\",\"amount\":23000,\"method\":\"CASH\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager).andExpect(status().isCreated());
+        postJson("/api/v1/payments", "{\"driverId\":\"" + first + "\",\"amount\":23000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager).andExpect(status().isCreated());
 
         send(get("/api/v1/payments/accounts?sort=driverName,asc"), viewer).andExpect(jsonPath("$.items[0].driverName").value("ABOGHE Luc"));
         send(get("/api/v1/payments/accounts?sort=driverName,desc"), viewer).andExpect(jsonPath("$.items[0].driverName").value("ZAMBO Paul"));
@@ -76,7 +76,7 @@ class ListSortAndRangeTest extends AbstractDriverTest {
     void theLedgerHistorySortsByAmount() throws Exception {
         String driver = driverNamed("ZAMBO", "Paul");
         for (int amount : new int[]{1000, 9000, 4000}) {
-            postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":" + amount + ",\"method\":\"CASH\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager);
+            postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":" + amount + ",\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager);
         }
         send(get("/api/v1/payments/history?sort=amount,desc"), viewer).andExpect(jsonPath("$.items[0].amount").value(9000)).andExpect(jsonPath("$.items[2].amount").value(1000));
         send(get("/api/v1/payments/history?sort=amount,asc"), viewer).andExpect(jsonPath("$.items[0].amount").value(1000));
@@ -102,8 +102,8 @@ class ListSortAndRangeTest extends AbstractDriverTest {
 
         String station = id(postJson("/api/v1/charging/stations", "{\"name\":\"Akanda\"}", manager).andExpect(status().isCreated()));
         String vehicle = jdbc.queryForObject("select vehicle_id::text from vehicle_assignments", String.class);
-        postJson("/api/v1/charging/recharges", "{\"vehicleId\":\"" + vehicle + "\",\"stationId\":\"" + station + "\",\"amount\":3000,\"method\":\"CASH\",\"batteryBefore\":20,\"batteryAfter\":80,\"requestId\":\"" + UUID.randomUUID() + "\"}", manager);
-        postJson("/api/v1/charging/recharges", "{\"publicLabel\":\"Toyota blanche\",\"stationId\":\"" + station + "\",\"amount\":2000,\"method\":\"CASH\",\"batteryBefore\":20,\"batteryAfter\":80,\"requestId\":\"" + UUID.randomUUID() + "\"}", manager);
+        postJson("/api/v1/charging/recharges", "{\"vehicleId\":\"" + vehicle + "\",\"stationId\":\"" + station + "\",\"amount\":3000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"batteryBefore\":20,\"batteryAfter\":80,\"requestId\":\"" + UUID.randomUUID() + "\"}", manager);
+        postJson("/api/v1/charging/recharges", "{\"publicLabel\":\"Toyota blanche\",\"stationId\":\"" + station + "\",\"amount\":2000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"batteryBefore\":20,\"batteryAfter\":80,\"requestId\":\"" + UUID.randomUUID() + "\"}", manager);
         send(get("/api/v1/charging/recharges?q=toyota"), viewer).andExpect(jsonPath("$.total").value(1));
         send(get("/api/v1/charging/recharges?q=zambo"), viewer).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].amount").value(3000));
         send(get("/api/v1/charging/recharges?q=" + jdbc.queryForObject("select plate from vehicles", String.class).toLowerCase()), viewer).andExpect(jsonPath("$.total").value(1));

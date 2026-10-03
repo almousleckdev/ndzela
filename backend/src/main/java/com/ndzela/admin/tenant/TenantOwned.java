@@ -8,7 +8,7 @@ import org.hibernate.annotations.TenantId;
 
 import java.util.UUID;
 
-/** Base class of every entity that belongs to one country (vehicles, drivers, contracts, payments...). */
+// Base class of every entity that belongs to one country (vehicles, drivers, contracts, payments...).
 @MappedSuperclass
 @EntityListeners(TenantOwnedListener.class)
 @Getter

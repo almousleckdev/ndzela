@@ -1,5 +1,6 @@
 package com.ndzela.admin.charging.application;
 
+import com.ndzela.admin.common.security.Actor;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.charging.api.dto.RechargeResponse;
 import com.ndzela.admin.charging.api.dto.RecordRechargeRequest;
@@ -10,20 +11,19 @@ import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.driver.api.dto.DriverResponse;
 import com.ndzela.admin.driver.application.DriverService;
-import com.ndzela.admin.payment.domain.PaymentMethod;
+import com.ndzela.admin.payment.application.PaymentOperatorService;
 import com.ndzela.admin.tenant.TenantHolder;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** Records recharges paid at the station and their cancellation. */
+// Records recharges paid at the station and their cancellation.
 @Service
 @RequiredArgsConstructor
 public class ChargingService {
@@ -32,6 +32,7 @@ public class ChargingService {
     private final DriverService driverService;
     private final ChargingQueryService queries;
     private final AuditService audit;
+    private final PaymentOperatorService operators;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -51,10 +52,13 @@ public class ChargingService {
         if (request.batteryAfter() < request.batteryBefore()) {
             throw new BusinessRuleViolationException("BATTERY_LEVELS_INVALID", "The battery level after charging cannot be lower than before.");
         }
-        if (request.method() != PaymentMethod.CASH && (request.reference() == null || request.reference().isBlank())) {
-            throw new BusinessRuleViolationException("PAYMENT_REFERENCE_REQUIRED", "A reference is required unless the payment is in cash.");
-        }
         stations.get(request.stationId());
+        if (operators.listActive().stream().noneMatch(operator -> operator.code().equals(request.method().name()))) {
+            throw new BusinessRuleViolationException("PAYMENT_METHOD_NOT_ALLOWED", "Recharges are paid with one of the mobile-money operators of the country.");
+        }
+        if (request.reference() == null || request.reference().isBlank()) {
+            throw new BusinessRuleViolationException("PAYMENT_REFERENCE_REQUIRED", "The transaction reference is required.");
+        }
         UUID driverId = null;
         if (request.vehicleId() != null) {
             DriverResponse driver = driverService.driverOfVehicle(request.vehicleId())
@@ -65,7 +69,7 @@ public class ChargingService {
                 .publicLabel(hasPublic ? request.publicLabel().trim() : null).stationId(request.stationId()).amount(request.amount()).method(request.method())
                 .reference(request.reference() == null || request.reference().isBlank() ? null : request.reference().trim())
                 .batteryBefore(request.batteryBefore()).batteryAfter(request.batteryAfter()).kwh(request.kwh()).requestId(request.requestId())
-                .recordedBy(actor()).createdAt(OffsetDateTime.now()).build());
+                .recordedBy(Actor.name()).createdAt(OffsetDateTime.now()).build());
         audit.record("CHARGING_RECORDED", "CHARGING", saved.getId().toString(), label(saved), saved.getCountryId(),
                 request.amount().toPlainString() + " " + request.method() + ", " + request.batteryBefore() + "% -> " + request.batteryAfter() + "%");
         return queries.respond(saved);
@@ -83,7 +87,7 @@ public class ChargingService {
         }
         ChargingEntry reversal = entries.saveAndFlush(ChargingEntry.builder().type(ChargingEntryType.REVERSAL).vehicleId(original.getVehicleId()).driverId(original.getDriverId())
                 .publicLabel(original.getPublicLabel()).stationId(original.getStationId()).amount(original.getAmount()).reversesEntryId(id).reason(reason.trim())
-                .recordedBy(actor()).createdAt(OffsetDateTime.now()).build());
+                .recordedBy(Actor.name()).createdAt(OffsetDateTime.now()).build());
         audit.record("CHARGING_REVERSED", "CHARGING", id.toString(), label(original), original.getCountryId(), original.getAmount().toPlainString() + ", reason: " + reason.trim());
         return queries.respond(reversal);
     }
@@ -94,10 +98,5 @@ public class ChargingService {
 
     private static String label(ChargingEntry e) {
         return e.getPublicLabel() != null ? e.getPublicLabel() : "véhicule " + e.getVehicleId();
-    }
-
-    private static String actor() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication == null ? "system" : authentication.getName();
     }
 }

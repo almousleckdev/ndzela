@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** A declared day off (single day or date range); the rent is waived on those days. */
+// A declared day off (single day or date range); the rent is waived on those days.
 @Entity
 @Table(name = "driver_leaves")
 @Getter

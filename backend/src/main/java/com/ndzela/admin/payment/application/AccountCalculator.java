@@ -3,14 +3,17 @@ package com.ndzela.admin.payment.application;
 import com.ndzela.admin.payment.application.model.AccountCharge;
 import com.ndzela.admin.payment.application.model.AccountDay;
 import com.ndzela.admin.payment.application.model.AccountEntry;
+import com.ndzela.admin.payment.application.model.AccountIncident;
 import com.ndzela.admin.payment.application.model.AccountInput;
 import com.ndzela.admin.payment.application.model.AccountLeave;
 import com.ndzela.admin.payment.application.model.AccountState;
 import com.ndzela.admin.payment.domain.DayStatus;
 import com.ndzela.admin.driver.domain.ArrearsLevel;
+import com.ndzela.admin.payment.domain.DayIncidentKind;
 import com.ndzela.admin.payment.domain.LedgerEntryType;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
@@ -24,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** The state of one contract's account, computed from its terms. */
+// The state of one contract's account, computed from its terms.
 public final class AccountCalculator {
     static final LocalTime DEADLINE = LocalTime.NOON;
     static final Duration WARNING = Duration.ofHours(24);
@@ -46,9 +49,13 @@ public final class AccountCalculator {
             if (day.getDayOfWeek() == DayOfWeek.SUNDAY || onLeave(in.leaves(), day)) {
                 continue;
             }
+            BigDecimal rent = rentOf(day, in);
+            if (rent.signum() == 0) {
+                continue;
+            }
             Instant due = dueAt(day, in.zone());
             if (!due.isAfter(in.now())) {
-                charges.add(new AccountCharge(day, due, in.dailyRent(), false));
+                charges.add(new AccountCharge(day, due, rent, false));
             }
         }
         for (AccountEntry e : in.entries()) {
@@ -107,6 +114,16 @@ public final class AccountCalculator {
         if (late.compareTo(URGENT) >= 0) return ArrearsLevel.DARK_YELLOW;
         if (late.compareTo(WARNING) >= 0) return ArrearsLevel.YELLOW;
         return ArrearsLevel.LATE;
+    }
+
+    // A stop means no rent that day, a half day means half of it; any other day is the full rent.
+    private static BigDecimal rentOf(LocalDate day, AccountInput in) {
+        for (AccountIncident incident : in.incidents()) {
+            if (incident.day().equals(day)) {
+                return incident.kind() == DayIncidentKind.STOP ? BigDecimal.ZERO : in.dailyRent().divide(BigDecimal.valueOf(2), 0, RoundingMode.HALF_UP);
+            }
+        }
+        return in.dailyRent();
     }
 
     static Instant dueAt(LocalDate day, ZoneId zone) {

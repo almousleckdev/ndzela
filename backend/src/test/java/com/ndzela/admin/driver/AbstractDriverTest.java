@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Shared people and helpers for the driver tests. */
+// Shared people and helpers for the driver tests.
 public abstract class AbstractDriverTest extends AbstractIntegrationTest {
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
 

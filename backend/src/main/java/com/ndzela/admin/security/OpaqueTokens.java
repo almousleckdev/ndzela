@@ -7,7 +7,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HexFormat;
 
-/** Helpers for random, unguessable tokens (refresh, reset, login challenge) that are only ever stored hashed. */
+// Helpers for random, unguessable tokens (refresh, reset
 public final class OpaqueTokens {
     private static final SecureRandom RANDOM = new SecureRandom();
 

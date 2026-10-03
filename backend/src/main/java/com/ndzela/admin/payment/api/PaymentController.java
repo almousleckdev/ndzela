@@ -9,6 +9,8 @@ import com.ndzela.admin.payment.api.dto.PaymentResult;
 import com.ndzela.admin.payment.api.dto.RecordPaymentRequest;
 import com.ndzela.admin.payment.api.dto.PaymentSummary;
 import com.ndzela.admin.payment.api.dto.WaiverRequest;
+import com.ndzela.admin.payment.api.dto.OperatorResponse;
+import com.ndzela.admin.payment.application.PaymentOperatorService;
 import com.ndzela.admin.payment.application.PaymentQueryService;
 import com.ndzela.admin.payment.application.PaymentService;
 import com.ndzela.admin.payment.domain.LedgerEntryType;
@@ -25,6 +27,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,15 +35,24 @@ import java.util.UUID;
 public class PaymentController {
     private final PaymentService payments;
     private final PaymentQueryService queries;
+    private final PaymentOperatorService operators;
+
+    // The mobile-money operators of the caller's country
+    @GetMapping("/api/v1/payments/operators")
+    @PreAuthorize("hasAuthority('payments:read')")
+    public List<OperatorResponse> operators() {
+        return operators.listActive();
+    }
 
     @GetMapping("/api/v1/payments/accounts")
     @PreAuthorize("hasAuthority('payments:read')")
-    public PageResponse<AccountRow> accounts(@RequestParam(defaultValue = "ALL") String filter, @RequestParam(required = false) String q,
-                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lateFrom,
-                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lateTo,
-                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidFrom,
-                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidTo, @RequestParam(required = false) String sort,
-                                             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+    public PageResponse<AccountRow> accounts(
+            @RequestParam(defaultValue = "ALL") String filter, @RequestParam(required = false) String q,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lateTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidTo, @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         return queries.accounts(filter, q, lateFrom, lateTo, paidFrom, paidTo, sort, page, size);
     }
 
@@ -59,20 +71,22 @@ public class PaymentController {
 
     @GetMapping("/api/v1/payments/history")
     @PreAuthorize("hasAuthority('payments:read')")
-    public PageResponse<EntryResponse> history(@RequestParam(required = false) UUID driverId, @RequestParam(required = false) LedgerEntryType type,
-                                               @RequestParam(required = false) PaymentMethod method, @RequestParam(required = false) String q,
-                                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-                                               @RequestParam(required = false) String sort, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+    public PageResponse<EntryResponse> history(
+            @RequestParam(required = false) UUID driverId, @RequestParam(required = false) LedgerEntryType type,
+            @RequestParam(required = false) PaymentMethod method, @RequestParam(required = false) String q,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String sort, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         return queries.history(driverId, type, method, q, from, to, sort, page, size);
     }
 
     @GetMapping("/api/v1/payments/export")
     @PreAuthorize("hasAuthority('payments:export')")
-    public ResponseEntity<byte[]> export(@RequestParam(required = false) UUID driverId, @RequestParam(required = false) LedgerEntryType type,
-                                         @RequestParam(required = false) PaymentMethod method, @RequestParam(required = false) String q,
-                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) UUID driverId, @RequestParam(required = false) LedgerEntryType type,
+            @RequestParam(required = false) PaymentMethod method, @RequestParam(required = false) String q,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"paiements.csv\"").body(queries.export(driverId, type, method, q, from, to));
     }

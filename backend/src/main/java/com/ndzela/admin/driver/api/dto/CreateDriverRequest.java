@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
-/** The whole wizard, created atomically: the driver, the car and the contract. */
+// The whole wizard, created atomically
 public record CreateDriverRequest(
         @NotNull @Valid PersonalInfo personal,
         @NotNull @Valid EmergencyContact emergency,

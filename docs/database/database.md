@@ -53,3 +53,25 @@ Ephemeral auth data (challenges, OTP, refresh tokens, reset links) is in **Redis
 ## Environments
 
 Dev database credentials in `docker-compose.yml` are for local use only. Production credentials come from environment variables (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`); never reuse dev defaults.
+
+**V19 (driver app):** `drivers.failed_login_attempts`, `login_locked_until`, `last_login_at` (sign-in throttling); `payment_operators` (country-scoped, `code`, `label`, `sort_order`, `active`), seeded for Gabon with Airtel Money and Moov Money.
+
+**V20 (driver profile and support):** `countries.support_phone`, `support_whatsapp`, `support_email` (copied from the legal phone and email at migration time, then edited per country); `support_messages` (country-scoped, `driver_id` with `ON DELETE CASCADE`, `body` up to 1000 characters).
+
+**V21 (payments through PVit):** `payment_intents` (country-scoped; unique `reference`; at most one `PENDING` per driver; `ON DELETE CASCADE` from drivers and contracts) and a new ledger entry type `FEE` (the operator's fee the driver paid, never counted toward the rent).
+
+**V29 (OCPP sessions):** `charging_sessions` (country-scoped; unique `(country_id, transaction_id)`; the platform's session fields, nullable battery levels, the raw payload) and `ocpp_events` (the received `event_id`s, for deduplication).
+
+**V28 (Ndzela name and e-mail):** Gabon's legal name written Ndzela, its e-mail `ndzelagabon@gmail.com` and its support WhatsApp number.
+
+**V27 (application decisions):** `driver_applications.interview_at` and `candidate_message` (the interview date, or the reason of a refusal, sent to the candidate).
+
+**V26 (public website):** `driver_applications` (country-scoped; the candidate's details, the stored names of the photo, licence, identity and optional address-proof files, `status` NEW, CONTACTED, ACCEPTED or REJECTED, staff note, reviewer) and `contact_messages` (country-scoped; `status` NEW or HANDLED); permissions `inquiries:read` and `inquiries:manage` for SUPER_ADMIN, ADMIN and GESTIONNAIRE.
+
+**V25 (Angata details):** head office, phone and e-mail of Mali's company.
+
+**V24 (Mali):** Angata's contract settings (`ANG-`, template `ML-1`) and its operators Orange Money and Moov Money.
+
+**V23 (day incidents):** `drivers.paid_days` (rent days paid, kept with the other arrears figures) and `day_incidents` (country-scoped; one live incident per contract and day; `kind` HALF_DAY or STOP, `cause` ELECTRICITY or OTHER, `hours`, `note`, `cancelled_at`; `ON DELETE CASCADE` from drivers and contracts).
+
+**V22 (driver app lock):** `drivers.unpaid_days`, the unpaid rent days kept with the other arrears figures; the driver app locks at `app.driver-app.lock-after-unpaid-days` (default 3).

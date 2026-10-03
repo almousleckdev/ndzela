@@ -57,7 +57,7 @@ class ChargingApiTest extends AbstractDriverTest {
     }
 
     private ResultActions charge(User as, int before, int after) throws Exception {
-        return postJson("/api/v1/charging/recharges", recharge(own(), 5000, "CASH", null, before, after, UUID.randomUUID()), as);
+        return postJson("/api/v1/charging/recharges", recharge(own(), 5000, "AIRTEL_MONEY", "R1", before, after, UUID.randomUUID()), as);
     }
 
     private String entryId(ResultActions result) throws Exception {
@@ -81,11 +81,11 @@ class ChargingApiTest extends AbstractDriverTest {
 
     @Test
     void theVehicleOrThePublicCarMustBeGivenExactlyOnce() throws Exception {
-        postJson("/api/v1/charging/recharges", recharge(own() + ",\"publicLabel\":\"X\"", 3000, "CASH", null, 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
+        postJson("/api/v1/charging/recharges", recharge(own() + ",\"publicLabel\":\"X\"", 3000, "AIRTEL_MONEY", "R1", 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("CHARGING_TARGET_INVALID"));
-        postJson("/api/v1/charging/recharges", recharge("\"publicLabel\":\"  \"", 3000, "CASH", null, 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity());
+        postJson("/api/v1/charging/recharges", recharge("\"publicLabel\":\"  \"", 3000, "AIRTEL_MONEY", "R1", 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity());
         String spare = newVehicle(manager);
-        postJson("/api/v1/charging/recharges", recharge("\"vehicleId\":\"" + spare + "\"", 3000, "CASH", null, 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
+        postJson("/api/v1/charging/recharges", recharge("\"vehicleId\":\"" + spare + "\"", 3000, "AIRTEL_MONEY", "R1", 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("VEHICLE_HAS_NO_DRIVER"));
         assertEquals(0, rows("select count(*) from charging_entries"));
     }
@@ -95,9 +95,13 @@ class ChargingApiTest extends AbstractDriverTest {
         charge(manager, 60, 50).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("BATTERY_LEVELS_INVALID"));
         charge(manager, -1, 50).andExpect(status().isBadRequest());
         charge(manager, 10, 101).andExpect(status().isBadRequest());
-        postJson("/api/v1/charging/recharges", recharge(own(), 0, "CASH", null, 10, 60, UUID.randomUUID()), manager).andExpect(status().isBadRequest());
+        postJson("/api/v1/charging/recharges", recharge(own(), 0, "AIRTEL_MONEY", "R1", 10, 60, UUID.randomUUID()), manager).andExpect(status().isBadRequest());
         postJson("/api/v1/charging/recharges", recharge(own(), 1000, "MOOV_MONEY", null, 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("PAYMENT_REFERENCE_REQUIRED"));
+        for (String method : new String[] {"CASH", "OTHER", "ORANGE_MONEY"}) {
+            postJson("/api/v1/charging/recharges", recharge(own(), 1000, method, "R1", 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.code").value("PAYMENT_METHOD_NOT_ALLOWED"));
+        }
         postJson("/api/v1/charging/recharges", recharge(own(), 1000, "BITCOIN", null, 10, 60, UUID.randomUUID()), manager).andExpect(status().isBadRequest());
         postJson("/api/v1/charging/recharges", "{}", manager).andExpect(status().isBadRequest());
         assertEquals(0, rows("select count(*) from charging_entries"));
@@ -121,7 +125,7 @@ class ChargingApiTest extends AbstractDriverTest {
         for (UUID request : List.of(same, same, same, UUID.randomUUID())) {
             Callable<Integer> call = () -> {
                 start.await();
-                return postJson("/api/v1/charging/recharges", recharge(own(), 2000, "CASH", null, 40, 80, request), manager).andReturn().getResponse().getStatus();
+                return postJson("/api/v1/charging/recharges", recharge(own(), 2000, "AIRTEL_MONEY", "R1", 40, 80, request), manager).andReturn().getResponse().getStatus();
             };
             results.add(pool.submit(call));
         }
@@ -158,7 +162,7 @@ class ChargingApiTest extends AbstractDriverTest {
     @Test
     void theMetricsCountTheDayTheWeekTheMonthAndTheCriticalArrivals() throws Exception {
         charge(manager, 15, 80).andExpect(status().isCreated());
-        postJson("/api/v1/charging/recharges", recharge("\"publicLabel\":\"Public 1\"", 3000, "CASH", null, 50, 90, UUID.randomUUID()), cashier).andExpect(status().isCreated());
+        postJson("/api/v1/charging/recharges", recharge("\"publicLabel\":\"Public 1\"", 3000, "AIRTEL_MONEY", "R1", 50, 90, UUID.randomUUID()), cashier).andExpect(status().isCreated());
         String cancelled = entryId(charge(manager, 10, 40).andExpect(status().isCreated()));
         postJson("/api/v1/charging/recharges/" + cancelled + "/reverse", REASON, admin).andExpect(status().isOk());
 
@@ -172,7 +176,7 @@ class ChargingApiTest extends AbstractDriverTest {
     @Test
     void theTableFollowsTheRequestedPeriodAndSort() throws Exception {
         charge(manager, 20, 80).andExpect(status().isCreated());
-        postJson("/api/v1/charging/recharges", recharge(own(), 9000, "CASH", null, 10, 95, UUID.randomUUID()), manager).andExpect(status().isCreated());
+        postJson("/api/v1/charging/recharges", recharge(own(), 9000, "AIRTEL_MONEY", "R1", 10, 95, UUID.randomUUID()), manager).andExpect(status().isCreated());
         LocalDate today = LocalDate.now(ZoneId.of("Africa/Libreville"));
         send(get("/api/v1/charging/recharges?from=" + today + "&to=" + today), viewer).andExpect(jsonPath("$.total").value(2));
         send(get("/api/v1/charging/recharges?from=" + today.minusDays(7) + "&to=" + today.minusDays(1)), viewer).andExpect(jsonPath("$.total").value(0));
@@ -233,9 +237,9 @@ class ChargingApiTest extends AbstractDriverTest {
         String id = entryId(charge(manager, 20, 80).andExpect(status().isCreated()));
         send(get("/api/v1/charging/recharges"), maliManager).andExpect(jsonPath("$.total").value(0));
         send(get("/api/v1/charging/summary"), maliManager).andExpect(jsonPath("$.rechargesToday").value(0)).andExpect(jsonPath("$.fcfaToday").value(0));
-        postJson("/api/v1/charging/recharges", recharge(own(), 1000, "CASH", null, 10, 50, UUID.randomUUID()), maliManager).andExpect(status().isNotFound());
+        postJson("/api/v1/charging/recharges", recharge(own(), 1000, "AIRTEL_MONEY", "R1", 10, 50, UUID.randomUUID()), maliManager).andExpect(status().isNotFound());
         String maliStation = id(postJson("/api/v1/charging/stations", "{\"name\":\"Bamako\"}", maliManager).andExpect(status().isCreated()));
-        postJson("/api/v1/charging/recharges", "{\"publicLabel\":\"X\",\"stationId\":\"" + station + "\",\"amount\":1000,\"method\":\"CASH\",\"batteryBefore\":10,\"batteryAfter\":50,\"requestId\":\"" + UUID.randomUUID() + "\"}", maliManager)
+        postJson("/api/v1/charging/recharges", "{\"publicLabel\":\"X\",\"stationId\":\"" + station + "\",\"amount\":1000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"batteryBefore\":10,\"batteryAfter\":50,\"requestId\":\"" + UUID.randomUUID() + "\"}", maliManager)
                 .andExpect(status().isNotFound());
         assertEquals(1, rows("select count(*) from stations where id = ?::uuid", maliStation));
         User maliAdmin = staff("ml.admin@ndzela.test", "ML", "ADMIN");
@@ -243,6 +247,6 @@ class ChargingApiTest extends AbstractDriverTest {
 
         send(get("/api/v1/charging/recharges"), root).andExpect(jsonPath("$.total").value(1));
         send(get("/api/v1/charging/recharges").header("X-Country", "ML"), root).andExpect(jsonPath("$.total").value(0));
-        postJson("/api/v1/charging/recharges", recharge(own(), 1000, "CASH", null, 10, 50, UUID.randomUUID()), root).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("COUNTRY_REQUIRED"));
+        postJson("/api/v1/charging/recharges", recharge(own(), 1000, "AIRTEL_MONEY", "R1", 10, 50, UUID.randomUUID()), root).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("COUNTRY_REQUIRED"));
     }
 }

@@ -4,5 +4,6 @@ public enum PaymentMethod {
     CASH,
     AIRTEL_MONEY,
     MOOV_MONEY,
+    ORANGE_MONEY,
     OTHER
 }

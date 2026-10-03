@@ -8,7 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** The caller: email, permissions (not roles) and whether they are global (no country). */
+// The caller
 public record CurrentActor(String email, Set<String> permissions, boolean global) {
     private static final String ROLE_PREFIX = "ROLE_";
 

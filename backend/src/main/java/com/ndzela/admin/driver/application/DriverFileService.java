@@ -21,7 +21,7 @@ import java.util.UUID;
 
 import static com.ndzela.admin.driver.application.DriverAssignmentService.label;
 
-/** The driver's photo and documents, stored privately and readable only through the driver's. */
+// The driver's photo and documents, stored privately and readable only through the driver's.
 @Service
 @RequiredArgsConstructor
 public class DriverFileService {

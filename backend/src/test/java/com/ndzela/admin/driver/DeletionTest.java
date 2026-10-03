@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** A driver or a vehicle can be deleted only while no money is recorded; the deletion is all or nothing. */
+// A driver or a vehicle can be deleted only while no money is recorded; the deletion is all or nothing.
 class DeletionTest extends AbstractDriverTest {
     @Autowired
     private AppProperties props;
@@ -41,7 +41,7 @@ class DeletionTest extends AbstractDriverTest {
     }
 
     private void pay(String driverId) throws Exception {
-        postJson("/api/v1/payments", "{\"driverId\":\"" + driverId + "\",\"amount\":1000,\"method\":\"CASH\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager).andExpect(status().isCreated());
+        postJson("/api/v1/payments", "{\"driverId\":\"" + driverId + "\",\"amount\":1000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager).andExpect(status().isCreated());
     }
 
     private void assertEverythingKept() {
@@ -93,7 +93,7 @@ class DeletionTest extends AbstractDriverTest {
     @Test
     void aRechargeKeepsTheDriverAndTheVehicle() throws Exception {
         String station = id(postJson("/api/v1/charging/stations", "{\"name\":\"Akanda\"}", manager).andExpect(status().isCreated()));
-        postJson("/api/v1/charging/recharges", "{\"vehicleId\":\"" + vehicle + "\",\"stationId\":\"" + station + "\",\"amount\":3000,\"method\":\"CASH\",\"batteryBefore\":20,\"batteryAfter\":80,\"requestId\":\"" + UUID.randomUUID() + "\"}", manager)
+        postJson("/api/v1/charging/recharges", "{\"vehicleId\":\"" + vehicle + "\",\"stationId\":\"" + station + "\",\"amount\":3000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"batteryBefore\":20,\"batteryAfter\":80,\"requestId\":\"" + UUID.randomUUID() + "\"}", manager)
                 .andExpect(status().isCreated());
 
         send(delete("/api/v1/drivers/" + driver), manager).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DRIVER_HAS_HISTORY"));

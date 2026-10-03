@@ -9,13 +9,13 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record DriverRef(UUID id, UUID countryId, String firstName, String lastName, String email, String phone, DriverStatus status,
-                        ArrearsLevel level, BigDecimal overdueAmount, OffsetDateTime overdueSince) {
+                        ArrearsLevel level, BigDecimal overdueAmount, OffsetDateTime overdueSince, int unpaidDays, int paidDays) {
     public String fullName() {
         return lastName + " " + firstName;
     }
 
     public static DriverRef from(Driver d) {
         return new DriverRef(d.getId(), d.getCountryId(), d.getFirstName(), d.getLastName(), d.getEmail(), d.getPhonePrimary(), d.getStatus(),
-                d.getArrearsLevel(), d.getOverdueAmount(), d.getOverdueSince());
+                d.getArrearsLevel(), d.getOverdueAmount(), d.getOverdueSince(), d.getUnpaidDays(), d.getPaidDays());
     }
 }

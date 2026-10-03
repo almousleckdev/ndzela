@@ -8,7 +8,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.UUID;
 import java.util.function.Supplier;
 
-/** Holds the TenantContext of the current thread. */
+// Holds the TenantContext of the current thread.
 public final class TenantHolder {
     private static final ThreadLocal<TenantContext> CURRENT = new ThreadLocal<>();
 

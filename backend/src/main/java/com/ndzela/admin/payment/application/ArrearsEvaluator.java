@@ -3,6 +3,7 @@ package com.ndzela.admin.payment.application;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.contract.api.dto.ContractResponse;
 import com.ndzela.admin.contract.application.ContractService;
+import com.ndzela.admin.country.application.CountryBrand;
 import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
 import com.ndzela.admin.driver.application.DriverArrearsService;
@@ -31,7 +32,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.UUID;
 
-/** Brings one contract's arrears up to date: the driver's figures, late penalties and escalation steps. */
+// Brings one contract's arrears up to date
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -64,7 +65,7 @@ public class ArrearsEvaluator {
             state = accounts.state(driver.countryId(), contract, now);
         }
         var zone = accounts.zoneOf(driver.countryId());
-        driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime());
+        driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime(), state.unpaid(), state.paidOnTime() + state.paidLate());
 
         ArrearsLevel highestNew = ArrearsLevel.NONE;
         for (AccountDay day : state.days()) {
@@ -98,10 +99,11 @@ public class ArrearsEvaluator {
     }
 
     private void sendEmail(DriverRef driver, AccountState state, ArrearsLevel level) {
-        String subject = switch (level) {
-            case YELLOW -> "NDZELA : rappel de paiement de votre loyer";
-            case DARK_YELLOW -> "NDZELA : rappel urgent, loyer impayé";
-            default -> "NDZELA : votre compte est suspendu pour impayés";
+        CountryBrand brand = CountryBrand.ofCountry(countries.findById(driver.countryId()).map(Country::getCode).orElse(null));
+        String subject = brand.name() + " : " + switch (level) {
+            case YELLOW -> "rappel de paiement de votre loyer";
+            case DARK_YELLOW -> "rappel urgent, loyer impayé";
+            default -> "votre compte est suspendu pour impayés";
         };
         String message = switch (level) {
             case YELLOW -> "Votre loyer n'a pas été réglé avant l'échéance. Merci de régulariser dès aujourd'hui.";
@@ -109,7 +111,7 @@ public class ArrearsEvaluator {
             default -> "Votre loyer est impayé depuis plus de 72 heures : votre compte est suspendu et votre véhicule peut être bloqué. Régularisez l'intégralité pour le débloquer.";
         };
         try {
-            email.sendHtmlEmail(driver.email(), subject, "arrears-email", Map.of("name", driver.firstName(), "message", message,
+            email.sendHtmlEmail(driver.email(), subject, "arrears-email", Map.of("name", driver.firstName(), "message", message, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(),
                     "amount", state.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " FCFA"));
         } catch (RuntimeException e) {
             log.warn("Could not send the arrears email to driver {}", driver.id(), e);

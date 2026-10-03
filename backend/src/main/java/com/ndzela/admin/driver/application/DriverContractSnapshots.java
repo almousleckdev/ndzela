@@ -10,7 +10,7 @@ import com.ndzela.admin.contract.domain.snapshot.ContractSnapshot;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.vehicle.api.dto.VehicleResponse;
 
-/** Freezes the driver, the car and the training as a contract prints them. */
+// Freezes the driver, the car and the training as a contract prints them.
 final class DriverContractSnapshots {
     private DriverContractSnapshots() {}
 

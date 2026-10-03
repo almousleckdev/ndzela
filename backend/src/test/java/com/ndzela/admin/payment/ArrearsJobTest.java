@@ -125,7 +125,7 @@ class ArrearsJobTest extends AbstractDriverTest {
     void payingEverythingClearsTheLevelButOnlyAnAdministratorLiftsTheSuspension() throws Exception {
         evaluateAt(73);
         UUID request = UUID.randomUUID();
-        postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":1000000,\"method\":\"CASH\",\"requestId\":\"" + request + "\"}", manager).andExpect(status().isCreated());
+        postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":1000000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"requestId\":\"" + request + "\"}", manager).andExpect(status().isCreated());
         assertEquals("NONE", level());
         assertEquals("SUSPENDED", jdbc.queryForObject("select status from drivers", String.class));
 

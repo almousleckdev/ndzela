@@ -46,7 +46,7 @@ class PaymentApiTest extends AbstractDriverTest {
     }
 
     protected ResultActions pay(User as, Object amount) throws Exception {
-        return postJson("/api/v1/payments", payment(driver, amount, "CASH", null, UUID.randomUUID()), as);
+        return postJson("/api/v1/payments", payment(driver, amount, "AIRTEL_MONEY", "REF-" + UUID.randomUUID(), UUID.randomUUID()), as);
     }
 
     protected String entryId(ResultActions result) throws Exception {
@@ -87,10 +87,21 @@ class PaymentApiTest extends AbstractDriverTest {
     }
 
     @Test
+    void rentIsPaidOnlyWithAirtelOrMoovAndAlwaysWithAReference() throws Exception {
+        for (String method : new String[] {"CASH", "OTHER"}) {
+            postJson("/api/v1/payments", payment(driver, 1000, method, "R-1", UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.code").value("PAYMENT_METHOD_NOT_ALLOWED"));
+        }
+        postJson("/api/v1/payments", payment(driver, 1000, "MOOV_MONEY", "  ", UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("PAYMENT_REFERENCE_REQUIRED"));
+        assertEquals(0, rows("select count(*) from ledger_entries"));
+    }
+
+    @Test
     void sendingTheSameRequestTwiceRecordsOneEntry() throws Exception {
         UUID request = UUID.randomUUID();
-        String first = entryId(postJson("/api/v1/payments", payment(driver, 5000, "CASH", null, request), manager).andExpect(status().isCreated()));
-        String second = entryId(postJson("/api/v1/payments", payment(driver, 5000, "CASH", null, request), manager).andExpect(status().isCreated()));
+        String first = entryId(postJson("/api/v1/payments", payment(driver, 5000, "AIRTEL_MONEY", "REF-" + request, request), manager).andExpect(status().isCreated()));
+        String second = entryId(postJson("/api/v1/payments", payment(driver, 5000, "AIRTEL_MONEY", "REF-" + request, request), manager).andExpect(status().isCreated()));
         assertEquals(first, second);
         assertEquals(1, rows("select count(*) from ledger_entries"));
     }
@@ -105,7 +116,7 @@ class PaymentApiTest extends AbstractDriverTest {
         for (UUID request : requests) {
             Callable<Integer> call = () -> {
                 start.await();
-                return postJson("/api/v1/payments", payment(driver, 1000, "CASH", null, request), manager).andReturn().getResponse().getStatus();
+                return postJson("/api/v1/payments", payment(driver, 1000, "AIRTEL_MONEY", "REF-" + request, request), manager).andReturn().getResponse().getStatus();
             };
             results.add(pool.submit(call));
         }
@@ -187,9 +198,17 @@ class PaymentApiTest extends AbstractDriverTest {
     }
 
     @Test
+    void eachCountryOffersItsOwnMobileMoneyOperators() throws Exception {
+        send(get("/api/v1/payments/operators"), manager).andExpect(jsonPath("$[0].code").value("AIRTEL_MONEY")).andExpect(jsonPath("$[1].code").value("MOOV_MONEY"));
+        send(get("/api/v1/payments/operators"), maliManager).andExpect(jsonPath("$[0].code").value("ORANGE_MONEY")).andExpect(jsonPath("$[1].code").value("MOOV_MONEY"));
+        postJson("/api/v1/payments", payment(driver, 1000, "ORANGE_MONEY", "REF-" + UUID.randomUUID(), UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("PAYMENT_METHOD_NOT_ALLOWED"));
+    }
+
+    @Test
     void anotherCountryNeverSeesOrChangesTheseRecords() throws Exception {
         String entry = entryId(pay(manager, 23000).andExpect(status().isCreated()));
-        postJson("/api/v1/payments", payment(driver, 1000, "CASH", null, UUID.randomUUID()), maliManager).andExpect(status().isNotFound());
+        postJson("/api/v1/payments", payment(driver, 1000, "AIRTEL_MONEY", "REF-" + UUID.randomUUID(), UUID.randomUUID()), maliManager).andExpect(status().isNotFound());
         send(get("/api/v1/payments/accounts/" + driver), maliManager).andExpect(status().isNotFound());
         send(get("/api/v1/payments/history"), maliManager).andExpect(jsonPath("$.total").value(0));
         send(get("/api/v1/payments/accounts"), maliManager).andExpect(jsonPath("$.total").value(0));
@@ -200,6 +219,6 @@ class PaymentApiTest extends AbstractDriverTest {
 
         send(get("/api/v1/payments/history"), root).andExpect(jsonPath("$.total").value(1));
         send(get("/api/v1/payments/history").header("X-Country", "ML"), root).andExpect(jsonPath("$.total").value(0));
-        postJson("/api/v1/payments", payment(driver, 1000, "CASH", null, UUID.randomUUID()), root).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("COUNTRY_REQUIRED"));
+        postJson("/api/v1/payments", payment(driver, 1000, "AIRTEL_MONEY", "REF-" + UUID.randomUUID(), UUID.randomUUID()), root).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("COUNTRY_REQUIRED"));
     }
 }

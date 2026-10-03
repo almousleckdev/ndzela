@@ -26,7 +26,7 @@ class AvatarStorageTest {
     void setUp() {
         AppProperties base = TestProperties.create();
         storage = new AvatarStorage(new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), base.jwt(), base.auth(),
-                base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), new StorageProperties(tmp.toString())));
+                base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), new StorageProperties(tmp.toString()), base.pvit(), base.driverApp(), base.publicSite(), base.ocpp()));
     }
 
     private static byte[] png() {

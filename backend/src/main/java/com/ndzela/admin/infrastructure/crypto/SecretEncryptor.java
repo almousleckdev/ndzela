@@ -12,7 +12,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-/** AES-256-GCM encryption for secrets stored at rest (TOTP seeds). */
+// AES-256-GCM encryption for secrets stored at rest (TOTP seeds).
 @Component
 public class SecretEncryptor {
     static final String PREFIX = "enc:v1:";

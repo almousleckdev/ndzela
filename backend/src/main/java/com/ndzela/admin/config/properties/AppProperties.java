@@ -22,6 +22,10 @@ public record AppProperties(
         BruteForceProperties bruteForce,
         MfaProperties mfa,
         BootstrapProperties bootstrap,
-        StorageProperties storage
+        StorageProperties storage,
+        PvitProperties pvit,
+        DriverAppProperties driverApp,
+        PublicSiteProperties publicSite,
+        OcppProperties ocpp
 ) {
 }

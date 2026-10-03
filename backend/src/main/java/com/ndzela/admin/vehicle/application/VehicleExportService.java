@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 
-/** The vehicles table as a CSV file, with the same filters; every export is audited. */
+// The vehicles table as a CSV file, with the same filters; every export is audited.
 @Service
 @RequiredArgsConstructor
 public class VehicleExportService {

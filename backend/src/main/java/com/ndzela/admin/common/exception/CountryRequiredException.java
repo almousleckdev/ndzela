@@ -1,6 +1,6 @@
 package com.ndzela.admin.common.exception;
 
-/** The operation needs exactly one country but none is selected (HTTP 422, code COUNTRY_REQUIRED). */
+// The operation needs exactly one country but none is selected (HTTP 422, code COUNTRY_REQUIRED).
 public class CountryRequiredException extends BusinessRuleViolationException {
     public static final String CODE = "COUNTRY_REQUIRED";
 

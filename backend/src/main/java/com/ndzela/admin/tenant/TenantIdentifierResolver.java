@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.UUID;
 
-/** Gives Hibernate the session's country: a country id, ALL (root tenant) or NONE (matches nothing). */
+// Gives Hibernate the session's country
 @Component
 public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver<UUID>, HibernatePropertiesCustomizer {
     static final UUID ALL = new UUID(0L, 0L);

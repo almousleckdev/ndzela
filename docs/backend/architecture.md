@@ -14,6 +14,7 @@ Java 21, Spring Boot 4.1.1, Maven. Modular monolith, **package by feature**, eac
 | `vehicle/` | `api`, `application` (VehicleService), `domain` (Vehicle extends TenantOwned, VehicleStatus): company cars |
 | `driver/` | `api`, `application` (DriverService, DriverAssignmentService, TrainingCenterService), `domain` (Driver, TrainingCenter, VehicleAssignment, enums): drivers, the one-vehicle-per-driver rule, training centres |
 | `notification/` | `api`, `application` (NotificationService), `domain` (Notification, repository): in-app only |
+| `driverapp/` | `api` (DriverAuthController, DriverAppController, dto), `application` (DriverAuthService, DriverLoginAttempts, DriverAppService): the driver app's sign-in, session and read-only views, under `/api/v1/driver/**` ([ADR-0013](../adr/0013-driver-api-token-audience-and-login-lookup.md)) |
 | `country/` | `api` (CountryController, dto), `application` (CountryService), `domain` (Country + repository): read-only country list |
 | `tenant/` | Country context: TenantContext, TenantHolder, TenantContextResolver, TenantIdentifierResolver (Hibernate), TenantOwned base class and its listener |
 | `security/` | SecurityConfig, `jwt/` (JwtService, JwtAuthenticationFilter), TenantContextFilter, CurrentActor, SecurityUser, CustomUserDetailsService, LoginAttemptService, OpaqueTokens |

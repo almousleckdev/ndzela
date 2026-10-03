@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-/** Refreshes a driver's active contract (printed parties and deposit) after the driver's details change. */
+// Refreshes a driver's active contract (printed parties and deposit) after the driver's details change.
 @Service
 @RequiredArgsConstructor
 public class DriverContractService {

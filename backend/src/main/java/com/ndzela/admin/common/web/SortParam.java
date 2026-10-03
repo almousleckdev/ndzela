@@ -7,7 +7,7 @@ import org.springframework.data.domain.Sort;
 import java.util.Locale;
 import java.util.Map;
 
-/** Reads a sort=field,asc|desc parameter against a whitelist of public names. */
+// Reads a sort=field,asc|desc parameter against a whitelist of public names.
 public final class SortParam {
     private SortParam() {}
 

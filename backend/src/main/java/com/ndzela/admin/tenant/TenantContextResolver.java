@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Locale;
 
-/** Decides, from the authenticated user, which country a request works in. */
+// Decides, from the authenticated user, which country a request works in.
 @Service
 @RequiredArgsConstructor
 public class TenantContextResolver {

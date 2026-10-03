@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 
-/** Test-only country-owned entity: proves the mechanism every future business entity will rely on. */
+// Test-only country-owned entity
 @Entity
 @Table(name = "tenant_test_items")
 public class TenantTestItem extends TenantOwned {

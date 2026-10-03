@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** Roles are named bundles of permissions. */
+// Roles are named bundles of permissions.
 @Service
 @RequiredArgsConstructor
 public class RoleManagementService {

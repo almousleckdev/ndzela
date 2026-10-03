@@ -9,11 +9,15 @@ import com.ndzela.admin.config.properties.MfaProperties;
 import com.ndzela.admin.config.properties.StorageProperties;
 import com.ndzela.admin.config.properties.BootstrapProperties;
 import com.ndzela.admin.config.properties.AppProperties;
+import com.ndzela.admin.config.properties.DriverAppProperties;
+import com.ndzela.admin.config.properties.OcppProperties;
+import com.ndzela.admin.config.properties.PublicSiteProperties;
+import com.ndzela.admin.config.properties.PvitProperties;
 
 import java.time.Duration;
 import java.util.List;
 
-/** Builds an AppProperties with fixed, test-only values. */
+// Builds an AppProperties with fixed, test-only values.
 public final class TestProperties {
     public static final String JWT_SECRET = "dGVzdC1vbmx5LWp3dC1zZWNyZXQtdGVzdC1vbmx5LWp3dC1zZWNyZXQ=";
     public static final String MFA_KEY = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
@@ -31,6 +35,11 @@ public final class TestProperties {
                 new BruteForceProperties(5, Duration.ofMinutes(30)),
                 new MfaProperties("NDZela Test", MFA_KEY),
                 new BootstrapProperties("admin@test.com", "Str0ng!Pass"),
-                new StorageProperties(System.getProperty("java.io.tmpdir") + "/ndzela-test-uploads"));
+                new StorageProperties(System.getProperty("java.io.tmpdir") + "/ndzela-test-uploads"),
+                new PvitProperties("https://pvit.test", "ACC_TEST", "test-password", "secretcode", "paymentcode", "statuscode", "feescode", "kyccode", "CB001", "NDZELA", "LOYER", "CUSTOMER",
+                        null, Duration.ofSeconds(5), Duration.ofMinutes(3), Duration.ofMinutes(30), false),
+                new DriverAppProperties(3),
+                new PublicSiteProperties("GA", 5),
+                new OcppProperties("https://ocpp.test", "test-key", "whsecret", "X-Webhook-Secret", "GA"));
     }
 }

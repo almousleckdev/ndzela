@@ -20,9 +20,11 @@ Backend settings are environment variables read by `application.yml` (optionally
 | `MAIL_HOST/PORT`, `RESEND_API_KEY`, `MAIL_FROM` | Email delivery | Gmail SMTP / Resend defaults |
 | `UPLOAD_DIR` | Avatar storage directory | `./uploads` |
 | `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | First SUPER_ADMIN, created only on an empty database; enrolment of MFA required at first login | password empty = skipped |
+| `PVIT_*` | PVit mobile money ([ADR-0014](../adr/0014-pvit-mobile-money-payments.md)): `PVIT_BASE_URL`, `PVIT_OPERATION_ACCOUNT_CODE`, `PVIT_SECRET_PASSWORD`, `PVIT_CODE_URL_SECRET/PAYMENT/STATUS/FEES/KYC`, `PVIT_CALLBACK_URL_CODE` (the code of the public callback URL registered in the PVit dashboard, type Callback, pointing at `/api/callback`), `PVIT_AGENT`, `PVIT_PRODUCT`, `PVIT_OWNER_CHARGE` (`CUSTOMER` or `MERCHANT`), `PVIT_SANDBOX_AMOUNT` (sandbox only; empty in production) | PVit sandbox values from the merchant space |
+| `DRIVER_LOCK_AFTER_UNPAID_DAYS` | From how many unpaid rent days a driver is limited to the payment screen | `3` |
 | `SWAGGER_ENABLED` | Swagger UI / OpenAPI | `false` |
 
-Frontend: `NEXT_PUBLIC_API_URL` in `frontend/.env.local` (template `.env.example`). Everything `NEXT_PUBLIC_*` is public: never put secrets in it.
+Frontend: `NEXT_PUBLIC_API_URL` in `dashboard/.env.local` (template `.env.example`). Everything `NEXT_PUBLIC_*` is public: never put secrets in it.
 
 Rules: no secret in the repository, in Docker images, or in logs. `.env*` files are git-ignored except `.env.example` (keep it in sync when adding a variable).
 
@@ -38,6 +40,6 @@ Hosting/cloud provider and regions; SMS/push provider per country; payment-provi
 ## Deployment rules (binding when deployment exists)
 
 1. Flyway runs at application start; a deployment must not start an incompatible schema/app pair. Schema changes are backwards compatible with the previous app version for one release.
-2. Production: HTTPS only, `COOKIE_SECURE=true`, Swagger off, real secrets, non-default database credentials, `MAIL_PROVIDER` not `log`.
+2. Production: HTTPS only, a stable public callback address for PVit (restrict it to PVit's published addresses at the proxy), `PVIT_SANDBOX_AMOUNT` empty and the production operation account, `COOKIE_SECURE=true`, Swagger off, real secrets, non-default database credentials, `MAIL_PROVIDER` not `log`.
 3. Health, readiness and logs must be observable before go-live. Logs carry `requestId`.
 4. Backups are tested by restoring them.

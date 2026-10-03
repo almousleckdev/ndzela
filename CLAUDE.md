@@ -5,7 +5,7 @@ Instructions for every AI agent (and human) working in this repository. **Read t
 NDZela is a **multi-tenant (one tenant per country: Mali, Gabon, more later) fleet and driver-contract platform**. The
 company owns the cars. Drivers sign a contract for a car and make fixed daily payments. Staff run the operation from
 this web admin; drivers (created by staff, never self-registered) use a separate **Flutter + Riverpod** mobile app to pay their daily rent. This repository holds the **backend** (`backend/`, Java 21 /
-Spring Boot 4) and the **web admin frontend** (`frontend/`, Next.js / TypeScript). Start with [docs/README.md](docs/README.md).
+Spring Boot 4) and the **web admin frontend** (`dashboard/`, Next.js / TypeScript). `web/` is the company's separate public website (NDZela): it is not part of the admin and shares no code with it. Start with [docs/README.md](docs/README.md).
 
 ## The documentation is the source of truth
 
@@ -28,6 +28,7 @@ Spring Boot 4) and the **web admin frontend** (`frontend/`, Next.js / TypeScript
 | Tenant-owned data, queries, endpoints | [docs/multi-tenancy/multi-tenancy.md](docs/multi-tenancy/multi-tenancy.md) |
 | Login, tokens, sessions, MFA | [docs/auth/authentication.md](docs/auth/authentication.md) |
 | Permissions, roles, guards | [docs/auth/authorization.md](docs/auth/authorization.md), [docs/auth/roles-and-permissions.md](docs/auth/roles-and-permissions.md) |
+| The public website (`web/`) | [docs/web/architecture.md](docs/web/architecture.md), [docs/adr/0015-public-website.md](docs/adr/0015-public-website.md), `web/AGENTS.md` |
 | Tables, migrations | [docs/database/database.md](docs/database/database.md) |
 | Endpoints, DTOs, errors | [docs/api/conventions.md](docs/api/conventions.md) |
 | Tests | [docs/testing/strategy.md](docs/testing/strategy.md) |
@@ -69,10 +70,10 @@ Spring Boot 4) and the **web admin frontend** (`frontend/`, Next.js / TypeScript
 - Read a file before editing it. Make the smallest change that solves the task; do not refactor unrelated code.
 - Do not implement features before the relevant spec/plan is approved by the user. Do not start coding when told not to.
 - Run the checks before saying a task is done: backend `cd backend && mvn clean test`; frontend
-  `cd frontend && npm run lint && npm run typecheck`. Report failures honestly.
+  `cd dashboard && npm run lint && npm run typecheck`. Report failures honestly.
 - Follow [docs/workflow/git-workflow.md](docs/workflow/git-workflow.md). Never commit, push or rewrite history unless asked.
-- The frontend runs a Next.js version with breaking changes: also follow `frontend/AGENTS.md` (read the guides in
-  `frontend/node_modules/next/dist/docs/` before writing Next.js code).
+- The frontend runs a Next.js version with breaking changes: also follow `dashboard/AGENTS.md` (read the guides in
+  `dashboard/node_modules/next/dist/docs/` before writing Next.js code).
 
 ## Commands
 
@@ -80,4 +81,4 @@ Spring Boot 4) and the **web admin frontend** (`frontend/`, Next.js / TypeScript
 | --- | --- |
 | Start Postgres and Redis | `docker compose up -d` |
 | Backend run / test | `cd backend && mvn spring-boot:run` / `mvn clean test` (Docker must be running: integration tests use Testcontainers; use `clean` after refactors: stale classes cause `ClassFormatError`) |
-| Frontend run / check | `cd frontend && npm run dev` / `npm run lint && npm run typecheck` |
+| Frontend run / check | `cd dashboard && npm run dev` / `npm run lint && npm run typecheck` |

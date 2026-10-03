@@ -7,7 +7,7 @@ import com.ndzela.admin.user.domain.User;
 
 import org.springframework.stereotype.Component;
 
-/** Which staff accounts the current request may see. */
+// Which staff accounts the current request may see.
 @Component
 public class UserScope {
     public boolean canSee(User target) {

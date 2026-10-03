@@ -8,7 +8,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** The Roles page shows users only their own roles; role managers see them all. */
+// The Roles page shows users only their own roles; role managers see them all.
 class RoleVisibilityTest extends AbstractIntegrationTest {
     private int roleCount() {
         return jdbc.queryForObject("select count(*) from roles", Integer.class);

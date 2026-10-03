@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Every administrative action leaves one audit row, and the table can never be changed. */
+// Every administrative action leaves one audit row, and the table can never be changed.
 class AuditTrailTest extends AbstractIntegrationTest {
     @Autowired private AuditService audit;
     @Autowired private TransactionTemplate transaction;

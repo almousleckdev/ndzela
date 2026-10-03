@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code de réinitialisation</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #333333; margin: 0; padding: 0; line-height: 1.6;">
+<div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid #eeeeee; margin-bottom: 24px;">
+        <span th:style="'font-size: 24px; font-weight: bold; color: ' + ${color}" th:text="${brand}">NDZELA</span>
+    </div>
+    <p>Bonjour <span th:text="${name}">Chauffeur</span>,</p>
+    <p>Voici votre code pour choisir un nouveau mot de passe dans l'application. Il est valable quelques minutes.</p>
+    <p style="text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; background: #f5f7fa; padding: 16px; border-radius: 8px;" th:text="${code}">000000</p>
+    <p style="color: #888888; font-size: 13px;">Si vous n'avez pas fait cette demande, ignorez ce message : votre mot de passe reste inchangé.</p>
+    <p style="color: #888888; font-size: 12px; margin-top: 32px;"><span th:text="${company}">NDZELA SARL</span> - Mobilité Électrique</p>
+</div>
+</body>
+</html>

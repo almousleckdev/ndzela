@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui;
+  --font-wordmark: var(--font-orbitron), ui-sans-serif, system-ui;
+}
+
+@theme {
+  /* The logo's orange, for shapes and accents. */
+  --color-primary: #F97316;
+  --color-action: #C2410C;
+  --color-action-hover: #9A3412;
+  --color-canvas: #FFFFFF;
+  --color-sky: #EAF3F8;
+  --color-sky-deep: #C9DFEB;
+  --color-line: #E3E8EF;
+  --color-ink: #0F172A;
+  --color-muted: #51607A;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* The dashed road of the logo */
+@keyframes road {
+  to {
+    background-position-x: var(--road-period);
+  }
+}
+
+.road-dashes {
+  background-image: repeating-linear-gradient(90deg, currentColor 0 var(--road-dash), transparent var(--road-dash) var(--road-period));
+  background-size: var(--road-period) 100%;
+  animation: road 0.9s linear infinite;
+}
+
+@keyframes shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes drive {
+  from {
+    left: calc(var(--car) * -1);
+  }
+  to {
+    left: 100%;
+  }
+}
+
+.road-car {
+  animation: drive 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .road-car {
+    display: none;
+  }
+}
+
+/* The flag of Gabon */
+.road-flag {
+  background: linear-gradient(180deg, #009e60 0 33.3%, #fcd116 33.3% 66.6%, #3a75c4 66.6% 100%);
+  transform-origin: right center;
+  animation: wave 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes wave {
+  from {
+    transform: skewY(-9deg) scaleX(1);
+  }
+  to {
+    transform: skewY(9deg) scaleX(0.82);
+  }
+}

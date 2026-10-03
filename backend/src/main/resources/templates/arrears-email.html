@@ -8,13 +8,13 @@
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #333333; margin: 0; padding: 0; line-height: 1.6;">
 <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid #eeeeee; margin-bottom: 24px;">
-        <span style="font-size: 24px; font-weight: bold; color: #F97316;">NDZELA</span>
+        <span style="font-size: 24px; font-weight: bold;" th:style="'font-size: 24px; font-weight: bold; color: ' + ${color}" th:text="${brand}">NDZELA</span>
     </div>
     <p>Bonjour <span th:text="${name}">Chauffeur</span>,</p>
     <p th:text="${message}">Message</p>
     <p style="font-size: 18px; font-weight: 600;">Montant à régler : <span style="color: #EA580C;" th:text="${amount}">0 FCFA</span></p>
-    <p>Vous pouvez régler auprès de votre gestionnaire NDZELA. Si vous avez déjà payé, ignorez ce message.</p>
-    <p style="color: #888888; font-size: 12px; margin-top: 32px;">NDZELA SARL - Mobilité Électrique</p>
+    <p>Vous pouvez régler auprès de votre gestionnaire <span th:text="${brand}">NDZELA</span>. Si vous avez déjà payé, ignorez ce message.</p>
+    <p style="color: #888888; font-size: 12px; margin-top: 32px;"><span th:text="${company}">NDZELA SARL</span> - Mobilité Électrique</p>
 </div>
 </body>
 </html>

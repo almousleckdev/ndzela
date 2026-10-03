@@ -9,7 +9,7 @@ import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
-/** Step 1 of the wizard: identity, contacts, identity document and driving licence. */
+// Step 1 of the wizard
 public record PersonalInfo(
         @NotNull Civility civility,
         @NotBlank @Size(max = 100) String lastName,

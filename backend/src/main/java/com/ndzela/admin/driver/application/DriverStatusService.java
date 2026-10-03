@@ -17,7 +17,7 @@ import java.util.UUID;
 
 import static com.ndzela.admin.driver.application.DriverAssignmentService.label;
 
-/** Suspending (temporary) and blocking (permanent until an administrator lifts it) a driver. */
+// Suspending (temporary) and blocking (permanent until an administrator lifts it) a driver.
 @Service
 @RequiredArgsConstructor
 public class DriverStatusService {

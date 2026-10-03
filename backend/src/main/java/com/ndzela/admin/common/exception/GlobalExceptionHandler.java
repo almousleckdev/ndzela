@@ -54,6 +54,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getCode(), ex.getMessage(), request, null);
     }
 
+    @ExceptionHandler(ProviderUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleProviderUnavailable(ProviderUnavailableException ex, HttpServletRequest request) {
+        log.warn("Payment provider unavailable: {}", ex.getMessage());
+        return buildResponse(HttpStatus.BAD_GATEWAY, "PAYMENT_PROVIDER_UNAVAILABLE", ex.getMessage(), request, null);
+    }
+
     @ExceptionHandler(InvalidCountryException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidCountry(InvalidCountryException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, "INVALID_COUNTRY", ex.getMessage(), request, null);

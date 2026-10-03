@@ -30,7 +30,7 @@ import java.util.*;
 
 import static com.ndzela.admin.driver.application.DriverAssignmentService.label;
 
-/** Declared days off: the rent is waived on those days. */
+// Declared days off
 @Service
 @RequiredArgsConstructor
 public class DriverLeaveService {

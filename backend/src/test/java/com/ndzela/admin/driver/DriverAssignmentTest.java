@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** One vehicle per driver and one driver per vehicle, in the code and in the database. */
+// One vehicle per driver and one driver per vehicle, in the code and in the database.
 class DriverAssignmentTest extends AbstractDriverTest {
     private String center;
 

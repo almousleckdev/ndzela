@@ -66,6 +66,15 @@ public class Country {
     @Column(name = "legal_email")
     private String legalEmail;
 
+    @Column(name = "support_phone")
+    private String supportPhone;
+
+    @Column(name = "support_whatsapp")
+    private String supportWhatsapp;
+
+    @Column(name = "support_email")
+    private String supportEmail;
+
     @Column(name = "signing_city")
     private String signingCity;
 

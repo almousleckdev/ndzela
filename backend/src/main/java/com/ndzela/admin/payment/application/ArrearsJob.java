@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
-/** Every five minutes (UTC clock, evaluated per country timezone). */
+// Every five minutes (UTC clock, evaluated per country timezone).
 @Slf4j
 @Component
 @RequiredArgsConstructor

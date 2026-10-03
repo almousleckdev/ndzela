@@ -1,7 +1,7 @@
 # Frontend architecture
 
 Next.js 16 (App Router), React 19, TypeScript `strict`, Tailwind 4, react-hook-form + zod, zustand, lucide-react. Path alias `@/*` -> `src/*`.
-**This Next.js version has breaking changes: read `frontend/node_modules/next/dist/docs/` (and `frontend/AGENTS.md`) before writing Next.js code.**
+**This Next.js version has breaking changes: read `dashboard/node_modules/next/dist/docs/` (and `dashboard/AGENTS.md`) before writing Next.js code.**
 
 ## Layout (Implemented)
 
@@ -9,12 +9,12 @@ Next.js 16 (App Router), React 19, TypeScript `strict`, Tailwind 4, react-hook-f
 src/app/                 routes: (auth)/login, (auth)/reset-password, (dashboard)/{page,users,roles,profile,settings}; layouts; globals.css
 src/features/<feature>/  auth, users, roles, access, profile, notifications, settings, tenancy, audit, vehicles, drivers
     components/ hooks/ services/ schemas/ store/ lib/ types.ts      (only the folders a feature needs)
-src/components/ui/       Button, Input, FormField, Dialog, Dropdown, Table, Card, Badge, Avatar, Select, FilterTabs, ConfirmDialog, Toaster...
+src/components/ui/       Button, Input, FormField, Dialog, Dropdown, Table, Card, Badge, Avatar, Select, FilterTabs, Tabs (page views, e.g. Historique: Progression and Transactions), ConfirmDialog, Toaster...
 src/components/layout/   Sidebar (collapsible), Header, nav-items.ts
 src/hooks/               use-fetch, use-toast   (generic)
 src/lib/                 utils (cn), errors, time, media, image, api/{api-client,api-error}
 src/config/env.ts        zod-validated NEXT_PUBLIC_* variables
-public/images/           logo.png, image.png
+public/images/           logo.png (NDZela), angatalogo.png (Angata; the sidebar shows the logo of the user's country, see `features/tenancy/lib/brand.ts`), image.png
 ```
 
 Feature responsibilities: `auth` (login flow, session hook, auth store, reset password), `access` (permission catalogue, `usePermissions`,

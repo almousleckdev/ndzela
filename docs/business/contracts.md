@@ -36,6 +36,9 @@ A contract can be **updated while it is active**: editing a driver (Chauffeurs, 
 ## Billing calendar (from the sample, Decided)
 
 - **Rent is due Monday to Saturday inclusive. Sunday is a rest day and is not billed.**
+- **Electricity cuts (2026-10-02):** an administrator declares them for a past billable day. A cut of 4 to 8 hours makes it a **half day** (rent / 2, rounded to the nearest franc); a cut of more than 8 hours is a **stop** (no rent that day). Another cause needs a note. One live incident per contract and day; it can be cancelled, which restores the full rent.
+- **Payment methods (per country):** the driver pays only with the country's mobile-money operators (`payment_operators`): Gabon Airtel Money and Moov Money, Mali Orange Money and Moov Money (PVit integration for Mali comes later). Staff can enter one received outside the app with the operator's transaction number. `GET /payments/operators` lists them.
+- **Mali contract (Angata, template `ML-1`, V24):** the Gabon contract with the brand swapped: company ANGATA SARL, green accent `#15803D`, the Angata logo, Bamako instead of Libreville, Malian law and court. Everything else is identical. Angata's details (V25): Hamdallaye ACI 2000, Rue 223, Porte 338, Bamako; +223 79 35 34 93; info@angata.com; prefix `ANG-`; the RCCM is still to be provided. The payment receipt and the arrears e-mail follow the country's brand (name, colour, logo), and the admin shows the Angata logo and a green theme to Mali users (`data-brand` in `globals.css`).
 - **Deadline: every day before 12:00 (noon) of the next day**, in the country's timezone. A rent unpaid after that is an **impayé**.
 - Payment platform named in the contract: **my-ndzela** (the driver app / payment platform).
 - **The electric charging cost is not included in the daily rent** (billed separately, see [ocpp-integration.md](ocpp-integration.md)).

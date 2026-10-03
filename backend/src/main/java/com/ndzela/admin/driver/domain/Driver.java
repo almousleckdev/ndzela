@@ -137,11 +137,26 @@ public class Driver extends TenantOwned {
     @Column(name = "overdue_since")
     private OffsetDateTime overdueSince;
 
+    @Column(name = "unpaid_days", nullable = false)
+    private int unpaidDays;
+
+    @Column(name = "paid_days", nullable = false)
+    private int paidDays;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @Column(name = "must_change_password", nullable = false)
     private boolean mustChangePassword;
+
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts;
+
+    @Column(name = "login_locked_until")
+    private OffsetDateTime loginLockedUntil;
+
+    @Column(name = "last_login_at")
+    private OffsetDateTime lastLoginAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Country staff never see or change another country's staff; only the global super admin crosses. */
+// Country staff never see or change another country's staff; only the global super admin crosses.
 class UserIsolationTest extends AbstractIntegrationTest {
     private User gabonAdmin;
     private User gabonViewer;

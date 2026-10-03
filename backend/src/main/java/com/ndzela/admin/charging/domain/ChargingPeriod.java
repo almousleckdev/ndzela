@@ -4,7 +4,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 
-/** The reporting periods; a week runs Monday to Sunday. */
+// The reporting periods; a week runs Monday to Sunday.
 public enum ChargingPeriod {
     DAY, WEEK, MONTH, YEAR;
 

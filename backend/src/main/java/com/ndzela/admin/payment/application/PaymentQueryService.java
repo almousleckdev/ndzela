@@ -6,6 +6,7 @@ import com.ndzela.admin.common.web.CsvWriter;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.SortParam;
 import com.ndzela.admin.contract.api.dto.ContractResponse;
+import com.ndzela.admin.contract.domain.BillingCalendar;
 import com.ndzela.admin.contract.application.ContractService;
 import com.ndzela.admin.country.application.CountryService;
 import com.ndzela.admin.driver.application.DriverArrearsService;
@@ -46,7 +47,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** The read side of payments: the follow-up table, an account in detail, the ledger history. */
+// The read side of payments
 @Service
 @RequiredArgsConstructor
 public class PaymentQueryService {
@@ -82,12 +83,16 @@ public class PaymentQueryService {
             ledger.collectedByDriver(ids, startOf(paidFrom, zone), endOf(paidTo, zone)).forEach(r -> collected.put((UUID) r[0], (BigDecimal) r[1]));
         }
         boolean ranged = paidFrom != null || paidTo != null;
+        LocalDate today = LocalDate.now(requestZone());
         return PageResponse.from(result, d -> {
             ContractResponse c = contracts.get(d.id());
             VehicleResponse v = c == null ? null : vehicles.get(c.vehicleId());
+            int elapsed = c == null ? 0 : BillingCalendar.billableDaysBetween(c.startDate(), today.isBefore(c.endDate()) ? today : c.endDate());
+            int total = c == null ? 0 : c.billableDays();
             return new AccountRow(d.id(), d.fullName(), d.phone(), d.status().name(), c == null ? null : c.id(), c == null ? null : c.contractNumber(), c == null ? null : c.dailyRent(),
                     v == null ? null : v.fleetNumber() + " · " + v.plate(), d.level(), d.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP), d.overdueSince(), lastPayment.get(d.id()),
-                    ranged ? collected.getOrDefault(d.id(), BigDecimal.ZERO).setScale(0, java.math.RoundingMode.HALF_UP) : null);
+                    ranged ? collected.getOrDefault(d.id(), BigDecimal.ZERO).setScale(0, java.math.RoundingMode.HALF_UP) : null,
+                    d.paidDays(), d.unpaidDays(), elapsed, total, Math.max(0, total - elapsed));
         });
     }
 

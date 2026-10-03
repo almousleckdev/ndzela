@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 
-/** Brute-force protection: counts failures per account and locks it for a cooling-off period. */
+// Brute-force protection
 @Slf4j
 @Service
 @RequiredArgsConstructor

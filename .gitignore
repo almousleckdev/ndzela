@@ -1,34 +1,58 @@
-# Dependencies
-node_modules/
-
-# Build output
-backend/target/
-frontend/.next/
-frontend/out/
-frontend/next-env.d.ts
-*.tsbuildinfo
-
-# Environment files (keep the .env.example templates)
+# Secrets and local configuration (keep the .env.example templates)
 .env
 .env.*
 !.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+**/key.properties
+**/local.properties
+**/google-services.json
+**/GoogleService-Info.plist
+**/*.mobileprovision
+**/service-account*.json
+secrets/
+
+# Postman collections and API test files (they hold PVit credentials)
+http/
 
 # Runtime data
 backend/uploads/
-
-# Logs
+uploads/
 *.log
+
+# Dependencies
+node_modules/
+**/node_modules/
+**/.pnpm-store/
+
+# Build output
+backend/target/
+**/.next/
+**/out/
+**/next-env.d.ts
+*.tsbuildinfo
+driver/build/
+driver/.dart_tool/
+driver/.flutter-plugins*
+**/Pods/
+**/.gradle/
+**/*.iml
 
 # OS / editors
 .DS_Store
 .idea/
 .vscode/
-*.iml
-*.pem
 
-# AI planning artifacts (local only)
+# Local AI tooling and planning artifacts
 docs/superpowers/
-
-# Execution ledger (local only)
 .superpowers/
-http/
+.junie/
+.claude/

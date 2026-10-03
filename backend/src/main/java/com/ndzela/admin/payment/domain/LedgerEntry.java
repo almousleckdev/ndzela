@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** One immutable ledger row; the database refuses updates and deletes. */
+// One immutable ledger row; the database refuses updates and deletes.
 @Entity
 @Table(name = "ledger_entries")
 @Getter

@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Switching a country off locks out its staff (their data is kept) and never affects the global super admin. */
+// Switching a country off locks out its staff
 class InactiveCountryTest extends AbstractIntegrationTest {
     private User gabonAdmin;
     private User root;

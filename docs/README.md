@@ -31,6 +31,7 @@ Where the code deviates from the intended rule, the deviation is recorded in
 | | [backend/standards.md](backend/standards.md) | How to write backend code |
 | Frontend | [frontend/architecture.md](frontend/architecture.md) | Folder layout, data flow, state |
 | | [frontend/standards.md](frontend/standards.md) | How to write frontend code |
+| Public website | [web/architecture.md](web/architecture.md) | The NDZela public site in `web/` |
 | Mobile | [mobile/architecture.md](mobile/architecture.md) | Flutter + Riverpod driver app, scope and API contract (not started) |
 | Multi-tenancy | [multi-tenancy/multi-tenancy.md](multi-tenancy/multi-tenancy.md) | Country isolation rules and design |
 | Auth | [auth/authentication.md](auth/authentication.md) | Sign-in, tokens, sessions, MFA |

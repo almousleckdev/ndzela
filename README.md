@@ -5,7 +5,8 @@ Admin back office: authentication with email OTP and TOTP MFA, user and role man
 | Part | Stack |
 | --- | --- |
 | `backend/` | Java 21, Spring Boot 4, PostgreSQL (Flyway), Redis, JWT |
-| `frontend/` | Next.js (App Router), React 19, Tailwind 4, react-hook-form + zod, zustand |
+| `web/` | The public NDZela website: Next.js, Tailwind 4, pnpm (see `docs/web/architecture.md`) |
+| `dashboard/` | Next.js (App Router), React 19, Tailwind 4, react-hook-form + zod, zustand |
 | `docker-compose.yml` | PostgreSQL 16 (port 5433) and Redis 7 for local development |
 
 ## Getting started
@@ -22,7 +23,7 @@ cp .env.example .env        # fill in the secrets, see the comments inside
 mvn spring-boot:run
 
 # 3. Frontend (http://localhost:3000)
-cd frontend
+cd dashboard
 cp .env.example .env.local  # NEXT_PUBLIC_API_URL must point at the backend
 npm install
 npm run dev
@@ -70,7 +71,7 @@ A feature may import from `components/ui`, `hooks`, `lib` and other features' pu
 - The access token lives in memory only. The refresh token is an HttpOnly, SameSite cookie set by the backend.
 - Sign-in flow: password, then email OTP, then TOTP (set up on first login).
 - Access is decided by permissions (`users:read`), never by role names. Roles are titles that bundle permissions.
-  Guard a page by adding it to `frontend/src/components/layout/nav-items.ts` with its `permission`.
+  Guard a page by adding it to `dashboard/src/components/layout/nav-items.ts` with its `permission`.
 - Secrets (`JWT_SECRET`, `MFA_ENCRYPTION_KEY`, mail credentials) have no defaults: the backend refuses to start
   without them. Never commit a real `.env`.
 

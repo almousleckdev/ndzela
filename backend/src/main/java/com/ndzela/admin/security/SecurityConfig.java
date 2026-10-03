@@ -1,6 +1,7 @@
 package com.ndzela.admin.security;
 
 import com.ndzela.admin.config.properties.AppProperties;
+import com.ndzela.admin.security.jwt.DriverJwtAuthenticationFilter;
 import com.ndzela.admin.security.jwt.JwtAuthenticationFilter;
 import com.ndzela.admin.tenant.TenantContextResolver;
 
@@ -30,6 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final DriverJwtAuthenticationFilter driverJwtAuthFilter;
     private final AppProperties props;
     private final TenantContextResolver tenantContextResolver;
 
@@ -42,15 +44,16 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/health").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/driver/auth/login", "/api/v1/driver/auth/refresh", "/api/v1/driver/auth/forgot-password", "/api/v1/driver/auth/reset-password", "/api/callback", "/api/v1/public/**", "/api/v1/webhooks/ocpp", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/health").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/media/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint((req, res, ex) -> exceptionResolver.resolveException(req, res, null, ex))
                         .accessDeniedHandler((req, res, ex) -> exceptionResolver.resolveException(req, res, null, ex)))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(driverJwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 // Not a bean: it must run after authentication, inside the security chain.
-                .addFilterAfter(new TenantContextFilter(tenantContextResolver, exceptionResolver), JwtAuthenticationFilter.class);
+                .addFilterAfter(new TenantContextFilter(tenantContextResolver, exceptionResolver), DriverJwtAuthenticationFilter.class);
         return http.build();
     }
 

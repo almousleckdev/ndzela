@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** Alerts about one country's staff reach that country and the global admins only. */
+// Alerts about one country's staff reach that country and the global admins only.
 class NotificationCountryScopeTest extends AbstractIntegrationTest {
     @Autowired private LoginAttemptService loginAttempts;
 

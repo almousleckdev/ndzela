@@ -1,6 +1,6 @@
 # Roles and permissions
 
-Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). The frontend mirror is `frontend/src/features/access/lib/permissions.ts`
+Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). The frontend mirror is `dashboard/src/features/access/lib/permissions.ts`
 (manual sync, see findings). Roles are **shared across all countries** (Decided): the user's country, not the role, limits the data.
 
 ## Permission catalogue (Implemented)

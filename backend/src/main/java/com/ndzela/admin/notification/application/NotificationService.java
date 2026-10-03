@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/** In-app notifications */
+// In-app notifications
 @Service
 @RequiredArgsConstructor
 public class NotificationService {

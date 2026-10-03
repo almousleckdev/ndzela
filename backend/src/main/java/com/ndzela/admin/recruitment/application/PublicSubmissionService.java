@@ -1,0 +1,84 @@
+package com.ndzela.admin.recruitment.application;
+
+import com.ndzela.admin.common.exception.BusinessRuleViolationException;
+import com.ndzela.admin.config.properties.AppProperties;
+import com.ndzela.admin.country.domain.Country;
+import com.ndzela.admin.country.domain.CountryRepository;
+import com.ndzela.admin.infrastructure.storage.DocumentStorage;
+import com.ndzela.admin.recruitment.api.dto.ApplicationRequest;
+import com.ndzela.admin.recruitment.api.dto.ContactRequest;
+import com.ndzela.admin.recruitment.application.model.ApplicationUploads;
+import com.ndzela.admin.tenant.TenantHolder;
+import com.ndzela.admin.tenant.model.TenantContext;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// What visitors of the public website send.
+@Service
+@RequiredArgsConstructor
+public class PublicSubmissionService {
+    private final AppProperties props;
+    private final CountryRepository countries;
+    private final PublicRateLimiter limiter;
+    private final InquiryStore store;
+    private final DocumentStorage storage;
+
+    public void submitMessage(ContactRequest request, String visitor) {
+        if (isRobot(request.website())) {
+            return;
+        }
+        limiter.check("contact", visitor);
+        TenantHolder.callAs(country(), () -> {
+            store.saveMessage(request);
+            return null;
+        });
+    }
+
+    public void submitApplication(ApplicationRequest request, ApplicationUploads uploads, String visitor) {
+        if (isRobot(request.website())) {
+            return;
+        }
+        if (missing(uploads.photo()) || missing(uploads.licence()) || missing(uploads.id())) {
+            throw new BusinessRuleViolationException("DOCUMENTS_REQUIRED", "The photo, the driving licence and the identity document are required.");
+        }
+        limiter.check("application", visitor);
+        List<String> stored = new ArrayList<>();
+        try {
+            String photo = keep(stored, storage.save(uploads.photo(), true));
+            String licence = keep(stored, storage.save(uploads.licence(), false));
+            String id = keep(stored, storage.save(uploads.id(), false));
+            String proof = missing(uploads.addressProof()) ? null : keep(stored, storage.save(uploads.addressProof(), false));
+            TenantHolder.callAs(country(), () -> {
+                store.saveApplication(request, photo, licence, id, proof);
+                return null;
+            });
+        } catch (RuntimeException e) {
+            stored.forEach(storage::delete);
+            throw e;
+        }
+    }
+
+    private TenantContext country() {
+        Country country = countries.findByCode(props.publicSite().countryCode())
+                .orElseThrow(() -> new IllegalStateException("The public website's country does not exist: " + props.publicSite().countryCode()));
+        return TenantContext.country(country.getId());
+    }
+
+    private static boolean isRobot(String honeypot) {
+        return honeypot != null && !honeypot.isBlank();
+    }
+
+    private static boolean missing(MultipartFile file) {
+        return file == null || file.isEmpty();
+    }
+
+    private static String keep(List<String> stored, String name) {
+        stored.add(name);
+        return name;
+    }
+}

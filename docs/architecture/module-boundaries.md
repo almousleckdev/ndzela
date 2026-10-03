@@ -5,7 +5,7 @@ current deviations are listed in [findings](../findings/architecture-findings.md
 
 ## Backend (package by feature)
 
-Base package `com.ndzela.admin`. Features: `auth`, `user` (users and roles), `profile`, `notification`, `country`, `audit`, `vehicle`, `driver`; future: `contract`, `payment`, `report`. `driver` uses `vehicle` and `country` only through their application services; `audit` is called by every feature. Shared: `security`, `tenant`, `common`, `config`, `infrastructure`, `bootstrap`.
+Base package `com.ndzela.admin`. Features: `auth`, `user` (users and roles), `profile`, `notification`, `country`, `audit`, `vehicle`, `driver`, `driverapp` (the driver app's API, using `driver`, `contract`, `vehicle` and `payment` only through their application services); future: `contract`, `payment`, `report`. `driver` uses `vehicle` and `country` only through their application services; `audit` is called by every feature. Shared: `security`, `tenant`, `common`, `config`, `infrastructure`, `bootstrap`.
 
 ```
 <feature>/api          controllers + request/response DTOs (api/dto)     -> may call: same feature's application, common

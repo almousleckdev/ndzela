@@ -1,5 +1,6 @@
 package com.ndzela.admin.user.application;
 
+import com.ndzela.admin.common.text.Strings;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.auth.application.PasswordResetService;
 import com.ndzela.admin.auth.application.RefreshTokenService;
@@ -35,7 +36,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-/** Administration of user accounts. */
+// Administration of user accounts.
 @Service
 @RequiredArgsConstructor
 public class UserManagementService {
@@ -72,9 +73,9 @@ public class UserManagementService {
         User user = userRepository.save(User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(OpaqueTokens.generate()))
-                .firstName(blankToNull(request.firstName()))
-                .lastName(blankToNull(request.lastName()))
-                .phoneNumber(blankToNull(request.phoneNumber()))
+                .firstName(Strings.blankToNull(request.firstName()))
+                .lastName(Strings.blankToNull(request.lastName()))
+                .phoneNumber(Strings.blankToNull(request.phoneNumber()))
                 .status(UserStatus.MFA_SETUP)
                 .roles(roles)
                 .country(country)
@@ -102,9 +103,9 @@ public class UserManagementService {
         if (rolesChanged && actor.isSelf(user.getEmail())) {
             throw new BusinessRuleViolationException("CANNOT_MODIFY_SELF", "You cannot change your own roles.");
         }
-        user.setFirstName(blankToNull(request.firstName()));
-        user.setLastName(blankToNull(request.lastName()));
-        user.setPhoneNumber(blankToNull(request.phoneNumber()));
+        user.setFirstName(Strings.blankToNull(request.firstName()));
+        user.setLastName(Strings.blankToNull(request.lastName()));
+        user.setPhoneNumber(Strings.blankToNull(request.phoneNumber()));
         user.setRoles(newRoles);
         userRepository.save(user);
         record("USER_UPDATED", user, "roles: " + roleNames(newRoles));
@@ -113,46 +114,6 @@ public class UserManagementService {
             notifications.notify(user, "ROLES_CHANGED", "Vos rôles ont changé",
                     "Vos accès ont été mis à jour par " + actor.email() + ".");
         }
-        return UserSummary.from(user);
-    }
-
-    @Transactional
-    public UserSummary setDisabled(UUID id, boolean disabled, String reason, CurrentActor actor) {
-        User user = load(id);
-        accessPolicy.assertCanManage(actor, user);
-        if (disabled) {
-            if (actor.isSelf(user.getEmail())) {
-                throw new BusinessRuleViolationException("CANNOT_MODIFY_SELF", "You cannot disable your own account.");
-            }
-            user.setStatus(UserStatus.DISABLED);
-            user.setStatusReason(reason.trim());
-            refreshTokens.revokeAll(user.getEmail());
-            record("USER_DISABLED", user, "reason: " + reason.trim());
-        } else if (user.getStatus() == UserStatus.DISABLED) {
-            user.setStatus(user.isMfaEnabled() ? UserStatus.ACTIVE : UserStatus.MFA_SETUP);
-            user.setFailedAttempts(0);
-            user.setStatusReason(null);
-            record("USER_ENABLED", user, null);
-        }
-        return UserSummary.from(userRepository.save(user));
-    }
-
-    @Transactional
-    public UserSummary lock(UUID id, String reason, CurrentActor actor) {
-        User user = load(id);
-        accessPolicy.assertCanManage(actor, user);
-        if (actor.isSelf(user.getEmail())) {
-            throw new BusinessRuleViolationException("CANNOT_MODIFY_SELF", "You cannot block your own account.");
-        }
-        if (user.getStatus() == UserStatus.DISABLED) {
-            throw new BusinessRuleViolationException("This account is suspended. Reactivate it first.");
-        }
-        user.setStatus(UserStatus.LOCKED);
-        user.setLockExpiration(null);
-        user.setStatusReason(reason.trim());
-        userRepository.save(user);
-        refreshTokens.revokeAll(user.getEmail());
-        record("USER_LOCKED", user, "reason: " + reason.trim());
         return UserSummary.from(user);
     }
 
@@ -169,53 +130,7 @@ public class UserManagementService {
         avatarStorage.delete(user.getProfilePictureUrl());
     }
 
-    @Transactional
-    public UserSummary unlock(UUID id, CurrentActor actor) {
-        User user = load(id);
-        accessPolicy.assertCanManage(actor, user);
-        if (user.getStatus() == UserStatus.LOCKED) {
-            user.setStatus(user.isMfaEnabled() ? UserStatus.ACTIVE : UserStatus.MFA_SETUP);
-            user.setStatusReason(null);
-        }
-        user.setFailedAttempts(0);
-        user.setLockExpiration(null);
-        record("USER_UNLOCKED", user, null);
-        return UserSummary.from(userRepository.save(user));
-    }
-
-    // For a lost or replaced phone: the user must enrol a new authenticator at their next login.
-    @Transactional
-    public UserSummary resetMfa(UUID id, CurrentActor actor) {
-        User user = load(id);
-        accessPolicy.assertCanManage(actor, user);
-        if (actor.isSelf(user.getEmail())) {
-            throw new BusinessRuleViolationException("CANNOT_MODIFY_SELF", "Reset your own authenticator from Settings.");
-        }
-        user.setMfaSecret(null);
-        user.setMfaEnabled(false);
-        if (user.getStatus() == UserStatus.ACTIVE) {
-            user.setStatus(UserStatus.MFA_SETUP);
-        }
-        userRepository.save(user);
-        refreshTokens.revokeAll(user.getEmail());
-        notifications.notify(user, "MFA_RESET", "Authentificateur réinitialisé",
-                "Un administrateur a réinitialisé votre authentificateur. Vous le configurerez à la prochaine connexion.");
-        record("USER_MFA_RESET", user, null);
-        return UserSummary.from(user);
-    }
-
-    @Transactional
-    public void resendInvitation(UUID id, CurrentActor actor) {
-        User user = load(id);
-        accessPolicy.assertCanManage(actor, user);
-        if (user.getStatus() == UserStatus.DISABLED) {
-            throw new BusinessRuleViolationException("This account is disabled.");
-        }
-        passwordResetService.sendInvitation(user.getEmail());
-        record("USER_INVITATION_RESENT", user, null);
-    }
-
-    private void record(String action, User user, String details) {
+    void record(String action, User user, String details) {
         audit.record(action, "USER", user.getId().toString(), user.getEmail(), user.countryIdOrNull(), details);
     }
 
@@ -223,7 +138,7 @@ public class UserManagementService {
         return roles.stream().map(Role::getName).sorted().collect(java.util.stream.Collectors.joining(", "));
     }
 
-    private User load(UUID id) {
+    User load(UUID id) {
         return userRepository.findById(id)
                 .map(scope::requireVisible)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found."));
@@ -271,9 +186,5 @@ public class UserManagementService {
             throw new BusinessRuleViolationException("One or more roles do not exist.");
         }
         return new HashSet<>(found);
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
     }
 }

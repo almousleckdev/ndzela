@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Builds the JSON of a driver creation request with valid defaults that tests override one field at a time. */
+// Builds the JSON of a driver creation request with valid defaults that tests override one field at a time.
 public final class DriverJson {
     private static final AtomicInteger COUNTER = new AtomicInteger(1000);
     private static final ObjectMapper MAPPER = new ObjectMapper();

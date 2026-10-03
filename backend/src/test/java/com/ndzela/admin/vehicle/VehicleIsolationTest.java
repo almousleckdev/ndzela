@@ -12,7 +12,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Vehicles belong to one country: other countries cannot see or change them. */
+// Vehicles belong to one country
 class VehicleIsolationTest extends AbstractIntegrationTest {
     private User gabonManager;
     private User maliManager;

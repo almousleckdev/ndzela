@@ -1,6 +1,6 @@
 package com.ndzela.admin.driver.domain;
 
-/** How late the oldest unpaid rent is: LATE under 24 hours past its deadline, then yellow (24 h). */
+// How late the oldest unpaid rent is
 public enum ArrearsLevel {
     NONE,
     LATE,

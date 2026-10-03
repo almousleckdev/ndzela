@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** The managed list of charging stations, per country. */
+// The managed list of charging stations, per country.
 @Service
 @RequiredArgsConstructor
 public class StationService {

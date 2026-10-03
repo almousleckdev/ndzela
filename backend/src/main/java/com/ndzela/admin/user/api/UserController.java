@@ -5,6 +5,7 @@ import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.user.api.dto.CreateUserRequest;
 import com.ndzela.admin.user.api.dto.UpdateUserRequest;
 import com.ndzela.admin.user.api.dto.UserSummary;
+import com.ndzela.admin.user.application.UserAccountStateService;
 import com.ndzela.admin.user.application.UserManagementService;
 
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserController {
     private final UserManagementService users;
+    private final UserAccountStateService accountState;
 
     @GetMapping
     @PreAuthorize("hasAuthority('users:read')")
@@ -45,19 +47,19 @@ public class UserController {
     @PostMapping("/{id}/disable")
     @PreAuthorize("hasAuthority('users:deactivate')")
     public UserSummary disable(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request, Authentication authentication) {
-        return users.setDisabled(id, true, request.reason(), CurrentActor.from(authentication));
+        return accountState.setDisabled(id, true, request.reason(), CurrentActor.from(authentication));
     }
 
     @PostMapping("/{id}/enable")
     @PreAuthorize("hasAuthority('users:deactivate')")
     public UserSummary enable(@PathVariable UUID id, Authentication authentication) {
-        return users.setDisabled(id, false, null, CurrentActor.from(authentication));
+        return accountState.setDisabled(id, false, null, CurrentActor.from(authentication));
     }
 
     @PostMapping("/{id}/lock")
     @PreAuthorize("hasAuthority('users:lock')")
     public UserSummary lock(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request, Authentication authentication) {
-        return users.lock(id, request.reason(), CurrentActor.from(authentication));
+        return accountState.lock(id, request.reason(), CurrentActor.from(authentication));
     }
 
     @DeleteMapping("/{id}")
@@ -70,19 +72,19 @@ public class UserController {
     @PostMapping("/{id}/unlock")
     @PreAuthorize("hasAuthority('users:lock')")
     public UserSummary unlock(@PathVariable UUID id, Authentication authentication) {
-        return users.unlock(id, CurrentActor.from(authentication));
+        return accountState.unlock(id, CurrentActor.from(authentication));
     }
 
     @PostMapping("/{id}/reset-mfa")
     @PreAuthorize("hasAuthority('users:update')")
     public UserSummary resetMfa(@PathVariable UUID id, Authentication authentication) {
-        return users.resetMfa(id, CurrentActor.from(authentication));
+        return accountState.resetMfa(id, CurrentActor.from(authentication));
     }
 
     @PostMapping("/{id}/resend-invitation")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('users:create')")
     public void resendInvitation(@PathVariable UUID id, Authentication authentication) {
-        users.resendInvitation(id, CurrentActor.from(authentication));
+        accountState.resendInvitation(id, CurrentActor.from(authentication));
     }
 }

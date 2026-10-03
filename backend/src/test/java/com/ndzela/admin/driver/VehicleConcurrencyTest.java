@@ -7,9 +7,8 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
-/** A vehicle is ASSIGNED exactly when it has an open assignment, even when requests race. */
+// A vehicle is ASSIGNED exactly when it has an open assignment, even when requests race.
 class VehicleConcurrencyTest extends AbstractDriverTest {
     private List<Integer> race(Callable<Integer> first, Callable<Integer> second) throws Exception {
         ExecutorService pool = Executors.newFixedThreadPool(2);

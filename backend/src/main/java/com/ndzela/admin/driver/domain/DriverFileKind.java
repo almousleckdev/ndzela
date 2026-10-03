@@ -3,7 +3,7 @@ package com.ndzela.admin.driver.domain;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-/** The files kept for a driver; the URL slug names the kind. */
+// The files kept for a driver; the URL slug names the kind.
 public enum DriverFileKind {
     PHOTO("photo", true, Driver::getPhotoFile, Driver::setPhotoFile),
     LICENCE("licence", false, Driver::getLicenceFile, Driver::setLicenceFile),

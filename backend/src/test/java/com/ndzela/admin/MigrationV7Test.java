@@ -9,7 +9,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Runs the real migrations on a scratch database in two steps to prove existing users move to Gabon. */
+// Runs the real migrations on a scratch database in two steps to prove existing users move to Gabon.
 class MigrationV7Test extends AbstractIntegrationTest {
     private Flyway flywayUpTo(String version, DriverManagerDataSource dataSource) {
         return Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").target(version).load();

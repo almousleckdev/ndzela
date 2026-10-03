@@ -1,5 +1,6 @@
 package com.ndzela.admin.contract.application;
 
+import com.ndzela.admin.common.security.Actor;
 import com.ndzela.admin.contract.domain.snapshot.SnapshotBailleur;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
@@ -23,7 +24,6 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +69,7 @@ public class ContractService {
                 .startDate(terms.startDate()).endDate(terms.endDate()).billableDays(terms.billableDays())
                 .dailyRent(terms.dailyRent()).deposit(terms.deposit()).totalPrice(terms.totalPrice())
                 .snapshot(write(seed.snapshot().withBailleur(bailleur(country))))
-                .createdBy(actor())
+                .createdBy(Actor.name())
                 .build();
         try {
             contracts.saveAndFlush(contract);
@@ -94,7 +94,7 @@ public class ContractService {
         contract.setDeposit(deposit);
         contract.setRevision(contract.getRevision() + 1);
         contract.setUpdatedAt(OffsetDateTime.now());
-        contract.setUpdatedBy(actor());
+        contract.setUpdatedBy(Actor.name());
         contracts.save(contract);
         audit.record("CONTRACT_UPDATED", "CONTRACT", contract.getId().toString(), contract.getContractNumber(), contract.getCountryId(),
                 "revision " + contract.getRevision() + ", deposit " + previous.setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " -> " + deposit.toPlainString());
@@ -208,10 +208,5 @@ public class ContractService {
 
     private LocalDate today(UUID countryId) {
         return LocalDate.now(ZoneId.of(country(countryId).getTimezone()));
-    }
-
-    private static String actor() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication == null ? "system" : authentication.getName();
     }
 }

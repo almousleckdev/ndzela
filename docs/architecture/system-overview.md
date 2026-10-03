@@ -5,7 +5,7 @@
 | Component | Tech | Path | Status |
 | --- | --- | --- | --- |
 | Backend API | Java 21, Spring Boot 4.1, Spring Security 7, Spring Data JPA, Flyway | `backend/` | Implemented (admin foundation) |
-| Web admin | Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind 4, react-hook-form + zod, zustand | `frontend/` | Implemented (admin foundation) |
+| Web admin | Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind 4, react-hook-form + zod, zustand | `dashboard/` | Implemented (admin foundation) |
 | Driver mobile app | **Flutter + Riverpod** | not in this repo (yet) | Decided, not started; see [mobile](../mobile/architecture.md) |
 | PostgreSQL 16 | system of record | `docker-compose.yml` (dev) | Implemented |
 | Redis 7 | short-lived auth state (login challenges, OTP, refresh tokens, reset links, TOTP replay guard) | `docker-compose.yml` (dev) | Implemented |

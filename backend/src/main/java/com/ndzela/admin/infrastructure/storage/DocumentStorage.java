@@ -15,7 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
-/** Private files (driver photos and documents): never served statically, the type comes from the bytes. */
+// Private files (driver photos and documents)
 @Slf4j
 @Component
 public class DocumentStorage {

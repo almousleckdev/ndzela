@@ -18,7 +18,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.UUID;
 
-/** Writes the append-only audit trail. */
+// Writes the append-only audit trail.
 @Service
 @RequiredArgsConstructor
 public class AuditService {

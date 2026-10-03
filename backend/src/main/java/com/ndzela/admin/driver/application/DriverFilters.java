@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Locale;
 
-/** The drivers list filters, shared by the table and the export. */
+// The drivers list filters, shared by the table and the export.
 @Component
 @RequiredArgsConstructor
 class DriverFilters {

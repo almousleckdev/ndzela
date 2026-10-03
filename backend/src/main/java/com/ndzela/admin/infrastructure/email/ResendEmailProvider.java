@@ -14,7 +14,7 @@ import org.thymeleaf.context.Context;
 import java.util.List;
 import java.util.Map;
 
-/** Sends email through the Resend HTTPS API (port 443), for networks that block outbound SMTP. */
+// Sends email through the Resend HTTPS API (port 443), for networks that block outbound SMTP.
 @Slf4j
 @Service
 @ConditionalOnProperty(name = "app.mail.provider", havingValue = "resend")

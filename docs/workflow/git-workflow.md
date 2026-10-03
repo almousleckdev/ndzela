@@ -1,6 +1,6 @@
 # Development and Git workflow
 
-**Status of these conventions: Proposed as the working default: confirm or amend with the user.** The repository is one Git repo (monorepo) containing `backend/` and `frontend/`; the first commit is `chore: initial commit`.
+**Status of these conventions: Proposed as the working default: confirm or amend with the user.** The repository is one Git repo (monorepo) containing `backend/` and `dashboard/`; the first commit is `chore: initial commit`.
 
 ## Branches
 - `main` is always releasable. Work happens on short-lived branches: `feat/<topic>`, `fix/<topic>`, `chore/<topic>`, `docs/<topic>`.

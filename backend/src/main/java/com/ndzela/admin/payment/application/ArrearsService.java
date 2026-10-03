@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** Runs the arrears evaluation over every active contract of every active country. */
+// Runs the arrears evaluation over every active contract of every active country.
 @Slf4j
 @Service
 @RequiredArgsConstructor

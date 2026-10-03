@@ -4,5 +4,6 @@ public enum LedgerEntryType {
     PAYMENT,
     REVERSAL,
     WAIVER,
-    PENALTY
+    PENALTY,
+    FEE
 }
