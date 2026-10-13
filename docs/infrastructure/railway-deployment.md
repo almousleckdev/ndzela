@@ -1,6 +1,6 @@
 # Deploying the backend to Railway
 
-Decision: [ADR-0018](../adr/0018-railway-hosting-and-domains.md). Domains: the API at `api.ndzela.com`, the web admin later at `dashboard.ndzela.com` (the DNS is at PlanetHoster).
+Decision: [ADR-0018](../adr/0018-railway-hosting-and-domains.md). Domains: the public website `ndzela.com` (and `www`), the web admin later at `dashboard.ndzela.com`, the API at `api.ndzela.com` (the DNS is at PlanetHoster; leave the existing records of `ndzela.com`, `www` and the mail alone).
 
 ## Services (one Railway project, one `production` environment)
 | Service | What | Notes |
@@ -25,7 +25,8 @@ Reference variables (`${{Service.NAME}}`) are filled by Railway. **Generate new 
 | `COOKIE_SECURE` | `true` |
 | `SWAGGER_ENABLED` | `false` |
 | `FORWARD_HEADERS_STRATEGY` | `native` (Railway's proxy sets `X-Forwarded-*`; the app is only reachable through it) |
-| `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS` | `https://dashboard.ndzela.com` (exact origin, no trailing slash) |
+| `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS` | `https://dashboard.ndzela.com` (exact origin, no trailing slash). **Only the web admin goes here**: these origins may send the sign-in cookie |
+| `PUBLIC_SITE_ORIGINS` | `https://ndzela.com,https://www.ndzela.com`: the public website, which may only post its forms to `/api/v1/public`, never with the cookie (see [ADR-0018](../adr/0018-railway-hosting-and-domains.md)) |
 | `MAIL_PROVIDER`, `RESEND_API_KEY`, `MAIL_FROM` | `resend`, the Resend key, a sender on the verified domain (for example `no-reply@ndzela.com`). Railway's smaller plans block outgoing SMTP, so do not use `smtp`; never `log` |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | From the console. `CLOUDINARY_ROOT_FOLDER=ndzela-prod` |
 | `OCPP_FLEET_API_KEY`, `OCPP_WEBHOOK_SECRET`, `OCPP_WEBHOOK_HEADER`, `OCPP_COUNTRY` | The Fleet key, a new random webhook secret, `X-Webhook-Secret`, `GA` |
