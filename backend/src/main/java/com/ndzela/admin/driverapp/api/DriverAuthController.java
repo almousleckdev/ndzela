@@ -11,6 +11,7 @@ import com.ndzela.admin.driverapp.api.dto.DriverTokens;
 import com.ndzela.admin.driverapp.application.DriverAuthService;
 import com.ndzela.admin.security.model.DriverPrincipal;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -37,8 +38,8 @@ public class DriverAuthController {
 
     @PostMapping("/auth/forgot-password")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        passwordReset.requestCode(request.identifier());
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest http) {
+        passwordReset.requestCode(request.identifier(), http.getRemoteAddr());
     }
 
     @PostMapping("/auth/reset-password")

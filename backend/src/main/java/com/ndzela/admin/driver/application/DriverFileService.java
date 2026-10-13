@@ -3,6 +3,7 @@ package com.ndzela.admin.driver.application;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
+import com.ndzela.admin.country.application.CountryService;
 import com.ndzela.admin.driver.application.model.DriverFileContent;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverFileKind;
@@ -27,18 +28,20 @@ import static com.ndzela.admin.driver.application.DriverAssignmentService.label;
 public class DriverFileService {
     private final DriverRepository drivers;
     private final DocumentStorage storage;
+    private final CountryService countries;
     private final AuditService audit;
 
-    public List<String> attach(Driver driver, MultipartFile photo, MultipartFile licence, MultipartFile id, MultipartFile addressProof) {
+    public List<String> attach(Driver driver, UUID countryId, MultipartFile photo, MultipartFile licence, MultipartFile id, MultipartFile addressProof) {
         if (photo == null || photo.isEmpty()) {
             throw new BusinessRuleViolationException("PHOTO_REQUIRED", "A profile picture is required.");
         }
         List<String> written = new ArrayList<>();
+        String countryCode = countries.codeOf(countryId);
         try {
-            put(driver, DriverFileKind.PHOTO, photo, written);
-            put(driver, DriverFileKind.LICENCE, licence, written);
-            put(driver, DriverFileKind.ID, id, written);
-            put(driver, DriverFileKind.ADDRESS_PROOF, addressProof, written);
+            put(driver, DriverFileKind.PHOTO, photo, countryCode, written);
+            put(driver, DriverFileKind.LICENCE, licence, countryCode, written);
+            put(driver, DriverFileKind.ID, id, countryCode, written);
+            put(driver, DriverFileKind.ADDRESS_PROOF, addressProof, countryCode, written);
         } catch (RuntimeException e) {
             discard(written);
             throw e;
@@ -60,7 +63,7 @@ public class DriverFileService {
     public void replace(UUID driverId, DriverFileKind kind, MultipartFile file) {
         Driver driver = load(driverId);
         String previous = kind.fileOf(driver);
-        String stored = storage.save(file, kind.imageOnly());
+        String stored = storage.save(file, kind.imageOnly(), countries.codeOf(driver.getCountryId()));
         kind.set(driver, stored);
         try {
             drivers.saveAndFlush(driver);
@@ -98,11 +101,11 @@ public class DriverFileService {
         return new DriverFileContent(resource, DocumentStorage.contentType(name));
     }
 
-    private void put(Driver driver, DriverFileKind kind, MultipartFile file, List<String> written) {
+    private void put(Driver driver, DriverFileKind kind, MultipartFile file, String countryCode, List<String> written) {
         if (file == null || file.isEmpty()) {
             return;
         }
-        String stored = storage.save(file, kind.imageOnly());
+        String stored = storage.save(file, kind.imageOnly(), countryCode);
         written.add(stored);
         kind.set(driver, stored);
     }

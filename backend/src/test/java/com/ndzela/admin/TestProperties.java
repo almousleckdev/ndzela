@@ -12,6 +12,7 @@ import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.config.properties.DriverAppProperties;
 import com.ndzela.admin.config.properties.OcppProperties;
 import com.ndzela.admin.config.properties.PublicSiteProperties;
+import com.ndzela.admin.config.properties.RateLimitProperties;
 import com.ndzela.admin.config.properties.PvitProperties;
 
 import java.time.Duration;
@@ -35,11 +36,12 @@ public final class TestProperties {
                 new BruteForceProperties(5, Duration.ofMinutes(30)),
                 new MfaProperties("NDZela Test", MFA_KEY),
                 new BootstrapProperties("admin@test.com", "Str0ng!Pass"),
-                new StorageProperties(System.getProperty("java.io.tmpdir") + "/ndzela-test-uploads"),
+                new StorageProperties("testcloud", "test-key", "test-secret", "ndzela-test", Duration.ofSeconds(5)),
                 new PvitProperties("https://pvit.test", "ACC_TEST", "test-password", "secretcode", "paymentcode", "statuscode", "feescode", "kyccode", "CB001", "NDZELA", "LOYER", "CUSTOMER",
                         null, Duration.ofSeconds(5), Duration.ofMinutes(3), Duration.ofMinutes(30), false),
                 new DriverAppProperties(3),
                 new PublicSiteProperties("GA", 5),
-                new OcppProperties("https://ocpp.test", "test-key", "whsecret", "X-Webhook-Secret", "GA"));
+                new OcppProperties("https://ocpp.test", "test-key", "whsecret", "X-Webhook-Secret", "GA", false, Duration.ofMinutes(1), 500, Duration.ofSeconds(5)),
+                new RateLimitProperties(10, 3));
     }
 }

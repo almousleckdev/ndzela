@@ -111,7 +111,7 @@ public class DriverService {
         Driver driver = Driver.builder().status(DriverStatus.ACTIVE).mustChangePassword(true).build();
         records.apply(driver, personal, request.emergency(), request.training(), center);
         driver.setPasswordHash(passwordEncoder.encode(request.password()));
-        List<String> written = fileService.attach(driver, uploads.photo(), uploads.licence(), uploads.id(), uploads.addressProof());
+        List<String> written = fileService.attach(driver, countryId, uploads.photo(), uploads.licence(), uploads.id(), uploads.addressProof());
         try {
             Driver saved = records.saveChecked(driver);
             audit.record("DRIVER_CREATED", "DRIVER", saved.getId().toString(), label(saved), saved.getCountryId(), null);

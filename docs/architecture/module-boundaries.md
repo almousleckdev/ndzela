@@ -24,7 +24,7 @@ Rules:
    Cross-feature references between tables use IDs (e.g. `notification` stores `user_id`, not a `User` entity).
    *Allowed exception:* the `user.domain` types (`User`, `Role`, `Permission`, `UserStatus`) are the platform's identity model and may be
    read by `auth`, `profile`, `security`, `notification`.
-3. **No cycles between features' application layers.** If A needs B and B needs A, extract the shared part.
+3. **No cycles between features' application layers.** If A needs B and B needs A, extract the shared part. (`charging` uses `ocpp`: it serves the sessions list marked with the recharge that paid each one, and checks a session before recording its payment; `ocpp` knows nothing about `charging`.)
 4. **`common`, `config`, `infrastructure` never depend on a feature.** `infrastructure` holds adapters to the outside (email, storage,
    encryption); it exposes an interface or a small class, and features depend on it, never the reverse.
 5. **`security` is cross-cutting infrastructure**: it may load a user (`user.domain`) but must not depend on feature application

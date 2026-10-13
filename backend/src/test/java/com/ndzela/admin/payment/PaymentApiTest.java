@@ -129,6 +129,45 @@ class PaymentApiTest extends AbstractDriverTest {
     }
 
     @Test
+    void aTransactionReferenceIsRecordedOnceUntilItsPaymentIsReversed() throws Exception {
+        String entry = entryId(postJson("/api/v1/payments", payment(driver, 5000, "AIRTEL_MONEY", "AM-777", UUID.randomUUID()), manager).andExpect(status().isCreated()));
+
+        postJson("/api/v1/payments", payment(driver, 5000, "AIRTEL_MONEY", "AM-777", UUID.randomUUID()), manager)
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("PAYMENT_REFERENCE_ALREADY_USED"));
+        postJson("/api/v1/payments", payment(driver, 5000, "AIRTEL_MONEY", " am-777 ", UUID.randomUUID()), manager)
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("PAYMENT_REFERENCE_ALREADY_USED"));
+        postJson("/api/v1/payments", payment(driver, 5000, "MOOV_MONEY", "AM-777", UUID.randomUUID()), manager).andExpect(status().isCreated());
+        assertEquals(2, rows("select count(*) from ledger_entries"));
+
+        postJson("/api/v1/payments/" + entry + "/reverse", "{\"reason\":\"Mauvais chauffeur\"}", admin).andExpect(status().isOk());
+        postJson("/api/v1/payments", payment(driver, 5000, "AIRTEL_MONEY", "AM-777", UUID.randomUUID()), manager).andExpect(status().isCreated());
+    }
+
+    @Test
+    void simultaneousPaymentsWithTheSameReferenceRecordOnlyOne() throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(4);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<Integer>> results = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            Callable<Integer> call = () -> {
+                start.await();
+                return postJson("/api/v1/payments", payment(driver, 1000, "AIRTEL_MONEY", "AM-RACE", UUID.randomUUID()), manager).andReturn().getResponse().getStatus();
+            };
+            results.add(pool.submit(call));
+        }
+        start.countDown();
+        int created = 0;
+        for (Future<Integer> result : results) {
+            int status = result.get();
+            assertTrue(status == 201 || status == 422, "unexpected status " + status);
+            created += status == 201 ? 1 : 0;
+        }
+        pool.shutdown();
+        assertEquals(1, created);
+        assertEquals(1, rows("select count(*) from ledger_entries"));
+    }
+
+    @Test
     void aDriverWithoutAnActiveContractCannotPay() throws Exception {
         postJson("/api/v1/drivers/" + driver + "/vehicle/remove", REASON, manager).andExpect(status().isOk());
         pay(manager, 1000).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("NO_ACTIVE_CONTRACT"));

@@ -70,6 +70,15 @@ class PvitClientTest {
     }
 
     @Test
+    void anAmountThatCannotBeReadIsAProviderError() {
+        expectKeyRenewal();
+        server.expect(once(), requestTo(BASE + "/T/status?transactionId=NDZ123&accountOperationCode=ACC_TEST&transactionOperation=PAYMENT"))
+                .andRespond(withSuccess("{\"status\":\"SUCCESS\",\"amount\":\"abc\",\"merchant_reference_id\":\"NDZ123\"}", MediaType.APPLICATION_JSON));
+
+        assertThrows(PvitException.class, () -> client.transaction("NDZ123"));
+    }
+
+    @Test
     void theKeyIsRenewedOnceAndReusedAcrossCalls() {
         expectKeyRenewal();
         server.expect(once(), requestTo(BASE + "/T/status?transactionId=NDZ123&accountOperationCode=ACC_TEST&transactionOperation=PAYMENT")).andExpect(header("X-Secret", "sk_test"))

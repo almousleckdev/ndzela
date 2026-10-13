@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 // Records what drivers pay and the corrections (reversals, waivers).
@@ -62,8 +63,13 @@ public class PaymentService {
             throw new BusinessRuleViolationException("PAYMENT_REFERENCE_REQUIRED", "The transaction reference is required.");
         }
         ContractResponse contract = activeContract(driver);
+        String reference = Strings.blankToNull(request.reference());
+        ledger.lockReference(driver.countryId() + ":" + request.method() + ":" + reference.toLowerCase(Locale.ROOT));
+        if (ledger.existsActivePayment(request.method(), reference)) {
+            throw new BusinessRuleViolationException("PAYMENT_REFERENCE_ALREADY_USED", "This transaction reference has already been recorded.");
+        }
         LedgerEntry entry = save(entry(driver, contract, LedgerEntryType.PAYMENT, request.amount())
-                .method(request.method()).reference(Strings.blankToNull(request.reference())).requestId(request.requestId()).recordedBy(recordedBy).build());
+                .method(request.method()).reference(reference).requestId(request.requestId()).recordedBy(recordedBy).build());
         audit.record("PAYMENT_RECORDED", "DRIVER", driver.id().toString(), driver.fullName(), driver.countryId(),
                 request.amount().toPlainString() + " " + request.method() + (entry.getReference() == null ? "" : ", ref " + entry.getReference()));
         return result(entry, driver, contract);

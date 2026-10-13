@@ -22,6 +22,11 @@ public class CountryService {
     }
 
     @Transactional(readOnly = true)
+    public String codeOf(UUID countryId) {
+        return countries.findById(countryId).orElseThrow().getCode();
+    }
+
+    @Transactional(readOnly = true)
     public java.util.Map<UUID, java.time.LocalDate> todayByCountry() {
         java.util.Map<UUID, java.time.LocalDate> today = new java.util.HashMap<>();
         countries.findAllByActiveTrueOrderByNameAsc().forEach(c -> today.put(c.getId(), java.time.LocalDate.now(ZoneId.of(c.getTimezone()))));

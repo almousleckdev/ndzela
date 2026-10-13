@@ -16,6 +16,7 @@ import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
 import { KpiBand, Page, PageHead, Panel, Toolbar, type Kpi } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
+import { usePolling } from "@/hooks/use-polling";
 import { useToast } from "@/hooks/use-toast";
 import { describeRange, NO_RANGE, rangeOf } from "@/lib/date-range";
 import { formatFcfa } from "@/lib/money";
@@ -29,7 +30,7 @@ import { RecordRechargeDialog } from "@/features/charging/components/record-rech
 import { SessionsTab } from "@/features/charging/components/sessions-tab";
 import { StationsDialog } from "@/features/charging/components/stations-dialog";
 import { chargingService } from "@/features/charging/services/charging.service";
-import type { Recharge } from "@/features/charging/types";
+import type { ChargingSessionRow, Recharge } from "@/features/charging/types";
 import { METHOD_LABELS } from "@/features/payments/lib/payment-labels";
 
 const col = columnsFor<Recharge>();
@@ -43,11 +44,13 @@ function ChargingContent() {
   const list = useAsync(() => chargingService.recharges({ q: query.q, from: range.from, to: range.to }, query.page, query.size, query.sort), [query.q, range.from, range.to, query.page, query.size, query.sort]);
   const summary = useAsync(chargingService.summary, []);
   const [recording, setRecording] = useState(false);
+  const [recordingSession, setRecordingSession] = useState<ChargingSessionRow | null>(null);
   const [stationsOpen, setStationsOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [tab, setTab] = useState<"recharges" | "sessions">("recharges");
   const [cancelling, setCancelling] = useState<Recharge | null>(null);
   const refresh = () => { list.reload(); summary.reload(); };
+  usePolling(refresh, 10000);
   const s = summary.data;
   const multiDay = range.from !== range.to;
 
@@ -95,7 +98,7 @@ function ChargingContent() {
         )}
       />
       <Tabs tabs={[{ value: "recharges" as const, label: "Recharges" }, { value: "sessions" as const, label: "Sessions du réseau" }]} value={tab} onChange={setTab} label="Recharge énergie" />
-      {tab === "sessions" ? <Panel><SessionsTab /></Panel> : <>
+      {tab === "sessions" ? <Panel><SessionsTab onRecord={setRecordingSession} /></Panel> : <>
       <KpiBand items={kpis} />
       <Panel>
         <Toolbar start={(
@@ -112,6 +115,7 @@ function ChargingContent() {
       </>}
 
       {recording && <RecordRechargeDialog onClose={() => setRecording(false)} onSaved={() => { setRecording(false); query.setRange(rangeOf("today")); refresh(); }} />}
+      {recordingSession && <RecordRechargeDialog session={recordingSession} onClose={() => setRecordingSession(null)} onSaved={() => { setRecordingSession(null); summary.reload(); list.reload(); }} />}
       {stationsOpen && <StationsDialog onClose={() => setStationsOpen(false)} />}
       {exporting && <ExportDialog day={range.to || format(new Date(), "yyyy-MM-dd")} onClose={() => setExporting(false)} />}
       {cancelling && (

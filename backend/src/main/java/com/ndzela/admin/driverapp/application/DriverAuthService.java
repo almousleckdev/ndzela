@@ -79,11 +79,14 @@ public class DriverAuthService {
 
     @Transactional
     public DriverTokens changePassword(UUID driverId, String currentPassword, String newPassword) {
-        Driver driver = drivers.findForUpdate(driverId).orElseThrow();
+        // Read without the row lock: the failure is counted in its own transaction, which locks the same row.
+        Driver driver = drivers.findById(driverId).orElseThrow();
+        attempts.assertNotLocked(driver);
         if (!encoder.matches(currentPassword, driver.getPasswordHash())) {
             attempts.failed(driverId);
             throw new BusinessRuleViolationException("PASSWORD_INCORRECT", "The current password is wrong.");
         }
+        driver = drivers.findForUpdate(driverId).orElseThrow();
         if (encoder.matches(newPassword, driver.getPasswordHash())) {
             throw new BusinessRuleViolationException("PASSWORD_UNCHANGED", "The new password must differ from the current one.");
         }

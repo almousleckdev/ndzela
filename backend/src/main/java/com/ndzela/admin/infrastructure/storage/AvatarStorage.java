@@ -1,41 +1,33 @@
 package com.ndzela.admin.infrastructure.storage;
 
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
+import com.ndzela.admin.common.exception.StorageUnavailableException;
 import com.ndzela.admin.config.properties.AppProperties;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-// Stores profile pictures on disk.
+// Profile pictures: public CDN images under <root>/<country or global>/avatars/. The database keeps the picture's URL.
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AvatarStorage {
-    public static final String URL_PREFIX = "/media/avatars/";
     private static final long MAX_BYTES = 2 * 1024 * 1024;
+    private static final String GLOBAL = "global";
 
-    private final Path directory;
+    private final CloudinaryClient cloud;
+    private final AppProperties props;
 
-    public AvatarStorage(AppProperties props) {
-        this.directory = Path.of(props.storage().uploadDir()).toAbsolutePath().normalize().resolve("avatars");
-        try {
-            Files.createDirectories(directory);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot create upload directory " + directory, e);
-        }
-    }
-
-    public Path rootDirectory() {
-        return directory.getParent();
-    }
-
-    public String save(MultipartFile file) {
+    public String save(MultipartFile file, String countryCode) {
         if (file == null || file.isEmpty()) {
             throw new BusinessRuleViolationException("INVALID_IMAGE", "No file received.");
         }
@@ -44,28 +36,37 @@ public class AvatarStorage {
         }
         try {
             byte[] bytes = file.getBytes();
-            String extension = detectExtension(bytes);
-            String name = UUID.randomUUID() + "." + extension;
-            Files.write(directory.resolve(name), bytes);
-            return URL_PREFIX + name;
+            detectExtension(bytes);
+            String folder = countryCode == null ? GLOBAL : countryCode.toLowerCase(Locale.ROOT);
+            return cloud.uploadPublicImage(bytes, props.storage().rootFolder() + "/" + folder + "/avatars/" + UUID.randomUUID());
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to store avatar", e);
+            throw new UncheckedIOException("Failed to read the uploaded avatar", e);
         }
     }
 
-    public void delete(String urlPath) {
-        if (urlPath == null || !urlPath.startsWith(URL_PREFIX)) {
-            return;
-        }
-        Path target = directory.resolve(urlPath.substring(URL_PREFIX.length())).normalize();
-        if (!target.startsWith(directory)) {
+    // Best effort, and only for pictures this application stored: any other URL is left alone.
+    public void delete(String url) {
+        String publicId = publicIdOf(url);
+        if (publicId == null) {
             return;
         }
         try {
-            Files.deleteIfExists(target);
-        } catch (IOException e) {
-            log.warn("Could not delete old avatar {}", target, e);
+            cloud.deletePublicImage(publicId);
+        } catch (StorageUnavailableException e) {
+            log.warn("Could not delete the old avatar {}", publicId, e);
         }
+    }
+
+    String publicIdOf(String url) {
+        if (url == null) {
+            return null;
+        }
+        String prefix = "https://res.cloudinary.com/" + props.storage().cloudName() + "/image/upload/";
+        if (!url.startsWith(prefix)) {
+            return null;
+        }
+        Matcher match = Pattern.compile("(?:v\\d+/)?(" + Pattern.quote(props.storage().rootFolder()) + "/[A-Za-z0-9_/-]+)\\.[a-z]+").matcher(url.substring(prefix.length()));
+        return match.matches() ? match.group(1) : null;
     }
 
     private static String detectExtension(byte[] b) {

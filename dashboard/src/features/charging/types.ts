@@ -35,6 +35,7 @@ export interface Recharge {
   reason: string | null;
   recordedBy: string;
   createdAt: string;
+  sessionId: string | null;
 }
 
 export interface ChargingSummary {
@@ -57,6 +58,8 @@ export interface RecordRechargeInput {
   batteryBefore: number;
   batteryAfter: number;
   kwh?: number;
+  // The network session this pays for, when recorded from one
+  sessionId?: string;
   // Generated once per form
   requestId: string;
 }
@@ -77,4 +80,9 @@ export interface ChargingSessionRow {
   stopReason: string | null;
   socBefore: number | null;
   socAfter: number | null;
+  durationSeconds: number | null;
+  pricePerKwh: number | null;
+  powerKw: number | null;
+  // The recharge that recorded its payment
+  rechargeId: string | null;
 }

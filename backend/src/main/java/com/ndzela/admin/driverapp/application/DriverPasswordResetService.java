@@ -2,6 +2,8 @@ package com.ndzela.admin.driverapp.application;
 
 import com.ndzela.admin.auth.application.OtpService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
+import com.ndzela.admin.common.ratelimit.RateLimiter;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.country.application.CountryBrand;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,9 +29,12 @@ public class DriverPasswordResetService {
     private final DriverRepository drivers;
     private final OtpService otp;
     private final EmailProvider email;
+    private final RateLimiter limiter;
+    private final AppProperties props;
 
     // Not transactional: the country is known only after the lookup.
-    public void requestCode(String identifier) {
+    public void requestCode(String identifier, String address) {
+        limiter.check("reset-address", address, props.rateLimit().passwordResetPerAddress(), Duration.ofHours(1));
         LoginCandidate candidate = auth.findCandidate(identifier.trim());
         if (candidate == null) {
             return;

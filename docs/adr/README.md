@@ -21,4 +21,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0014](0014-pvit-mobile-money-payments.md) | Mobile-money payments through PVit: the callback is a hint, PVit's status API is the truth | Accepted |
 | [0015](0015-public-website.md) | The public website is a separate Next.js project (`web/`), static-first, no admin code | Accepted |
 
+| [0016](0016-cloudinary-file-storage.md) | Files live in Cloudinary: private assets read through the backend, public CDN images only for profile pictures | Accepted |
+| [0017](0017-ocpp-sessions-from-the-fleet-api-sync.md) | OCPP sessions come from the Fleet API incremental sync; webhooks only ask for a sync | Accepted |
+
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

@@ -1,0 +1,97 @@
+package com.ndzela.admin.support;
+
+import com.ndzela.admin.config.properties.OcppProperties;
+import com.ndzela.admin.infrastructure.ocpp.FleetMetering;
+import com.ndzela.admin.infrastructure.ocpp.FleetPage;
+import com.ndzela.admin.infrastructure.ocpp.FleetSession;
+import com.ndzela.admin.infrastructure.ocpp.OcppFleetClient;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+// The Fleet API in memory: pages are served by the cursor they are asked with ("" is the first request).
+public class FakeFleetClient extends OcppFleetClient {
+    private final Map<String, FleetPage> pages = new HashMap<>();
+    private final List<String> asked = new ArrayList<>();
+    private final Map<String, FleetMetering> readings = new HashMap<>();
+    private final List<String> meteringAsked = new ArrayList<>();
+    private RuntimeException failure;
+    private RuntimeException meteringFailure;
+
+    public FakeFleetClient(OcppProperties props) {
+        super(null, props, null);
+    }
+
+    @Override
+    public FleetPage sync(String cursor, int limit) {
+        asked.add(cursor == null ? "" : cursor);
+        if (failure != null) {
+            throw failure;
+        }
+        FleetPage page = pages.get(cursor == null ? "" : cursor);
+        return page != null ? page : new FleetPage(List.of(), cursor, false);
+    }
+
+    @Override
+    public FleetMetering metering(String transactionId) {
+        meteringAsked.add(transactionId);
+        if (meteringFailure != null) {
+            throw meteringFailure;
+        }
+        return readings.get(transactionId);
+    }
+
+    public void serveMetering(String transactionId, Integer stateOfChargePercent) {
+        readings.put(transactionId, new FleetMetering(stateOfChargePercent, null));
+    }
+
+    public void serveMetering(String transactionId, Integer stateOfChargePercent, String powerKw) {
+        readings.put(transactionId, new FleetMetering(stateOfChargePercent, new BigDecimal(powerKw)));
+    }
+
+    public void failMeteringWith(RuntimeException exception) {
+        this.meteringFailure = exception;
+    }
+
+    public List<String> meteringAsked() {
+        return meteringAsked;
+    }
+
+    public void serve(String cursor, FleetPage page) {
+        pages.put(cursor, page);
+    }
+
+    public void failWith(RuntimeException exception) {
+        this.failure = exception;
+    }
+
+    public List<String> asked() {
+        return asked;
+    }
+
+    public void clear() {
+        pages.clear();
+        asked.clear();
+        readings.clear();
+        meteringAsked.clear();
+        failure = null;
+        meteringFailure = null;
+    }
+
+    /** A session that started `startedMinutesAgo` minutes ago, and ended `endedMinutesAgo` minutes ago (null: still running). */
+    public static FleetSession recent(String transactionId, int startedMinutesAgo, Integer endedMinutesAgo) {
+        OffsetDateTime now = OffsetDateTime.now();
+        return new FleetSession(transactionId, "DY202609110007", 2, "Z-TAG", endedMinutesAgo == null ? "CHARGING" : "COMPLETED", now.minusMinutes(startedMinutesAgo),
+                endedMinutesAgo == null ? null : now.minusMinutes(endedMinutesAgo), new BigDecimal("3.2"), null, null, 1120L, "XAF", 0, 350L, now, "{\"transactionId\":" + transactionId + "}");
+    }
+
+    public static FleetSession session(String transactionId, String status, String energyKwh, Long costMinor, String updatedAt) {
+        return new FleetSession(transactionId, "DY202609110007", 1, "Z-TAG", status, OffsetDateTime.parse("2026-10-04T08:00:00Z"),
+                "COMPLETED".equals(status) ? OffsetDateTime.parse("2026-10-04T08:40:00Z") : null, new BigDecimal(energyKwh), 2400, "EVDisconnected", costMinor, "XAF", 0, 350L,
+                OffsetDateTime.parse(updatedAt), "{\"transactionId\":" + transactionId + "}");
+    }
+}

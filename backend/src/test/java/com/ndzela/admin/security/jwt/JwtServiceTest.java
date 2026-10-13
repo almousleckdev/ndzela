@@ -21,7 +21,7 @@ class JwtServiceTest {
     private static JwtService serviceWith(JwtProperties jwt) {
         AppProperties base = TestProperties.create();
         return new JwtService(new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), jwt, base.auth(),
-                base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), base.storage(), base.pvit(), base.driverApp(), base.publicSite(), base.ocpp()));
+                base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), base.storage(), base.pvit(), base.driverApp(), base.publicSite(), base.ocpp(), base.rateLimit()));
     }
 
     @Test

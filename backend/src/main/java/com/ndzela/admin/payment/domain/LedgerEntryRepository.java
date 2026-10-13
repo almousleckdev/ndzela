@@ -34,4 +34,13 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID>,
 
     @Query("select e.driverId, max(e.createdAt) from LedgerEntry e where e.type = com.ndzela.admin.payment.domain.LedgerEntryType.PAYMENT and e.driverId in :driverIds group by e.driverId")
     List<Object[]> lastPaymentOf(@Param("driverIds") Collection<UUID> driverIds);
+
+    // Serialises recording the same reference, whichever driver it is recorded for
+    @Query(value = "select count(*) from (select pg_advisory_xact_lock(hashtextextended(:key, 0))) locked", nativeQuery = true)
+    long lockReference(@Param("key") String key);
+
+    // A reference stays taken until its payment is reversed
+    @Query("select count(e) > 0 from LedgerEntry e where e.type = com.ndzela.admin.payment.domain.LedgerEntryType.PAYMENT and e.method = :method "
+            + "and lower(e.reference) = lower(:reference) and not exists (select r.id from LedgerEntry r where r.reversesEntryId = e.id)")
+    boolean existsActivePayment(@Param("method") PaymentMethod method, @Param("reference") String reference);
 }

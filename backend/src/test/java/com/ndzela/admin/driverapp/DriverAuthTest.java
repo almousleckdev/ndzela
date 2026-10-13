@@ -80,6 +80,21 @@ class DriverAuthTest extends AbstractDriverAppTest {
     }
 
     @Test
+    void wrongCurrentPasswordsOnThePasswordChangeLockTheDriverToo() throws Exception {
+        String token = accessToken();
+        for (int i = 0; i < 5; i++) {
+            mvc.perform(put("/api/v1/driver/me/password").header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"currentPassword\":\"nope\",\"newPassword\":\"Another123\"}"))
+                    .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("PASSWORD_INCORRECT"));
+        }
+        assertEquals(5, rows("select failed_login_attempts from drivers"));
+        mvc.perform(put("/api/v1/driver/me/password").header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"currentPassword\":\"" + DRIVER_PASSWORD + "\",\"newPassword\":\"Another123\"}"))
+                .andExpect(status().isLocked()).andExpect(jsonPath("$.code").value("ACCOUNT_LOCKED"));
+        login(email, DRIVER_PASSWORD).andExpect(status().isLocked());
+    }
+
+    @Test
     void refreshRotatesAndLogoutRevokes() throws Exception {
         String login = login(email, DRIVER_PASSWORD).andReturn().getResponse().getContentAsString();
         String refresh = JsonPath.read(login, "$.refreshToken");

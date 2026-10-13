@@ -64,7 +64,7 @@ public class ProfileService {
     public String updatePicture(String email, MultipartFile file) {
         User user = load(email);
         String previous = user.getProfilePictureUrl();
-        user.setProfilePictureUrl(avatarStorage.save(file));
+        user.setProfilePictureUrl(avatarStorage.save(file, user.getCountry() == null ? null : user.getCountry().getCode()));
         userRepository.save(user);
         avatarStorage.delete(previous);
         return user.getProfilePictureUrl();

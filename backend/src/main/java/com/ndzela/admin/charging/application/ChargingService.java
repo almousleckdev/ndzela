@@ -11,6 +11,8 @@ import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.driver.api.dto.DriverResponse;
 import com.ndzela.admin.driver.application.DriverService;
+import com.ndzela.admin.ocpp.api.SessionRow;
+import com.ndzela.admin.ocpp.application.OcppSessionQueryService;
 import com.ndzela.admin.payment.application.PaymentOperatorService;
 import com.ndzela.admin.tenant.TenantHolder;
 
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 // Records recharges paid at the station and their cancellation.
@@ -33,6 +36,7 @@ public class ChargingService {
     private final ChargingQueryService queries;
     private final AuditService audit;
     private final PaymentOperatorService operators;
+    private final OcppSessionQueryService ocppSessions;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -59,6 +63,7 @@ public class ChargingService {
         if (request.reference() == null || request.reference().isBlank()) {
             throw new BusinessRuleViolationException("PAYMENT_REFERENCE_REQUIRED", "The transaction reference is required.");
         }
+        String sessionNote = checkSession(request.sessionId());
         UUID driverId = null;
         if (request.vehicleId() != null) {
             DriverResponse driver = driverService.driverOfVehicle(request.vehicleId())
@@ -68,10 +73,10 @@ public class ChargingService {
         ChargingEntry saved = entries.saveAndFlush(ChargingEntry.builder().type(ChargingEntryType.RECHARGE).vehicleId(request.vehicleId()).driverId(driverId)
                 .publicLabel(hasPublic ? request.publicLabel().trim() : null).stationId(request.stationId()).amount(request.amount()).method(request.method())
                 .reference(request.reference() == null || request.reference().isBlank() ? null : request.reference().trim())
-                .batteryBefore(request.batteryBefore()).batteryAfter(request.batteryAfter()).kwh(request.kwh()).requestId(request.requestId())
+                .batteryBefore(request.batteryBefore()).batteryAfter(request.batteryAfter()).kwh(request.kwh()).sessionId(request.sessionId()).requestId(request.requestId())
                 .recordedBy(Actor.name()).createdAt(OffsetDateTime.now()).build());
         audit.record("CHARGING_RECORDED", "CHARGING", saved.getId().toString(), label(saved), saved.getCountryId(),
-                request.amount().toPlainString() + " " + request.method() + ", " + request.batteryBefore() + "% -> " + request.batteryAfter() + "%");
+                request.amount().toPlainString() + " " + request.method() + ", " + request.batteryBefore() + "% -> " + request.batteryAfter() + "%" + sessionNote);
         return queries.respond(saved);
     }
 
@@ -90,6 +95,22 @@ public class ChargingService {
                 .recordedBy(Actor.name()).createdAt(OffsetDateTime.now()).build());
         audit.record("CHARGING_REVERSED", "CHARGING", id.toString(), label(original), original.getCountryId(), original.getAmount().toPlainString() + ", reason: " + reason.trim());
         return queries.respond(reversal);
+    }
+
+    // A finished network session can be recorded as paid once; returns a note for the audit trail
+    private String checkSession(UUID sessionId) {
+        if (sessionId == null) {
+            return "";
+        }
+        lock(sessionId);
+        SessionRow session = ocppSessions.find(sessionId).orElseThrow(() -> new ResourceNotFoundException("Charging session not found."));
+        if (session.endedAt() == null) {
+            throw new BusinessRuleViolationException("SESSION_NOT_FINISHED", "Only a finished session can be recorded as paid.");
+        }
+        if (!entries.activeRechargesOfSessions(List.of(sessionId)).isEmpty()) {
+            throw new BusinessRuleViolationException("SESSION_ALREADY_RECORDED", "This session has already been recorded as paid.");
+        }
+        return ", session " + session.transactionId();
     }
 
     private void lock(UUID key) {

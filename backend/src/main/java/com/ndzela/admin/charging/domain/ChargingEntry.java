@@ -57,6 +57,10 @@ public class ChargingEntry extends TenantOwned {
     @Column(updatable = false)
     private BigDecimal kwh;
 
+    // The network session this recharge pays for, when it was recorded from one
+    @Column(name = "session_id", updatable = false)
+    private UUID sessionId;
+
     @Column(name = "reverses_entry_id", updatable = false)
     private UUID reversesEntryId;
 

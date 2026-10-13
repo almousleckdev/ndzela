@@ -8,7 +8,7 @@
 ## Enforcement points
 
 1. **Endpoint**: `@PreAuthorize("hasAuthority('<resource:action>')")` on every controller method (method security is enabled). Only `/api/v1/auth/**`, `/actuator/health`,
-   Swagger (when enabled) and `GET /media/**` are public; everything else requires authentication (`SecurityConfig`).
+   Swagger (when enabled) is public (profile pictures are CDN URLs, there is no `/media`); everything else requires authentication (`SecurityConfig`).
 2. **Service rules**: `AccessPolicy` prevents **privilege escalation** for the administrative resources `users` and `roles`:
    - you cannot grant or assign a role carrying an administrative permission you do not hold yourself;
    - you cannot manage (edit, block, delete...) a user whose roles carry administrative permissions beyond yours;

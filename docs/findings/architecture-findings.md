@@ -12,7 +12,7 @@ these docs, or a risk. Severity: **High** (fix before building on it), **Medium*
 | A3 | `JwtAuthenticationFilter` loads the user with eager roles and permissions from the database on **every request**. Simple and always fresh, but every request costs a query and the country would be read the same way. | Medium | Acceptable for now; if it becomes a hotspot add a short-lived cache invalidated on role/status change. Do not put permissions or country in the JWT without an ADR. |
 | A4 | **Resolved:** the audit trail is built (migration V9, `AuditService`, `GET /api/v1/audit`, screen "Historique"). | Done | Every new module must call `AuditService.record` for each change and assert it in its tests. |
 | A5 | **Two scoping mechanisms by design:** business tables use `TenantOwned` (automatic, Hibernate `@TenantId`); the `users` identity table is scoped explicitly by `UserScope` (sign-in happens before any country is known). | Low | Keep the split (ADR-0009). Any new table that holds staff identity data must follow `UserScope`, and every new administration action must call it. |
-| A6 | **Integration tests need Docker** (Testcontainers starts PostgreSQL and Redis). There is still no CI. | Medium | Add CI with a Docker-capable runner before the team grows. |
+| A6 | **Resolved (2026-10-13):** CI runs the backend (Testcontainers), dashboard, website and driver app checks ([git workflow](../workflow/git-workflow.md#continuous-integration-githubworkflows)). | Done | Protect `main` and require the checks in GitHub; consider pinning the actions by commit SHA. |
 
 ## B. Backend structure
 
@@ -26,7 +26,7 @@ these docs, or a risk. Severity: **High** (fix before building on it), **Medium*
 | B6 | Hard-coded strings: the `SUPER_ADMIN` role name in `RoleManagementService` and frontend; French notification titles/messages written by the backend. | Low | Centralise constants; decide the i18n approach (see D3). |
 | B7 | `RoleController` `GET /roles` allows `roles:read` **or** `users:create` **or** `users:update`. Intentional (user form) but undocumented in code. | Low | Documented in [authorization](../auth/authorization.md); keep explicit. |
 | B8 | Refresh rotation deletes the used token, but **reuse of an already-rotated token is not treated as theft** (no token-family revocation). | Low | Optional hardening: on reuse, revoke all of the user's tokens. |
-| B9 | No general **rate limiting** beyond login lockout and OTP cooldown; public `/auth/forgot-password` can be hammered. | Medium | Add per-IP/per-account rate limits before public exposure. |
+| B9 | No general **rate limiting** beyond login lockout and OTP cooldown; public `/auth/forgot-password` can be hammered. | Medium | **Partly resolved (2026-10-13):** password-reset requests are limited per address and per account (`common/ratelimit/RateLimiter`, Redis). Login is still limited only by the account lockout; consider a per-address limit on sign-in. |
 | B10 | **Fixed:** the `StrongPassword` Javadoc now names `features/auth/schemas/password.ts`. | Done | None. |
 
 ## C. Frontend structure
@@ -47,10 +47,10 @@ these docs, or a risk. Severity: **High** (fix before building on it), **Medium*
 
 | # | Finding | Severity | Recommendation |
 | --- | --- | --- | --- |
-| D1 | **Tests:** unit tests plus Testcontainers integration tests for tenancy now exist; still no CI, no frontend tests, and no integration tests for the other features yet. | Medium | Extend the integration harness to auth and the next modules; add CI. |
+| D1 | **Tests:** backend unit and Testcontainers integration tests, driver app tests and now CI exist; there are still no dashboard or website tests and no end-to-end tests. | Medium | Add dashboard tests before finance screens grow; extend the integration harness to every new module. |
 | D2 | **Flyway history:** V1 seed is duplicated by V3 (idempotent workaround for databases created by Hibernate), `baseline-on-migrate: true` is enabled, V4/V6 delete a permission and a role. | Medium | Never edit these. Consider disabling `baseline-on-migrate` outside dev once all environments are baselined. |
 | D3 | **Language:** UI French, API errors English, backend notifications French, no i18n. Mali and Gabon are French-speaking, but more countries are planned. | Medium | **Decision:** i18n scope (UI only? notifications? emails?). |
-| D4 | **Files** are stored on the local disk (`uploads/`, served at `/media/**`, public and immutable-cached). Not tenant-aware, not scalable, and unsuitable for sensitive driver/contract documents. | High (before driver documents) | **Decision:** object storage with per-country prefixes and access control. |
+| D4 | **Resolved (2026-10-13, [ADR-0016](../adr/0016-cloudinary-file-storage.md)):** files are in Cloudinary, private assets per country read only through the backend. Still open: contract/receipt archiving, orphan clean-up, migration of old local files. | Done | Decide whether contracts are archived (frozen copy or signed scan). |
 | D5 | **Infrastructure:** compose has only Postgres/Redis; no frontend Dockerfile; no CI/CD; no environments; dev DB credentials (`postgres/postgres`) are also the fallback defaults in `application.yml`. | Medium | See [infrastructure](../infrastructure/infrastructure-and-deployment.md) "Not yet defined"; remove insecure defaults for non-dev profiles. |
 | D6 | `/actuator/health` is public and includes the mail health check, so an SMTP outage marks the whole service DOWN. | Low | Exclude mail from readiness or split liveness/readiness. |
 | D7 | Notifications are in-app only. Drivers and daily payments will need SMS/push/WhatsApp. | Medium | **Decision** with the mobile and payments modules. |

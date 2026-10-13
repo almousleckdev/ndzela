@@ -61,6 +61,23 @@ public class ChargingSession extends TenantOwned {
     @Column(name = "soc_after")
     private Integer socAfter;
 
+    // The latest power reading, kept only while the session is under way
+    @Column(name = "power_kw")
+    private java.math.BigDecimal powerKw;
+
+    @Column(name = "duration_seconds")
+    private Integer durationSeconds;
+
+    @Column(name = "price_per_kwh_minor")
+    private Long pricePerKwhMinor;
+
+    @Column(name = "currency_decimals")
+    private Integer currencyDecimals;
+
+    // The platform's own "updatedAt" of the version kept here: an older version never replaces a newer one
+    @Column(name = "source_updated_at")
+    private OffsetDateTime sourceUpdatedAt;
+
     @Column(nullable = false)
     private String raw;
 

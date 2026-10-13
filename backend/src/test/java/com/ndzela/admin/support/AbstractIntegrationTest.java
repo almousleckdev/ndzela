@@ -28,6 +28,7 @@ import java.util.Set;
 // Integration test base
 @SpringBootTest
 @AutoConfigureMockMvc
+@org.springframework.context.annotation.Import({FakeStorageConfig.class, FakeFleetConfig.class})
 public abstract class AbstractIntegrationTest {
     public static final String PASSWORD = "Str0ng!Pass";
 
@@ -48,6 +49,8 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
         registry.add("app.arrears.job-enabled", () -> "false");
+        registry.add("app.ocpp.sync-enabled", () -> "false");
+        registry.add("app.ocpp.api-key", () -> "test-key");
         registry.add("app.pvit.reconcile-enabled", () -> "false");
         registry.add("app.pvit.sandbox-amount", () -> "");
         registry.add("app.jwt.secret", () -> "dGVzdC1vbmx5LWp3dC1zZWNyZXQtdGVzdC1vbmx5LWp3dC1zZWNyZXQ=");
@@ -56,10 +59,15 @@ public abstract class AbstractIntegrationTest {
         registry.add("app.ocpp.webhook-secret", () -> "whsecret");
         registry.add("spring.mail.username", () -> "test@ndzela.test");
         registry.add("spring.mail.password", () -> "unused");
-        registry.add("app.storage.upload-dir", () -> System.getProperty("java.io.tmpdir") + "/ndzela-it-uploads");
+        registry.add("app.storage.cloud-name", () -> "testcloud");
+        registry.add("app.storage.api-key", () -> "test-key");
+        registry.add("app.storage.api-secret", () -> "test-secret");
+        registry.add("app.storage.root-folder", () -> "ndzela-test");
         registry.add("app.bootstrap.initial-admin-password", () -> "");
     }
 
+    @Autowired protected FakeCloudinaryClient cloud;
+    @Autowired protected FakeFleetClient fleet;
     @Autowired protected JdbcTemplate jdbc;
     @Autowired protected org.springframework.data.redis.core.StringRedisTemplate redis;
     @Autowired protected MockMvc mvc;
@@ -71,9 +79,15 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void resetData() {
-        jdbc.execute("TRUNCATE TABLE tenant_test_items, charging_sessions, ocpp_events, driver_applications, contact_messages, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
+        jdbc.execute("TRUNCATE TABLE tenant_test_items, charging_sessions, ocpp_sync_state, driver_applications, contact_messages, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
         jdbc.update("UPDATE countries SET active = TRUE, late_penalty = 0, charging_critical_percent = 20");
-        var limits = redis.keys("public:*");
+        cloud.clear();
+        fleet.clear();
+        var ocppKeys = redis.keys("ocpp:sync:*");
+        if (ocppKeys != null && !ocppKeys.isEmpty()) {
+            redis.delete(ocppKeys);
+        }
+        var limits = redis.keys("ratelimit:*");
         if (limits != null && !limits.isEmpty()) {
             redis.delete(limits);
         }

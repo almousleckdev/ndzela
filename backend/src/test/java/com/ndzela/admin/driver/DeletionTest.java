@@ -1,17 +1,12 @@
 package com.ndzela.admin.driver;
 
-import com.ndzela.admin.config.properties.AppProperties;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -20,9 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 // A driver or a vehicle can be deleted only while no money is recorded; the deletion is all or nothing.
 class DeletionTest extends AbstractDriverTest {
-    @Autowired
-    private AppProperties props;
-
     private String center;
     private String vehicle;
     private String driver;
@@ -34,10 +26,8 @@ class DeletionTest extends AbstractDriverTest {
         driver = id(createDriver(manager, DriverJson.create(vehicle, center)).andExpect(status().isCreated()));
     }
 
-    private long storedFiles() throws Exception {
-        try (Stream<Path> files = Files.list(Path.of(props.storage().uploadDir()).toAbsolutePath().normalize().resolve("private"))) {
-            return files.count();
-        }
+    private long storedFiles() {
+        return cloud.privateCount();
     }
 
     private void pay(String driverId) throws Exception {

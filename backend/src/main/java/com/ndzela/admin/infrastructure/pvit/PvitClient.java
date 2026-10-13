@@ -120,6 +120,13 @@ public class PvitClient {
     }
 
     private static BigDecimal decimal(JsonNode node) {
-        return node.isMissingNode() || node.isNull() ? null : new BigDecimal(node.asString("0"));
+        if (node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        try {
+            return new BigDecimal(node.asString("0"));
+        } catch (NumberFormatException e) {
+            throw new PvitException("PVit sent an amount that cannot be read.", e);
+        }
     }
 }

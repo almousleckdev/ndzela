@@ -32,6 +32,7 @@ MFA is **mandatory for every staff account**. Unknown/wrong credentials always r
 
 `UserStatus`: `MFA_SETUP` (invited/enrolling), `ACTIVE`, `LOCKED`, `DISABLED`.
 - 5 failed attempts (password, OTP or TOTP) lock the account for 30 min (`LOCKED`, auto-release on next attempt after expiry). Holders of `users:update` in the same country, and the global super admins, are notified.
+- **Driver app:** wrong passwords on sign-in **and on the password change** both count toward the lockout, and the change is refused while the driver is locked (`423 ACCOUNT_LOCKED`). The failure count is written in its own transaction so it survives the refused request.
 - **Staff of an inactive country** cannot sign in (`423 ACCOUNT_LOCKED`, like a disabled account); their existing access tokens are rejected (`401`) and refresh is refused. Global users are unaffected.
 - An admin can **block** (indefinite `LOCKED`), **suspend** (`DISABLED`), unblock, reactivate, delete, or reset MFA.
 

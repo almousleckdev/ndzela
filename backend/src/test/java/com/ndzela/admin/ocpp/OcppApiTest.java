@@ -1,22 +1,29 @@
 package com.ndzela.admin.ocpp;
 
+import com.ndzela.admin.infrastructure.ocpp.FleetPage;
+import com.ndzela.admin.ocpp.application.OcppSyncService;
 import com.ndzela.admin.support.AbstractIntegrationTest;
 import com.ndzela.admin.user.domain.User;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.util.List;
+
+import static com.ndzela.admin.support.FakeFleetClient.session;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class OcppApiTest extends AbstractIntegrationTest {
-    private static final String STARTED = "{\"eventId\":\"e1\",\"type\":\"session.started\",\"data\":{\"transactionId\":\"T-100\",\"chargePointId\":\"CP-1\",\"connectorId\":1,\"idTag\":\"TAG-9\",\"startedAt\":\"2026-10-03T08:00:00Z\",\"status\":\"CHARGING\"}}";
-    private static final String STOPPED = "{\"eventId\":\"e2\",\"type\":\"session.stopped\",\"data\":{\"transactionId\":\"T-100\",\"endedAt\":\"2026-10-03T08:40:00Z\",\"status\":\"COMPLETED\",\"energyWh\":21000,\"costMinor\":7350,\"currency\":\"XAF\",\"stopReason\":\"EVDisconnected\"}}";
+    @Autowired OcppSyncService sync;
 
     private User manager;
     private User maliManager;
@@ -34,48 +41,49 @@ class OcppApiTest extends AbstractIntegrationTest {
         return mvc.perform(secret == null ? request : request.header("X-Webhook-Secret", secret));
     }
 
-    @Test
-    void aSessionIsBuiltFromItsEventsAndAnEventIsRecordedOnce() throws Exception {
-        webhook(STARTED, "whsecret").andExpect(status().isOk()).andExpect(jsonPath("$.recorded").value(true));
-        webhook(STARTED, "whsecret").andExpect(status().isOk()).andExpect(jsonPath("$.recorded").value(false));
-        webhook(STOPPED, "whsecret").andExpect(status().isOk()).andExpect(jsonPath("$.recorded").value(true));
+    private void oneCompletedSession() {
+        fleet.serve("", new FleetPage(List.of(session("100", "COMPLETED", "21", 7350L, "2026-10-04T08:41:00Z")), "c1", false));
+        sync.sync();
+    }
 
-        assertEquals(1, jdbc.queryForObject("select count(*) from charging_sessions", Integer.class));
+    @Test
+    void aWebhookOnlyAsksForASyncAndWritesNothing() throws Exception {
+        webhook("{\"eventId\":\"e1\",\"type\":\"session.started\",\"data\":{\"transactionId\":\"T-100\",\"energyWh\":999999}}", "whsecret")
+                .andExpect(status().isOk()).andExpect(jsonPath("$.received").value(true));
+
+        assertTrue(Boolean.TRUE.equals(redis.hasKey("ocpp:sync:wanted")));
+        assertEquals(0, jdbc.queryForObject("select count(*) from charging_sessions", Integer.class));
+        assertTrue(fleet.asked().isEmpty(), "the request itself does not call the platform");
+    }
+
+    @Test
+    void aWebhookWithoutTheSecretIsRefusedAndAsksForNothing() throws Exception {
+        webhook("{}", null).andExpect(status().isUnauthorized());
+        webhook("{}", "wrong").andExpect(status().isUnauthorized());
+        assertFalse(Boolean.TRUE.equals(redis.hasKey("ocpp:sync:wanted")));
+    }
+
+    @Test
+    void syncedSessionsAreListedWithTheirEnergyAndAmount() throws Exception {
+        oneCompletedSession();
+
         mvc.perform(get("/api/v1/charging/sessions").header("Authorization", bearer(manager))).andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
-                .andExpect(jsonPath("$.items[0].transactionId").value("T-100")).andExpect(jsonPath("$.items[0].chargePointId").value("CP-1")).andExpect(jsonPath("$.items[0].idTag").value("TAG-9"))
-                .andExpect(jsonPath("$.items[0].status").value("COMPLETED")).andExpect(jsonPath("$.items[0].energyKwh").value(21.0)).andExpect(jsonPath("$.items[0].costMinor").value(7350)).andExpect(jsonPath("$.items[0].amount").value(7350))
-                .andExpect(jsonPath("$.items[0].socBefore").doesNotExist());
-    }
-
-    @Test
-    void aLaterEventNeverErasesWhatIsKnown() throws Exception {
-        webhook(STOPPED, "whsecret").andExpect(status().isOk());
-        webhook(STARTED.replace("\"e1\"", "\"e3\"").replace("CHARGING", "STARTED"), "whsecret").andExpect(status().isOk());
-        mvc.perform(get("/api/v1/charging/sessions").header("Authorization", bearer(manager))).andExpect(jsonPath("$.items[0].costMinor").value(7350)).andExpect(jsonPath("$.items[0].amount").value(7350)).andExpect(jsonPath("$.items[0].chargePointId").value("CP-1"));
-    }
-
-    @Test
-    void aWebhookWithoutTheSecretIsRefusedAndNothingIsSaved() throws Exception {
-        webhook(STARTED, null).andExpect(status().isUnauthorized());
-        webhook(STARTED, "wrong").andExpect(status().isUnauthorized());
-        assertEquals(0, jdbc.queryForObject("select count(*) from charging_sessions", Integer.class));
-        assertEquals(0, jdbc.queryForObject("select count(*) from ocpp_events", Integer.class));
-    }
-
-    @Test
-    void anEventWithoutATransactionIsIgnored() throws Exception {
-        webhook("{\"eventId\":\"x\",\"type\":\"heartbeat\"}", "whsecret").andExpect(status().isOk()).andExpect(jsonPath("$.recorded").value(false));
-        assertEquals(0, jdbc.queryForObject("select count(*) from charging_sessions", Integer.class));
+                .andExpect(jsonPath("$.items[0].transactionId").value("100")).andExpect(jsonPath("$.items[0].chargePointId").value("DY202609110007"))
+                .andExpect(jsonPath("$.items[0].connectorId").value("1")).andExpect(jsonPath("$.items[0].idTag").value("Z-TAG")).andExpect(jsonPath("$.items[0].status").value("COMPLETED"))
+                .andExpect(jsonPath("$.items[0].energyKwh").value(21.0)).andExpect(jsonPath("$.items[0].costMinor").value(7350)).andExpect(jsonPath("$.items[0].amount").value(7350))
+                .andExpect(jsonPath("$.items[0].currency").value("XAF")).andExpect(jsonPath("$.items[0].stopReason").value("EVDisconnected")).andExpect(jsonPath("$.items[0].socBefore").doesNotExist()).andExpect(jsonPath("$.items[0].durationSeconds").value(2400))
+                .andExpect(jsonPath("$.items[0].pricePerKwh").value(350)).andExpect(jsonPath("$.items[0].rechargeId").doesNotExist());
     }
 
     @Test
     void sessionsAreSeenOnlyByStaffOfTheCountryWithThePermission() throws Exception {
-        webhook(STARTED, "whsecret").andExpect(status().isOk());
+        oneCompletedSession();
+
         mvc.perform(get("/api/v1/charging/sessions")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/charging/sessions").header("Authorization", bearer(maliManager))).andExpect(jsonPath("$.total").value(0));
-        mvc.perform(get("/api/v1/charging/sessions?q=tag-9&status=CHARGING").header("Authorization", bearer(viewer))).andExpect(jsonPath("$.total").value(1));
-        mvc.perform(get("/api/v1/charging/sessions?status=COMPLETED").header("Authorization", bearer(manager))).andExpect(jsonPath("$.total").value(0));
-        mvc.perform(get("/api/v1/charging/sessions?from=2026-10-04").header("Authorization", bearer(manager))).andExpect(jsonPath("$.total").value(0));
-        mvc.perform(get("/api/v1/charging/sessions?from=2026-10-03&to=2026-10-03").header("Authorization", bearer(manager))).andExpect(jsonPath("$.total").value(1));
+        mvc.perform(get("/api/v1/charging/sessions?q=z-tag&status=COMPLETED").header("Authorization", bearer(viewer))).andExpect(jsonPath("$.total").value(1));
+        mvc.perform(get("/api/v1/charging/sessions?status=CHARGING").header("Authorization", bearer(manager))).andExpect(jsonPath("$.total").value(0));
+        mvc.perform(get("/api/v1/charging/sessions?from=2026-10-05").header("Authorization", bearer(manager))).andExpect(jsonPath("$.total").value(0));
+        mvc.perform(get("/api/v1/charging/sessions?from=2026-10-04&to=2026-10-04").header("Authorization", bearer(manager))).andExpect(jsonPath("$.total").value(1));
     }
 }
