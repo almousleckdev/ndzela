@@ -8,13 +8,15 @@ Run the backend with `mvn spring-boot:run` (port 8080) and the frontend with `np
 ## Configuration and secrets
 
 Backend settings are environment variables read by `application.yml` (optionally from `backend/.env`, git-ignored, template `backend/.env.example`). **Required, no default** (startup fails without them):
-`JWT_SECRET` (base64, >= 256 bit: `openssl rand -base64 48`), `MFA_ENCRYPTION_KEY` (base64 of 32 bytes: `openssl rand -base64 32`), `MAIL_USERNAME`, `MAIL_PASSWORD`.
+`JWT_SECRET` (base64, >= 256 bit: `openssl rand -base64 48`), `MFA_ENCRYPTION_KEY` (base64 of 32 bytes: `openssl rand -base64 32`), and the four `CLOUDINARY_*`. `MAIL_USERNAME` and `MAIL_PASSWORD` are only needed with `MAIL_PROVIDER=smtp`.
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | PostgreSQL | local dev values |
 | `REDIS_HOST`, `REDIS_PORT` | Redis | `localhost`, `6379` |
 | `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS` | Links in emails, CORS | `http://localhost:3000` |
+| `PORT` | Port to listen on (set by Railway and similar hosts) | `8080` |
+| `REDIS_PASSWORD` | Redis password, when it has one | empty |
 | `COOKIE_SECURE` | `Secure` flag on the refresh cookie | `false` (**must be `true` behind HTTPS in every deployed environment**) |
 | `MAIL_PROVIDER` | `smtp`, `resend` or `log` (console only, local dev) | `smtp` |
 | `MAIL_HOST/PORT`, `RESEND_API_KEY`, `MAIL_FROM` | Email delivery | Gmail SMTP / Resend defaults |
@@ -38,9 +40,12 @@ Rules: no secret in the repository, in Docker images, or in logs. `.env*` files 
 
 ## Not yet defined (Open, needs the user's decisions)
 
-Hosting/cloud provider and regions; SMS/push provider per country; payment-provider credentials and webhook endpoints per country; PDF generation library and storage for contract PDFs; scheduled jobs (arrears escalation) and their timezone handling; environments (dev/staging/production) and promotion; CD (CI exists, see the git workflow); managed PostgreSQL/Redis, backups and retention; secrets manager; TLS/domain layout (single domain vs per country); monitoring, alerting and log aggregation (Actuator health exists; `mail` health check makes `/actuator/health` report DOWN when SMTP is unreachable); rate limiting/WAF; payment-provider webhook exposure; disaster-recovery targets.
+Hosting for the dashboard and website, and the choice of Railway region (backend: [Railway deployment](railway-deployment.md)); SMS/push provider per country; payment-provider credentials and webhook endpoints per country; PDF generation library and storage for contract PDFs; scheduled jobs (arrears escalation) and their timezone handling; environments (dev/staging/production) and promotion; CD (CI exists, see the git workflow); managed PostgreSQL/Redis, backups and retention; secrets manager; TLS/domain layout (single domain vs per country); monitoring, alerting and log aggregation (Actuator health exists; `mail` health check makes `/actuator/health` report DOWN when SMTP is unreachable); rate limiting/WAF; payment-provider webhook exposure; disaster-recovery targets.
 
 ## Deployment rules (binding when deployment exists)
+
+The backend is deployed to Railway: see [railway-deployment.md](railway-deployment.md).
+
 
 1. Flyway runs at application start; a deployment must not start an incompatible schema/app pair. Schema changes are backwards compatible with the previous app version for one release.
 2. Production: HTTPS only, a stable public callback address for PVit (restrict it to PVit's published addresses at the proxy), `PVIT_SANDBOX_AMOUNT` empty and the production operation account, `COOKIE_SECURE=true`, Swagger off, real secrets, non-default database credentials, `MAIL_PROVIDER` not `log`, `FORWARD_HEADERS_STRATEGY=native` when behind a proxy.

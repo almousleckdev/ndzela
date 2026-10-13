@@ -1,9 +1,14 @@
 # Secrets have no defaults on purpose: the app refuses to start without them.
 # Provide them as environment variables, or in backend/.env (git-ignored; see .env.example).
 server:
+  port: ${PORT:8080}                    # Railway and similar hosts give the port to listen on
   # Behind a reverse proxy set FORWARD_HEADERS_STRATEGY=native so the rate limits and the audit trail see the visitor, not the proxy.
   # Leave it "none" when the app is reachable directly: the headers could then be forged.
   forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
+management:
+  health:
+    mail:
+      enabled: false   # a mail outage must not mark the whole service DOWN and get it restarted
 spring:
   application:
     name: ndzela-admin
@@ -26,11 +31,12 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${MAIL_USERNAME:}               # only for MAIL_PROVIDER=smtp
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
