@@ -26,5 +26,8 @@ COPY --from=builder /app/target/*.jar app.jar
 # Expose the default Spring Boot port
 EXPOSE 8080
 
+# Size the heap from the container's memory, and let the platform restart a process that ran out of it
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
