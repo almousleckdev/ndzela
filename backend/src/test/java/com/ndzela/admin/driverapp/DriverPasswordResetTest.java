@@ -40,6 +40,14 @@ class DriverPasswordResetTest extends AbstractDriverAppTest {
     }
 
     @Test
+    void oneAddressCannotKeepRequestingCodes() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            forgot("nobody" + i + "@example.com").andExpect(status().isAccepted());
+        }
+        forgot("nobody-more@example.com").andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("TOO_MANY_REQUESTS"));
+    }
+
+    @Test
     void theAnswerNeverRevealsWhetherTheAccountExists() throws Exception {
         forgot("nobody@example.com").andExpect(status().isAccepted());
         forgot("0700000000").andExpect(status().isAccepted());

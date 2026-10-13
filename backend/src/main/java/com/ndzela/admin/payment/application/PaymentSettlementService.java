@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 // Closes payment attempts.
 @Slf4j
@@ -26,6 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentSettlementService {
     private static final Duration LATE_CONFIRMATION_WINDOW = Duration.ofHours(6);
+    private static final Pattern PROVIDER_REFERENCE = Pattern.compile("[A-Za-z0-9._-]{1,100}");
 
     private final PaymentIntentStore store;
     private final PaymentIntentRepository intents;
@@ -77,6 +79,9 @@ public class PaymentSettlementService {
             return;
         }
         if (transaction.status() == PvitStatus.SUCCESS && transaction.amount() != null && transaction.amount().signum() > 0) {
+            if (transaction.amount().compareTo(intent.getAmount()) < 0) {
+                log.warn("PVit confirmed {} for payment {} which asked {}", transaction.amount(), intent.getReference(), intent.getAmount());
+            }
             store.complete(id, providerReferenceOf(intent, callbackProviderReference), transaction.amount(), transaction.fees());
         } else if (transaction.status() == PvitStatus.FAILED) {
             store.markFailed(id, "Refused or cancelled on the phone.");
@@ -86,11 +91,13 @@ public class PaymentSettlementService {
     }
 
     // What the ledger shows as the payment's reference: PVit's transaction id when known, otherwise ours.
+    // The callback is not authenticated, so what it carries is used only when it looks like a transaction id.
     private static String providerReferenceOf(PaymentIntent intent, String callbackProviderReference) {
         if (intent.getProviderReference() != null) {
             return intent.getProviderReference();
         }
-        return callbackProviderReference != null ? callbackProviderReference : intent.getReference();
+        boolean usable = callbackProviderReference != null && PROVIDER_REFERENCE.matcher(callbackProviderReference).matches();
+        return usable ? callbackProviderReference : intent.getReference();
     }
 
     private void expireIfOld(PaymentIntent intent) {

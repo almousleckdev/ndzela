@@ -45,7 +45,6 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/api/v1/driver/auth/login", "/api/v1/driver/auth/refresh", "/api/v1/driver/auth/forgot-password", "/api/v1/driver/auth/reset-password", "/api/callback", "/api/v1/public/**", "/api/v1/webhooks/ocpp", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/health").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/media/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint((req, res, ex) -> exceptionResolver.resolveException(req, res, null, ex))

@@ -60,6 +60,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_GATEWAY, "PAYMENT_PROVIDER_UNAVAILABLE", ex.getMessage(), request, null);
     }
 
+    @ExceptionHandler(StorageUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleStorageUnavailable(StorageUnavailableException ex, HttpServletRequest request) {
+        log.error("File storage unavailable: {}", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.BAD_GATEWAY, "STORAGE_UNAVAILABLE", "The file storage is unavailable. Please try again.", request, null);
+    }
+
     @ExceptionHandler(InvalidCountryException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidCountry(InvalidCountryException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, "INVALID_COUNTRY", ex.getMessage(), request, null);

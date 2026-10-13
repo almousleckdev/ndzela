@@ -1,0 +1,29 @@
+# ADR-0017: OCPP sessions come from the Fleet API's incremental sync; webhooks only ask for a sync
+
+**Status:** Accepted · **Date:** 2026-10-13
+
+**Context.** The OCPP platform (`zella-ocpp.com`) reports charging sessions by webhook (at least once, possibly lost or out of order) and, since the Fleet read-only API, by `GET /api/v1/sessions/sync`, an incremental feed with an opaque cursor. Their engineer states the sync is the source of truth and webhooks are only a low-latency hint. We first guessed the webhook payload's field names and let each event write sessions. Two writers (events and a pull) can overwrite each other with older data.
+
+**Decision.**
+- **One writer: the sync.** `OcppSyncService` pulls pages with `GET /api/v1/sessions/sync?limit=&cursor=` (`X-API-Key`, no bearer token) until `hasMore` is false and upserts each session by `transactionId`. The webhook (`POST /api/v1/webhooks/ocpp`, still refused without its shared secret) stores nothing: it sets a flag and answers `{received: true}`; the next job tick (every 5 seconds) runs a sync. Any number of webhooks make one sync.
+- **The cursor** is opaque: it is stored exactly as received (`ocpp_sync_state.sync_cursor`, V31) and sent back unchanged, never parsed. Each page and the cursor that follows it are written in **one transaction**, so a crash can only replay a page, never skip one. An empty page still moves the cursor. `cursor` and `updatedSince` are never sent together.
+- **Replay-safe and last-write-wins.** A session is replaced by the platform's version unless the stored one carries a later `updatedAt` (`charging_sessions.source_updated_at`). Null fields from the platform stay null: it is authoritative. The item is kept whole in `raw`.
+- **Scheduling.** A job ticks every 5 seconds; the service syncs when a webhook asked, or when `OCPP_SYNC_INTERVAL` (1 minute) has passed since the last attempt. One sync at a time across instances (a Redis lock with an expiry). On HTTP 429 the platform's `Retry-After` is honoured through a Redis back-off: nothing is requested until it ends (the platform allows 60 requests a minute per key).
+- **Failures** are recorded (`last_error`, `last_success_at`) and logged without the key; nothing is lost because the cursor did not move. An invalid or expired cursor is not guessed around: the error is kept and, until the platform documents that case, recovery is manual (`update ocpp_sync_state set sync_cursor = null`, which re-reads everything the key may see; harmless because the upsert is idempotent).
+- **Country.** The sessions belong to `OCPP_COUNTRY` (GA). The charge points' `isoCode` can drive this when Mali joins.
+- **The key** `OCPP_FLEET_API_KEY` (falls back to `OCPP_API_KEY`) lives in `backend/.env` only; `OcppProperties.toString` hides it. The credential is scoped by the platform to granted charge points and a start date; whatever it cannot see simply never arrives.
+- **Removed.** The webhook-driven ingest and the guessing parser (`OcppIngestService`, `OcppSessionParser`) and the `ocpp_events` table.
+
+**Battery level (added 2026-10-13).** The sync does not carry it; the platform gives `stateOfChargePercent` per session in `GET /sessions/{transactionId}/metering` (the latest reading). After each sync, `OcppBatteryService` reads it for sessions started in the last 12 hours that are still running, and for sessions finished within the last hour whose final level is unknown, at most 5 per run (the platform allows 60 requests a minute). `socAfter` is the latest level seen; `socBefore` is the first level seen while the session was running, so a session first seen already finished has no "before". A problem reading the battery never fails the sync; a 429 pauses it.
+
+**Live power (2026-10-13).** The same reading gives `currentPowerKw`; it is kept in `charging_sessions.power_kw` while the session runs and cleared by the final reading. A session just finished whose last reading was taken while it ran is read once more, so its final battery level and power are right.
+
+**From a session to a recharge.** A network session is not a payment (the platform's amount is energy times tariff, and a session may be started remotely by an operator). Staff record the payment from the session ("Enregistrer le paiement"): the recharge form is prefilled with the session's energy, amount and battery levels, and the recharge keeps `session_id`. Only a finished, unpaid session can be recorded; cancelling the recharge frees it. The charging module serves the sessions list and checks the session through the OCPP module, never the reverse.
+
+**Freshness.** The sync interval is 10 seconds by default (6 of the 60 requests a minute), and a webhook triggers one within about 5 seconds. The admin screens refresh themselves every 5 seconds (sessions) and 10 seconds (recharges).
+
+**Not covered.** `GET /charge-points` and `GET /sessions/{transactionId}` are not used yet. Linking `idTag` to a vehicle and driver, and to what was paid, is phases 2 and 3 of the OCPP plan.
+
+**Consequences.** (+) A missed or duplicated webhook cannot corrupt data; restart-safe; no guessing of payload shapes; the platform's rate limit is respected. (-) Up to a minute of delay without a webhook, and a few seconds with one; if the platform changes its cursor semantics we depend on its documentation.
+
+**Alternatives considered.** Keep webhooks as writers beside a periodic sync (two writers, stale overwrites); poll `GET /sessions` with date windows (the platform offers no checkpoint, overlap and duplicates); a message queue for webhooks (nothing else needs one).

@@ -60,6 +60,12 @@ Dev database credentials in `docker-compose.yml` are for local use only. Product
 
 **V21 (payments through PVit):** `payment_intents` (country-scoped; unique `reference`; at most one `PENDING` per driver; `ON DELETE CASCADE` from drivers and contracts) and a new ledger entry type `FEE` (the operator's fee the driver paid, never counted toward the rent).
 
+**V32 (recharge from a session, live power):** `charging_entries.session_id` (nullable FK to `charging_sessions`, indexed; a session is "paid" while a non-cancelled `RECHARGE` points at it, enforced by the service under a lock per session) and `charging_sessions.power_kw` (the latest power reading, kept only while the session runs).
+
+**V31 (OCPP Fleet sync):** `charging_sessions` gains `source_updated_at, duration_seconds, price_per_kwh_minor, currency_decimals`; `ocpp_sync_state` (one row per country: `sync_cursor` stored exactly as received, last attempt, last success, last error); `ocpp_events` is dropped (webhooks no longer write sessions).
+
+**V30 (payment reference lookup):** non-unique index `idx_ledger_payment_reference (country_id, method, lower(reference))` on `PAYMENT` rows. Uniqueness of a transaction reference is enforced by `PaymentService` under a per-reference advisory lock, not by a unique index, so a reversed payment frees its reference (a payment recorded on the wrong driver can be reversed and re-recorded).
+
 **V29 (OCPP sessions):** `charging_sessions` (country-scoped; unique `(country_id, transaction_id)`; the platform's session fields, nullable battery levels, the raw payload) and `ocpp_events` (the received `event_id`s, for deduplication).
 
 **V28 (Ndzela name and e-mail):** Gabon's legal name written Ndzela, its e-mail `ndzelagabon@gmail.com` and its support WhatsApp number.

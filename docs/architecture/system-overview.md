@@ -19,7 +19,7 @@
 Browser (Next.js SPA-style client) --HTTPS JSON--> Backend API (/api/v1) --> PostgreSQL (business data, Flyway-owned schema)
                                                                        \--> Redis (ephemeral auth state)
                                                                        \--> SMTP / Resend (email)
-                                                                       \--> local disk (avatars, /media/**)
+                                                                       \--> Cloudinary (driver documents, avatars; ADR-0016)
 Driver app (future) ------------HTTPS JSON--------------------------> Backend API (driver endpoints)
 Payment providers (future, per country) <----API + webhooks----> Backend API
 OCPP platform (future) <----API (charging billing)---- Backend API

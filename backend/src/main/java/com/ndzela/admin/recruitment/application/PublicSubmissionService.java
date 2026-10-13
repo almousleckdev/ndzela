@@ -1,6 +1,7 @@
 package com.ndzela.admin.recruitment.application;
 
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
+import com.ndzela.admin.common.ratelimit.RateLimiter;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,9 +24,11 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class PublicSubmissionService {
+    private static final Duration SUBMISSION_WINDOW = Duration.ofHours(1);
+
     private final AppProperties props;
     private final CountryRepository countries;
-    private final PublicRateLimiter limiter;
+    private final RateLimiter limiter;
     private final InquiryStore store;
     private final DocumentStorage storage;
 
@@ -32,7 +36,7 @@ public class PublicSubmissionService {
         if (isRobot(request.website())) {
             return;
         }
-        limiter.check("contact", visitor);
+        limiter.check("public-contact", visitor, props.publicSite().maxSubmissionsPerHour(), SUBMISSION_WINDOW);
         TenantHolder.callAs(country(), () -> {
             store.saveMessage(request);
             return null;
@@ -46,13 +50,14 @@ public class PublicSubmissionService {
         if (missing(uploads.photo()) || missing(uploads.licence()) || missing(uploads.id())) {
             throw new BusinessRuleViolationException("DOCUMENTS_REQUIRED", "The photo, the driving licence and the identity document are required.");
         }
-        limiter.check("application", visitor);
+        limiter.check("public-application", visitor, props.publicSite().maxSubmissionsPerHour(), SUBMISSION_WINDOW);
         List<String> stored = new ArrayList<>();
+        String countryCode = props.publicSite().countryCode();
         try {
-            String photo = keep(stored, storage.save(uploads.photo(), true));
-            String licence = keep(stored, storage.save(uploads.licence(), false));
-            String id = keep(stored, storage.save(uploads.id(), false));
-            String proof = missing(uploads.addressProof()) ? null : keep(stored, storage.save(uploads.addressProof(), false));
+            String photo = keep(stored, storage.save(uploads.photo(), true, countryCode));
+            String licence = keep(stored, storage.save(uploads.licence(), false, countryCode));
+            String id = keep(stored, storage.save(uploads.id(), false, countryCode));
+            String proof = missing(uploads.addressProof()) ? null : keep(stored, storage.save(uploads.addressProof(), false, countryCode));
             TenantHolder.callAs(country(), () -> {
                 store.saveApplication(request, photo, licence, id, proof);
                 return null;

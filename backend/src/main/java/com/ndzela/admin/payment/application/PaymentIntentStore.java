@@ -3,6 +3,7 @@ package com.ndzela.admin.payment.application;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.payment.api.dto.RecordPaymentRequest;
+import com.ndzela.admin.payment.domain.LedgerEntryRepository;
 import com.ndzela.admin.payment.domain.PaymentIntent;
 import com.ndzela.admin.payment.domain.PaymentIntentRepository;
 import com.ndzela.admin.payment.domain.PaymentIntentStatus;
@@ -33,6 +34,7 @@ public class PaymentIntentStore {
 
     private final PaymentIntentRepository intents;
     private final PaymentService payments;
+    private final LedgerEntryRepository ledger;
     private final AppProperties props;
     private final SecureRandom random = new SecureRandom();
 
@@ -77,12 +79,14 @@ public class PaymentIntentStore {
         }
         BigDecimal paid = confirmedAmount.setScale(0, RoundingMode.HALF_UP);
         PaymentMethod method = methodOf(intent.getOperatorCode());
-        payments.record(new RecordPaymentRequest(intent.getDriverId(), paid, method, providerReference, intent.getId()), AUTOMATIC);
+        // A reference already taken must not stop money PVit holds from being recorded: ours is unique.
+        String reference = ledger.existsActivePayment(method, providerReference) ? intent.getReference() : providerReference;
+        payments.record(new RecordPaymentRequest(intent.getDriverId(), paid, method, reference, intent.getId()), AUTOMATIC);
         if (fee != null && fee.signum() > 0) {
-            payments.recordProviderFee(intent.getDriverId(), intent.getContractId(), fee, method, providerReference,
+            payments.recordProviderFee(intent.getDriverId(), intent.getContractId(), fee, method, reference,
                     UUID.nameUUIDFromBytes(("fee:" + intent.getId()).getBytes(StandardCharsets.UTF_8)));
         }
-        intent.setProviderReference(providerReference);
+        intent.setProviderReference(reference);
         intent.setFeeAmount(fee);
         intent.setStatus(PaymentIntentStatus.SUCCESS);
         intent.setFailureReason(null);

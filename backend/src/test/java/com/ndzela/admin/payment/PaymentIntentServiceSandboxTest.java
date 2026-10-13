@@ -45,7 +45,7 @@ class PaymentIntentServiceSandboxTest {
         AppProperties base = TestProperties.create();
         PvitProperties pvit = new PvitProperties("https://pvit.test", "ACC", "pw", "S", "P", "T", "F", "K", "CB", "NDZELA", "LOYER", "CUSTOMER", sandboxAmount,
                 Duration.ofSeconds(5), Duration.ofMinutes(3), Duration.ofMinutes(30), false);
-        AppProperties props = new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), base.jwt(), base.auth(), base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), base.storage(), pvit, base.driverApp(), base.publicSite(), base.ocpp());
+        AppProperties props = new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), base.jwt(), base.auth(), base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), base.storage(), pvit, base.driverApp(), base.publicSite(), base.ocpp(), base.rateLimit());
 
         PaymentIntentStore store = mock(PaymentIntentStore.class);
         PaymentOperatorService operators = mock(PaymentOperatorService.class);

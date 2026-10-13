@@ -26,6 +26,7 @@ public record AppProperties(
         PvitProperties pvit,
         DriverAppProperties driverApp,
         PublicSiteProperties publicSite,
-        OcppProperties ocpp
+        OcppProperties ocpp,
+        RateLimitProperties rateLimit
 ) {
 }

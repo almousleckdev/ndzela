@@ -202,6 +202,32 @@ class DriverPaymentTest extends AbstractDriverAppTest {
     }
 
     @Test
+    void aCallbackIdThatDoesNotLookLikeATransactionIdIsNotWrittenToTheLedger() throws Exception {
+        startOk();
+        pvitSays(PvitStatus.SUCCESS, amount(), null);
+        jdbc.update("update payment_intents set provider_reference = null");
+
+        callback(reference(), "x y; drop table", 200).andExpect(status().isOk());
+
+        assertEquals("SUCCESS", intentStatus());
+        assertEquals(1, rows("select count(*) from ledger_entries where entry_type = 'PAYMENT' and reference = '" + reference() + "'"));
+    }
+
+    @Test
+    void aProviderIdAlreadyInTheLedgerStillGetsTheConfirmedMoneyRecorded() throws Exception {
+        startOk();
+        pvitSays(PvitStatus.SUCCESS, amount(), null);
+        jdbc.update("update payment_intents set provider_reference = null");
+        jdbc.update("insert into ledger_entries (id, country_id, contract_id, driver_id, entry_type, amount, method, reference, recorded_by, created_at) "
+                + "select gen_random_uuid(), country_id, id, driver_id, 'PAYMENT', 1000, 'AIRTEL_MONEY', 'PAY1', 'test', now() from contracts");
+
+        callback(reference(), "PAY1", 200).andExpect(status().isOk());
+
+        assertEquals("SUCCESS", intentStatus());
+        assertEquals(1, rows("select count(*) from ledger_entries where entry_type = 'PAYMENT' and reference = '" + reference() + "'"));
+    }
+
+    @Test
     void callbacksArrivingAtTheSameInstantRecordTheMoneyOnce() throws Exception {
         startOk();
         pvitSays(PvitStatus.SUCCESS, amount(), "5.25");

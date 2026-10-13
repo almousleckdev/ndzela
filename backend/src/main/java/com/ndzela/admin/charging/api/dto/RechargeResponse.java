@@ -20,4 +20,4 @@ public record RechargeResponse(
         Integer batteryBefore,
         Integer batteryAfter,
         BigDecimal kwh, boolean critical, boolean reversed,
-        String reason, String recordedBy, OffsetDateTime createdAt) {}
+        String reason, String recordedBy, OffsetDateTime createdAt, UUID sessionId) {}

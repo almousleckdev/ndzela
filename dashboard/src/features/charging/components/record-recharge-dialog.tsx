@@ -10,11 +10,12 @@ import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { chargingService } from "@/features/charging/services/charging.service";
 import { useRentMethods } from "@/features/payments/hooks/use-rent-methods";
+import type { ChargingSessionRow } from "@/features/charging/types";
 import type { PaymentMethod } from "@/features/payments/types";
 import { useBrand } from "@/features/tenancy/hooks/use-brand";
 
-// Records a recharge paid at the station.
-export function RecordRechargeDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+// Records a recharge paid at the station, or the payment of a network session (its figures are proposed, staff correct them).
+export function RecordRechargeDialog({ session, onClose, onSaved }: { session?: ChargingSessionRow; onClose: () => void; onSaved: () => void }) {
   const { addToast } = useToast();
   const requestId = useRef(crypto.randomUUID());
   const vehicles = useFetch(() => chargingService.vehicles());
@@ -23,15 +24,15 @@ export function RecordRechargeDialog({ onClose, onSaved }: { onClose: () => void
   const [vehicleId, setVehicleId] = useState("");
   const [publicLabel, setPublicLabel] = useState("");
   const [stationId, setStationId] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(session?.amount != null ? String(Math.round(session.amount)) : "");
   const brand = useBrand();
   const methods = useRentMethods();
   const [chosenMethod, setMethod] = useState<PaymentMethod | "">("");
   const method = (chosenMethod || methods[0]?.value || "") as PaymentMethod;
   const [reference, setReference] = useState("");
-  const [before, setBefore] = useState("");
-  const [after, setAfter] = useState("");
-  const [kwh, setKwh] = useState("");
+  const [before, setBefore] = useState(session?.socBefore != null ? String(session.socBefore) : "");
+  const [after, setAfter] = useState(session?.socAfter != null ? String(session.socAfter) : "");
+  const [kwh, setKwh] = useState(session?.energyKwh != null ? String(session.energyKwh) : "");
   const [error, setError] = useState<string>();
   const [isSaving, setIsSaving] = useState(false);
   const chosen = vehicles.data?.find((option) => option.id === vehicleId);
@@ -53,9 +54,9 @@ export function RecordRechargeDialog({ onClose, onSaved }: { onClose: () => void
     try {
       await chargingService.record({
         vehicleId: kind === "OWN" ? vehicleId : undefined, publicLabel: kind === "PUBLIC" ? publicLabel.trim() : undefined, stationId, amount: Number(amount), method,
-        reference: reference.trim(), batteryBefore: b, batteryAfter: a, kwh: kwh ? Number(kwh) : undefined, requestId: requestId.current,
+        reference: reference.trim(), batteryBefore: b, batteryAfter: a, kwh: kwh ? Number(kwh) : undefined, sessionId: session?.id, requestId: requestId.current,
       });
-      addToast({ title: "Recharge enregistrée", description: `Batterie ${b} % → ${a} %.`, type: "success" });
+      addToast({ title: session ? "Paiement enregistré" : "Recharge enregistrée", description: `Batterie ${b} % → ${a} %.`, type: "success" });
       onSaved();
     } catch (failure) {
       setError(getErrorMessage(failure, "Impossible d'enregistrer la recharge."));
@@ -64,7 +65,7 @@ export function RecordRechargeDialog({ onClose, onSaved }: { onClose: () => void
   };
 
   return (
-    <Dialog isOpen onClose={onClose} title="Enregistrer une recharge" description="Le client paie la recharge sur place, avec son propre argent." className="max-w-xl">
+    <Dialog isOpen onClose={onClose} title={session ? "Enregistrer le paiement de la session" : "Enregistrer une recharge"} description={session ? `Session ${session.transactionId} sur ${session.chargePointId ?? "la borne"}. Les chiffres de la plateforme sont proposés : corrigez ce que le client a réellement payé.` : "Le client paie la recharge sur place, avec son propre argent."} className="max-w-xl">
       <div className="space-y-4">
         <SelectField label="Véhicule *" options={[{ value: "OWN", label: `Véhicule ${brand.name}` }, { value: "PUBLIC", label: "Voiture publique" }]} value={kind}
           onChange={(event) => { setKind(event.target.value as "OWN" | "PUBLIC"); setError(undefined); }} />

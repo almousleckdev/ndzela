@@ -8,6 +8,7 @@ import com.ndzela.admin.driver.domain.DriverRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
@@ -27,7 +28,8 @@ public class DriverLoginAttempts {
         }
     }
 
-    @Transactional
+    // Its own transaction: the count must survive the caller rolling back after it refuses the request.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void failed(UUID driverId) {
         Driver driver = drivers.findForUpdate(driverId).orElseThrow();
         if (driver.getLoginLockedUntil() != null && !driver.getLoginLockedUntil().isAfter(OffsetDateTime.now())) {

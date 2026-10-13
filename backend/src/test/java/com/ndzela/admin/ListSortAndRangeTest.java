@@ -76,7 +76,7 @@ class ListSortAndRangeTest extends AbstractDriverTest {
     void theLedgerHistorySortsByAmount() throws Exception {
         String driver = driverNamed("ZAMBO", "Paul");
         for (int amount : new int[]{1000, 9000, 4000}) {
-            postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":" + amount + ",\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager);
+            postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":" + amount + ",\"method\":\"AIRTEL_MONEY\",\"reference\":\"R" + amount + "\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager).andExpect(status().isCreated());
         }
         send(get("/api/v1/payments/history?sort=amount,desc"), viewer).andExpect(jsonPath("$.items[0].amount").value(9000)).andExpect(jsonPath("$.items[2].amount").value(1000));
         send(get("/api/v1/payments/history?sort=amount,asc"), viewer).andExpect(jsonPath("$.items[0].amount").value(1000));

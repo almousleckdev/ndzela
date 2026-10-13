@@ -128,7 +128,7 @@ public class ChargingQueryService {
             boolean critical = e.getBatteryBefore() != null && e.getBatteryBefore() <= byId.get(e.getCountryId()).getChargingCriticalPercent();
             return new RechargeResponse(e.getId(), e.getType(), e.getVehicleId(), v != null ? v.fleetNumber() + " · " + v.plate() : e.getPublicLabel(), e.getDriverId(),
                     d == null ? null : d.fullName(), e.getPublicLabel(), e.getStationId(), stationNames.get(e.getStationId()), whole(e.getAmount()), e.getMethod(), e.getReference(),
-                    e.getBatteryBefore(), e.getBatteryAfter(), e.getKwh(), critical, reversed.contains(e.getId()), e.getReason(), e.getRecordedBy(), e.getCreatedAt());
+                    e.getBatteryBefore(), e.getBatteryAfter(), e.getKwh(), critical, reversed.contains(e.getId()), e.getReason(), e.getRecordedBy(), e.getCreatedAt(), e.getSessionId());
         }).toList();
     }
 

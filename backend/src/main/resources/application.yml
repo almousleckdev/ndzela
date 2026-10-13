@@ -1,5 +1,9 @@
 # Secrets have no defaults on purpose: the app refuses to start without them.
 # Provide them as environment variables, or in backend/.env (git-ignored; see .env.example).
+server:
+  # Behind a reverse proxy set FORWARD_HEADERS_STRATEGY=native so the rate limits and the audit trail see the visitor, not the proxy.
+  # Leave it "none" when the app is reachable directly: the headers could then be forged.
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
 spring:
   application:
     name: ndzela-admin
@@ -79,8 +83,12 @@ app:
   mfa:
     issuer: NDZela Admin
     encryption-key: ${MFA_ENCRYPTION_KEY} # base64 of 32 bytes: openssl rand -base64 32
-  storage:
-    upload-dir: ${UPLOAD_DIR:./uploads}
+  storage:                                  # Cloudinary: no defaults, the app refuses to start without them
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
+    root-folder: ${CLOUDINARY_ROOT_FOLDER}  # separates environments inside one account: ndzela-dev, ndzela-prod
+    request-timeout: 15s
   pvit:
     base-url: ${PVIT_BASE_URL:https://api.mypvit.pro}
     operation-account-code: ${PVIT_OPERATION_ACCOUNT_CODE:}
@@ -103,10 +111,17 @@ app:
     lock-after-unpaid-days: ${DRIVER_LOCK_AFTER_UNPAID_DAYS:3}   # from this many unpaid days a driver can only use the payment screen until all is paid
   ocpp:
     base-url: ${OCPP_BASE_URL:https://zella-ocpp.com}
-    api-key: ${OCPP_API_KEY:}                       # server-to-server X-API-Key; never in a frontend or the app
+    api-key: ${OCPP_FLEET_API_KEY:${OCPP_API_KEY:}}  # the Fleet API key (X-API-Key); never in a frontend or the app. Empty: no sync
     webhook-secret: ${OCPP_WEBHOOK_SECRET:}         # empty: every webhook is refused
     webhook-header: ${OCPP_WEBHOOK_HEADER:X-Webhook-Secret}
     country-code: ${OCPP_COUNTRY:GA}                # the country the platform's stations and sessions belong to
+    sync-enabled: ${OCPP_SYNC_ENABLED:true}
+    sync-interval: ${OCPP_SYNC_INTERVAL:PT10S}       # between two syncs when no webhook asked for one (6 of the 60 requests a minute)
+    sync-page-size: 500                             # 1 to 1000
+    request-timeout: 15s
+  rate-limit:
+    password-reset-per-address: ${RATE_LIMIT_RESET_PER_ADDRESS:10}   # reset requests one address can send in an hour
+    password-reset-per-account: ${RATE_LIMIT_RESET_PER_ACCOUNT:3}    # reset e-mails one account receives in an hour
   public-site:
     country-code: ${PUBLIC_SITE_COUNTRY:GA}          # the country the website's applications and messages belong to
     max-submissions-per-hour: ${PUBLIC_SITE_MAX_PER_HOUR:5}

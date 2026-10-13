@@ -1,6 +1,7 @@
 package com.ndzela.admin.auth.application;
 
 import com.ndzela.admin.common.exception.SessionExpiredException;
+import com.ndzela.admin.common.ratelimit.RateLimiter;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.infrastructure.email.EmailProvider;
 import com.ndzela.admin.security.OpaqueTokens;
@@ -22,6 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PasswordResetService {
     private static final String KEY_PREFIX = "auth:reset:";
+    private static final java.time.Duration RESET_WINDOW = java.time.Duration.ofHours(1);
 
     private final UserRepository userRepository;
     private final StringRedisTemplate redis;
@@ -29,9 +31,16 @@ public class PasswordResetService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokens;
     private final AppProperties props;
+    private final RateLimiter limiter;
 
-    public void requestReset(String rawEmail) {
+    // An address that asks too often is refused; an account that was already mailed enough gets no more, silently, so the answer reveals nothing.
+    public void requestReset(String rawEmail, String address) {
+        var limits = props.rateLimit();
+        limiter.check("reset-address", address, limits.passwordResetPerAddress(), RESET_WINDOW);
         String email = rawEmail.trim().toLowerCase(Locale.ROOT);
+        if (!limiter.tryAcquire("reset-account", email, limits.passwordResetPerAccount(), RESET_WINDOW)) {
+            return;
+        }
         userRepository.findByEmail(email)
                 .filter(user -> user.getStatus() != UserStatus.DISABLED)
                 .ifPresent(user -> sendLink(user.getEmail(), props.auth().passwordResetTtl(),

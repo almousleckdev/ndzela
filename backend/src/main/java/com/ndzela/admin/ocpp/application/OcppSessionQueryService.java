@@ -28,6 +28,11 @@ public class OcppSessionQueryService {
         return PageResponse.from(sessions.findAll(spec, PageRequest.of(page, size, Sort.by(Sort.Order.desc("startedAt").nullsLast(), Sort.Order.desc("createdAt")))), SessionRow::from);
     }
 
+    @Transactional(readOnly = true)
+    public java.util.Optional<SessionRow> find(java.util.UUID id) {
+        return sessions.findById(id).map(SessionRow::from);
+    }
+
     private static Specification<ChargingSession> status(String status) {
         return (root, query, cb) -> status == null || status.isBlank() ? cb.conjunction() : cb.equal(root.get("status"), status.trim());
     }

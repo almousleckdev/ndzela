@@ -1,26 +1,19 @@
 package com.ndzela.admin.driver;
 
-import com.ndzela.admin.config.properties.AppProperties;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class DriverFilesTest extends AbstractDriverTest {
     private static final byte[] PDF = "%PDF-1.4 test".getBytes(StandardCharsets.UTF_8);
-
-    @Autowired
-    private AppProperties props;
 
     private String center;
 
@@ -29,15 +22,22 @@ class DriverFilesTest extends AbstractDriverTest {
         center = newCenter(manager, "NDZELA");
     }
 
-    private long storedFiles() throws Exception {
-        try (Stream<Path> files = Files.list(Path.of(props.storage().uploadDir()).toAbsolutePath().normalize().resolve("private"))) {
-            return files.count();
-        }
+    private long storedFiles() {
+        return cloud.privateCount();
     }
 
     private org.springframework.test.web.servlet.ResultActions putFile(String url, String name, String type, byte[] bytes, com.ndzela.admin.user.domain.User as) throws Exception {
         return mvc.perform(multipart(url).file(new MockMultipartFile("file", name, type, bytes)).with(r -> { r.setMethod("PUT"); return r; })
                 .header("Authorization", bearer(as)));
+    }
+
+    @Test
+    void documentsAreKeptInTheirCountrysFolderAndNeverPublicly() throws Exception {
+        createDriver(manager, DriverJson.create(newVehicle(manager), center)).andExpect(status().isCreated());
+
+        assertEquals(1, storedFiles());
+        cloud.privateFiles().keySet().forEach(id -> assertTrue(id.matches("ndzela-test/ga/documents/[0-9a-f-]{36}\\.(png|pdf)"), id));
+        assertEquals(0, cloud.publicCount());
     }
 
     @Test

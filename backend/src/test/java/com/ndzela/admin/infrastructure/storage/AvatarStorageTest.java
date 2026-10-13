@@ -1,32 +1,29 @@
 package com.ndzela.admin.infrastructure.storage;
 
-import com.ndzela.admin.config.properties.StorageProperties;
 import com.ndzela.admin.TestProperties;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
-import com.ndzela.admin.config.properties.AppProperties;
+import com.ndzela.admin.support.FakeCloudinaryClient;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AvatarStorageTest {
-    @TempDir
-    Path tmp;
-
+    private FakeCloudinaryClient cloud;
     private AvatarStorage storage;
 
     @BeforeEach
     void setUp() {
-        AppProperties base = TestProperties.create();
-        storage = new AvatarStorage(new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), base.jwt(), base.auth(),
-                base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(), new StorageProperties(tmp.toString()), base.pvit(), base.driverApp(), base.publicSite(), base.ocpp()));
+        var props = TestProperties.create();
+        cloud = new FakeCloudinaryClient(props.storage());
+        storage = new AvatarStorage(cloud, props);
     }
 
     private static byte[] png() {
@@ -34,36 +31,45 @@ class AvatarStorageTest {
     }
 
     @Test
-    void storesPngUnderRandomNameAndDeletesIt() {
-        String url = storage.save(new MockMultipartFile("file", "me.png", "image/png", png()));
-
-        assertTrue(url.startsWith("/media/avatars/") && url.endsWith(".png"));
-        Path file = tmp.resolve("avatars").resolve(url.substring("/media/avatars/".length()));
-        assertTrue(Files.exists(file));
+    void storesAPictureUnderTheCountryFolderAndDeletesIt() {
+        String url = storage.save(new MockMultipartFile("file", "me.png", "image/png", png()), "GA");
+        assertTrue(url.startsWith("https://res.cloudinary.com/testcloud/image/upload/") && url.contains("/ndzela-test/ga/avatars/"));
+        assertEquals(1, cloud.publicCount());
 
         storage.delete(url);
-        assertFalse(Files.exists(file));
+        assertEquals(0, cloud.publicCount());
+    }
+
+    @Test
+    void aPictureOfAGlobalUserGoesToTheGlobalFolder() {
+        assertTrue(storage.save(new MockMultipartFile("file", "me.png", "image/png", png()), null).contains("/ndzela-test/global/avatars/"));
     }
 
     @Test
     void typeIsDecidedByContentNotByClaimedName() {
         byte[] svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" onload=\"alert(1)\"/>".getBytes(StandardCharsets.UTF_8);
         var fake = new MockMultipartFile("file", "avatar.png", "image/png", svg);
-
-        BusinessRuleViolationException e = assertThrows(BusinessRuleViolationException.class, () -> storage.save(fake));
+        BusinessRuleViolationException e = assertThrows(BusinessRuleViolationException.class, () -> storage.save(fake, "GA"));
         assertEquals("INVALID_IMAGE", e.getCode());
+        assertEquals(0, cloud.publicCount());
     }
 
     @Test
     void rejectsOversizedFiles() {
         var big = new MockMultipartFile("file", "big.png", "image/png", new byte[2 * 1024 * 1024 + 1]);
-        assertEquals("IMAGE_TOO_LARGE", assertThrows(BusinessRuleViolationException.class, () -> storage.save(big)).getCode());
+        assertEquals("IMAGE_TOO_LARGE", assertThrows(BusinessRuleViolationException.class, () -> storage.save(big, "GA")).getCode());
     }
 
     @Test
-    void deleteIgnoresPathsOutsideTheAvatarFolder() throws Exception {
-        Path outside = Files.writeString(tmp.resolve("secret.txt"), "keep me");
-        storage.delete("/media/avatars/../secret.txt");
-        assertTrue(Files.exists(outside));
+    void deleteTouchesOnlyPicturesThisApplicationStored() {
+        String ours = storage.save(new MockMultipartFile("file", "me.png", "image/png", png()), "GA");
+        storage.delete("https://evil.example/image/upload/v1/ndzela-test/ga/avatars/x.png");
+        storage.delete("https://res.cloudinary.com/othercloud/image/upload/v1/ndzela-test/ga/avatars/x.png");
+        storage.delete("https://res.cloudinary.com/testcloud/image/upload/v1/another-root/ga/avatars/x.png");
+        storage.delete("/media/avatars/old.png");
+        storage.delete(null);
+        assertEquals(1, cloud.publicCount());
+        assertNull(storage.publicIdOf("https://res.cloudinary.com/testcloud/image/upload/v1/ndzela-test/../secrets/x.png"));
+        assertTrue(storage.publicIdOf(ours).startsWith("ndzela-test/ga/avatars/"));
     }
 }

@@ -79,8 +79,8 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public MessageResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        passwordResetService.requestReset(request.email());
+    public MessageResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest http) {
+        passwordResetService.requestReset(request.email(), http.getRemoteAddr());
         return new MessageResponse("If the email exists, a reset link was sent.");
     }
 

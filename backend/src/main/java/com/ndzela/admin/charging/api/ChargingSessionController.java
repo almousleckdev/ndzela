@@ -1,7 +1,8 @@
-package com.ndzela.admin.ocpp.api;
+package com.ndzela.admin.charging.api;
 
+import com.ndzela.admin.charging.application.ChargingSessionService;
 import com.ndzela.admin.common.web.dto.PageResponse;
-import com.ndzela.admin.ocpp.application.OcppSessionQueryService;
+import com.ndzela.admin.ocpp.api.SessionRow;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -14,8 +15,8 @@ import java.time.LocalDate;
 
 @RestController
 @RequiredArgsConstructor
-public class OcppSessionController {
-    private final OcppSessionQueryService sessions;
+public class ChargingSessionController {
+    private final ChargingSessionService sessions;
 
     @GetMapping("/api/v1/charging/sessions")
     @PreAuthorize("hasAuthority('charging:read')")

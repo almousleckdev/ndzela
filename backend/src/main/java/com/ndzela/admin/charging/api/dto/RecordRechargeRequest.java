@@ -25,4 +25,5 @@ public record RecordRechargeRequest(
         @DecimalMin("0.01")
         @DecimalMax("9999")
         @Digits(integer = 4, fraction = 2) BigDecimal kwh,
+        UUID sessionId,
         @NotNull UUID requestId) {}
