@@ -23,10 +23,11 @@ class PasswordResetRateLimitTest extends AbstractIntegrationTest {
     @Test
     void anAccountReceivesAFewResetLinksAnHourAndTheAnswerNeverChanges() throws Exception {
         staff("ga.reset@ndzela.test", "GA", "ADMIN");
+        int before = resetLinks();
         for (int i = 0; i < 5; i++) {
             forgot("ga.reset@ndzela.test").andExpect(status().isOk()).andExpect(jsonPath("$.message").value("If the email exists, a reset link was sent."));
         }
-        assertEquals(3, resetLinks());
+        assertEquals(3, resetLinks() - before);
     }
 
     @Test
