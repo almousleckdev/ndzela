@@ -65,7 +65,7 @@ app:
       api-key: ${RESEND_API_KEY:}
       from: ${MAIL_FROM:NDZela Admin <onboarding@resend.dev>}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
-  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}   # the web admin only: these may send the cookie
   jwt:
     secret: ${JWT_SECRET}            # base64, >= 256 bits: openssl rand -base64 48
     issuer: ndzela-admin
@@ -131,6 +131,7 @@ app:
   public-site:
     country-code: ${PUBLIC_SITE_COUNTRY:GA}          # the country the website's applications and messages belong to
     max-submissions-per-hour: ${PUBLIC_SITE_MAX_PER_HOUR:5}
+    allowed-origins: ${PUBLIC_SITE_ORIGINS:http://localhost:3001}   # the website: may only post to /api/v1/public, never with credentials
   bootstrap:
     initial-admin-email: ${INITIAL_ADMIN_EMAIL:superadmin@ndzela.com}
     initial-admin-password: ${INITIAL_ADMIN_PASSWORD:}

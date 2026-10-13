@@ -40,7 +40,7 @@ public final class TestProperties {
                 new PvitProperties("https://pvit.test", "ACC_TEST", "test-password", "secretcode", "paymentcode", "statuscode", "feescode", "kyccode", "CB001", "NDZELA", "LOYER", "CUSTOMER",
                         null, Duration.ofSeconds(5), Duration.ofMinutes(3), Duration.ofMinutes(30), false),
                 new DriverAppProperties(3),
-                new PublicSiteProperties("GA", 5),
+                new PublicSiteProperties("GA", 5, List.of("https://ndzela.test")),
                 new OcppProperties("https://ocpp.test", "test-key", "whsecret", "X-Webhook-Secret", "GA", false, Duration.ofMinutes(1), 500, Duration.ofSeconds(5)),
                 new RateLimitProperties(10, 3));
     }

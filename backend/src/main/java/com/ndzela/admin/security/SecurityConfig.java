@@ -56,16 +56,26 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Two tiers. The web admin may call everything, with its cookie. The public website (same site as the API, so the browser would send it the refresh cookie)
+    // may only post its forms, never with credentials: a flaw in the website must not be able to reach a signed-in session.
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(props.corsAllowedOrigins());
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-ID", TenantContextFilter.COUNTRY_HEADER));
-        configuration.setAllowCredentials(true);
+        CorsConfiguration website = new CorsConfiguration();
+        website.setAllowedOrigins(props.publicSite().allowedOrigins());
+        website.setAllowedMethods(List.of("POST", "OPTIONS"));
+        website.setAllowedHeaders(List.of("Content-Type", "X-Request-ID"));
+        website.setAllowCredentials(false);
+
+        CorsConfiguration admin = new CorsConfiguration();
+        admin.setAllowedOrigins(props.corsAllowedOrigins());
+        admin.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        admin.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-ID", TenantContextFilter.COUNTRY_HEADER));
+        admin.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        // The first matching pattern wins: the narrow one goes first
+        source.registerCorsConfiguration("/api/v1/public/**", website);
+        source.registerCorsConfiguration("/**", admin);
         return source;
     }
 
