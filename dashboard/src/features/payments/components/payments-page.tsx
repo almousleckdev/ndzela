@@ -10,6 +10,7 @@ import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
 import { KpiBand, Page, PageHead, Panel, Toolbar, type Kpi } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
+import { usePolling } from "@/hooks/use-polling";
 import { describeRange, NO_RANGE, rangeOf } from "@/lib/date-range";
 import { formatFcfa } from "@/lib/money";
 import { RequirePermission } from "@/features/access/components/require-permission";
@@ -23,9 +24,9 @@ import type { AccountFilter, AccountRow } from "@/features/payments/types";
 const LEVELS = [
   { value: "UP_TO_DATE", label: "À jour" },
   { value: "LATE", label: "En retard (tous niveaux)" },
-  { value: "YELLOW", label: "Retard 24 h" },
-  { value: "DARK_YELLOW", label: "Retard 48 h" },
-  { value: "RED", label: "Retard 72 h" },
+  { value: "YELLOW", label: "Rappel · 1 jour" },
+  { value: "DARK_YELLOW", label: "Urgent · 2 jours" },
+  { value: "RED", label: "Suspendu · 3 jours et +" },
 ];
 
 function PaymentsContent() {
@@ -37,6 +38,7 @@ function PaymentsContent() {
   const summary = useAsync(() => paymentsService.summary({ from: range.from, to: range.to }), [range.from, range.to]);
   const [paying, setPaying] = useState<AccountRow | null>(null);
   const columns = useAccountColumns({ onPay: can(PERMISSIONS.PAYMENTS_CREATE) ? setPaying : undefined, showCollected: range.preset !== "all" });
+  usePolling(() => { list.reload(); summary.reload(); }, 15000);
   const s = summary.data;
 
   const kpis: Kpi[] = [
@@ -44,7 +46,7 @@ function PaymentsContent() {
     { label: "Encaissé aujourd'hui", value: s ? formatFcfa(s.collectedToday) : "-" },
     { label: "Total impayé", value: s ? formatFcfa(s.totalOverdue) : "-", tone: s && s.totalOverdue > 0 ? "bad" : undefined },
     { label: "Chauffeurs à jour", value: s?.upToDate ?? "-" },
-    { label: "En retard", value: s?.late ?? "-", hint: s ? `${s.red} à plus de 72 h` : undefined, tone: s && s.late > 0 ? "bad" : undefined, href: "/finance/arrears" },
+    { label: "En retard", value: s?.late ?? "-", hint: s ? `${s.red} à 3 jours ou plus` : undefined, tone: s && s.late > 0 ? "bad" : undefined, href: "/finance/arrears" },
   ];
   const active: ActiveFilter[] = [
     ...(filters.level ? [{ key: "level", label: LEVELS.find((l) => l.value === filters.level)?.label ?? filters.level, onRemove: () => query.setFilter("level", "") }] : []),

@@ -75,6 +75,12 @@ public class OcppSessionWriter {
         s.setCurrency(item.currency());
         s.setCurrencyDecimals(item.currencyDecimals());
         s.setPricePerKwhMinor(item.pricePerKwhMinor());
+        if (item.socStartPercent() != null) {
+            s.setSocBefore(item.socStartPercent());
+        }
+        if (item.socEndPercent() != null) {
+            s.setSocAfter(item.socEndPercent());
+        }
         s.setSourceUpdatedAt(item.updatedAt());
         s.setRaw(item.raw());
     }

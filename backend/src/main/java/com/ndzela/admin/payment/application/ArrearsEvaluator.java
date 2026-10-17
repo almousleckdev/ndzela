@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,8 +37,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ArrearsEvaluator {
-    static final String SUSPENSION_REASON = "Impayés : loyer non réglé depuis plus de 72 heures (suspension automatique)";
-    private static final EnumSet<ArrearsLevel> STEPS = EnumSet.of(ArrearsLevel.YELLOW, ArrearsLevel.DARK_YELLOW, ArrearsLevel.RED);
+    static final String SUSPENSION_REASON = "Impayés : trois jours de loyer non réglés ou plus (suspension automatique)";
+    private static final List<ArrearsLevel> STEPS = List.of(ArrearsLevel.YELLOW, ArrearsLevel.DARK_YELLOW, ArrearsLevel.RED);
 
     private final ContractService contractService;
     private final DriverArrearsService driverArrears;
@@ -65,21 +65,18 @@ public class ArrearsEvaluator {
             state = accounts.state(driver.countryId(), contract, now);
         }
         var zone = accounts.zoneOf(driver.countryId());
-        driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime(), state.unpaid(), state.paidOnTime() + state.paidLate());
+        driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime(), state.unpaid(), state.paidOnTime() + state.paidLate(),
+                state.awaitingDays(), state.awaitingAmount());
 
         ArrearsLevel highestNew = ArrearsLevel.NONE;
-        for (AccountDay day : state.days()) {
-            if (day.status() != DayStatus.UNPAID) {
-                continue;
-            }
-            ArrearsLevel reached = AccountCalculator.levelOf(day.dueAt(), now);
-            for (ArrearsLevel step : STEPS) {
-                if (step.compareTo(reached) <= 0 && events.recordOnce(driver.countryId(), contractId, driver.id(), day.day(), step.name()) == 1) {
-                    audit.record("ARREARS_LEVEL_REACHED", "DRIVER", driver.id().toString(), driver.fullName(), driver.countryId(), step + ", rent of " + day.day());
-                    if (step.compareTo(highestNew) > 0) {
-                        highestNew = step;
-                    }
-                }
+        // The 1st unpaid day is the reminder, the 2nd the urgent step, the 3rd the suspension; each is recorded once for the day that reached it.
+        List<AccountDay> unpaidDays = state.days().stream().filter(day -> day.status() == DayStatus.UNPAID).toList();
+        for (int i = 0; i < Math.min(unpaidDays.size(), STEPS.size()); i++) {
+            ArrearsLevel step = STEPS.get(i);
+            AccountDay day = unpaidDays.get(i);
+            if (events.recordOnce(driver.countryId(), contractId, driver.id(), day.day(), step.name()) == 1) {
+                audit.record("ARREARS_LEVEL_REACHED", "DRIVER", driver.id().toString(), driver.fullName(), driver.countryId(), step + ", rent of " + day.day());
+                highestNew = step;
             }
         }
         if (highestNew != ArrearsLevel.NONE) {
@@ -92,7 +89,7 @@ public class ArrearsEvaluator {
         if (level == ArrearsLevel.RED) {
             boolean suspended = driverArrears.suspendForArrears(driver.id(), SUSPENSION_REASON);
             String plate = vehicleService.responsesByIds(java.util.List.of(contract.vehicleId())).values().stream().findFirst().map(v -> v.fleetNumber() + " " + v.plate()).orElse("");
-            notifications.notifyHolders("arrears:manage", driver.countryId(), null, "ARREARS_RED", "Impayés de plus de 72 heures",
+            notifications.notifyHolders("arrears:manage", driver.countryId(), null, "ARREARS_RED", "Impayés : 3 jours ou plus",
                     driver.fullName() + " : " + state.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " FCFA impayés"
                             + (suspended ? ", chauffeur suspendu automatiquement" : "") + ". Bloquez le véhicule " + plate + " dans l'outil GPS.");
         }
@@ -102,13 +99,13 @@ public class ArrearsEvaluator {
         CountryBrand brand = CountryBrand.ofCountry(countries.findById(driver.countryId()).map(Country::getCode).orElse(null));
         String subject = brand.name() + " : " + switch (level) {
             case YELLOW -> "rappel de paiement de votre loyer";
-            case DARK_YELLOW -> "rappel urgent, loyer impayé";
+            case DARK_YELLOW -> "urgent : deux jours de loyer impayés";
             default -> "votre compte est suspendu pour impayés";
         };
         String message = switch (level) {
-            case YELLOW -> "Votre loyer n'a pas été réglé avant l'échéance. Merci de régulariser dès aujourd'hui.";
-            case DARK_YELLOW -> "Votre loyer est impayé depuis plus de 48 heures. Une pénalité peut s'appliquer. Régularisez immédiatement.";
-            default -> "Votre loyer est impayé depuis plus de 72 heures : votre compte est suspendu et votre véhicule peut être bloqué. Régularisez l'intégralité pour le débloquer.";
+            case YELLOW -> "Votre loyer d'un jour n'a pas été réglé avant l'échéance. Merci de régulariser dès aujourd'hui.";
+            case DARK_YELLOW -> "Deux jours de loyer sont impayés. Une pénalité peut s'appliquer. Régularisez immédiatement.";
+            default -> "Trois jours de loyer ou plus sont impayés : votre compte est suspendu et votre véhicule peut être bloqué. Régularisez l'intégralité pour le débloquer.";
         };
         try {
             email.sendHtmlEmail(driver.email(), subject, "arrears-email", Map.of("name", driver.firstName(), "message", message, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(),

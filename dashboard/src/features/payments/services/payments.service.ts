@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
+import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
 import type { AccountDetail, AccountFilter, AccountRow, HistoryQuery, IncidentInput, LedgerEntry, PaymentMethod, PaymentResult, PaymentSummary, TransactionQuery, TransactionRow } from "@/features/payments/types";
@@ -31,7 +32,7 @@ export const paymentsService = {
 
   history: (query: HistoryQuery, page: number, size: number, sort?: string) => apiClient<Page<LedgerEntry>>(`/payments/history?${queryString({ ...historyParams(query), sort, page, size })}`),
 
-  exportPath: (query: HistoryQuery) => `/payments/export?${queryString(historyParams(query))}`,
+  exportPath: (query: HistoryQuery, format: ExportFormat) => `/payments/export?${queryString({ ...historyParams(query), format })}`,
 
   transactions: (query: TransactionQuery, page: number, size: number) =>
     apiClient<Page<TransactionRow>>(`/payments/transactions?${queryString({ status: query.status === "ALL" ? undefined : query.status, method: query.method === "ALL" ? undefined : query.method, q: query.q.trim(), from: query.from, to: query.to, page, size })}`),

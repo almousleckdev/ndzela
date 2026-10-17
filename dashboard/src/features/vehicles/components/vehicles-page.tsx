@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Eye, MoreHorizontal, Plus } from "lucide-react";
+import { Eye, MoreHorizontal, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ColorLabel } from "@/components/ui/color-picker";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -19,9 +19,9 @@ import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
 import { KpiBand, Page, PageHead, Panel, Toolbar } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
+import { ExportMenu } from "@/components/export-menu";
 import { useToast } from "@/hooks/use-toast";
 import { describeRange, NO_RANGE } from "@/lib/date-range";
-import { downloadFile } from "@/lib/download";
 import { getErrorMessage } from "@/lib/errors";
 import { formatFcfa } from "@/lib/money";
 import { RequirePermission } from "@/features/access/components/require-permission";
@@ -52,7 +52,6 @@ function VehiclesContent() {
   const [editing, setEditing] = useState<Vehicle | "new" | null>(null);
   const [changing, setChanging] = useState<{ vehicle: Vehicle; action: (typeof STATUS_ACTIONS)[number] } | null>(null);
   const [deleting, setDeleting] = useState<Vehicle | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
   const { reload: reloadList } = list;
   const { reload: reloadCounts } = counts;
   const refresh = useCallback(() => { reloadList(); reloadCounts(); }, [reloadList, reloadCounts]);
@@ -68,17 +67,6 @@ function VehiclesContent() {
       addToast({ title: "Erreur", description: getErrorMessage(error, failure), type: "error" });
     }
   }, [addToast, refresh]);
-
-  const exportCsv = async () => {
-    setIsExporting(true);
-    try {
-      await downloadFile(vehiclesService.exportPath({ status, q: query.q, from: range.from, to: range.to }), "vehicules.csv");
-    } catch (error) {
-      addToast({ title: "Erreur", description: getErrorMessage(error, "Impossible d'exporter les véhicules."), type: "error" });
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   const columns = useMemo(() => col.columns([
     col.accessor("fleetNumber", { id: "fleetNumber", header: "N°", cell: (c) => <span className="font-medium">{c.getValue()}</span> }),
@@ -122,7 +110,7 @@ function VehiclesContent() {
         description="Les véhicules de la flotte, leur état et leur loyer journalier."
         actions={(
           <>
-            {can(PERMISSIONS.VEHICLES_EXPORT) && <Button variant="outline" onClick={exportCsv} isLoading={isExporting}><Download className="mr-2 h-4 w-4" /> Exporter</Button>}
+            {can(PERMISSIONS.VEHICLES_EXPORT) && <ExportMenu path={(format) => vehiclesService.exportPath({ status, q: query.q, from: range.from, to: range.to }, format)} filename="vehicules" failure="Impossible d'exporter les véhicules." />}
             {can(PERMISSIONS.VEHICLES_CREATE) && (
               <div className="text-right">
                 <Button onClick={() => setEditing("new")} disabled={mustPickCountry}><Plus className="mr-2 h-4 w-4" /> Ajouter un véhicule</Button>

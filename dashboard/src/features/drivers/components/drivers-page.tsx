@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarOff, Download, Eye, GraduationCap, MoreHorizontal, Plus } from "lucide-react";
+import { CalendarOff, Eye, GraduationCap, MoreHorizontal, Plus } from "lucide-react";
+import { ExportMenu } from "@/components/export-menu";
 import { Button } from "@/components/ui/button";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -18,10 +19,7 @@ import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
 import { KpiBand, Page, PageHead, Panel, Toolbar } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
-import { useToast } from "@/hooks/use-toast";
 import { describeRange, NO_RANGE } from "@/lib/date-range";
-import { downloadFile } from "@/lib/download";
-import { getErrorMessage } from "@/lib/errors";
 import { RequirePermission } from "@/features/access/components/require-permission";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
@@ -34,6 +32,7 @@ import { DRIVER_STATUS_LABELS, displayStatus } from "@/features/drivers/lib/driv
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver, DriverQuery } from "@/features/drivers/types";
 import { LEVEL_LABELS } from "@/features/payments/lib/payment-labels";
+import { LEVEL_MARKER } from "@/features/payments/components/account-columns";
 import { CountryFlag } from "@/features/tenancy/components/country-flag";
 import { useCountrySelectionStore } from "@/features/tenancy/store/country-selection.store";
 
@@ -51,12 +50,11 @@ function queryOf(filter: string): Pick<DriverQuery, "status" | "onLeave" | "late
 }
 
 const TONE: Record<string, Tone> = { success: "good", warning: "watch", danger: "bad", neutral: "neutral", info: "info" };
-const LEVEL_TONE = { NONE: "good", LATE: "neutral", YELLOW: "watch", DARK_YELLOW: "alert", RED: "bad" } as const;
+const LEVEL_TONE = { NONE: "good", LATE: "neutral", YELLOW: "watch", DARK_YELLOW: "bad", RED: "critical" } as const;
 const col = columnsFor<Driver>();
 
 function DriversContent() {
   const { can } = usePermissions();
-  const { addToast } = useToast();
   const router = useRouter();
   const isGlobal = useAuthStore((state) => state.user?.country === null);
   const selectedCountry = useCountrySelectionStore((state) => state.selectedCode);
@@ -68,21 +66,9 @@ function DriversContent() {
   const [action, setAction] = useState<DriverAction | null>(null);
   const [leavesOf, setLeavesOf] = useState<Driver | null>(null);
   const [centersOpen, setCentersOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const mustPickCountry = isGlobal && selectedCountry === null;
   const refresh = () => { list.reload(); stats.reload(); };
   const s = stats.data;
-
-  const exportCsv = async () => {
-    setIsExporting(true);
-    try {
-      await downloadFile(driversService.exportPath({ ...server, q: query.q, from: range.from, to: range.to }), "chauffeurs.csv");
-    } catch (error) {
-      addToast({ title: "Erreur", description: getErrorMessage(error, "Impossible d'exporter les chauffeurs."), type: "error" });
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   const columns = useMemo(() => col.columns([
     col.accessor((d) => `${d.personal.lastName} ${d.personal.firstName}`, { id: "lastName", header: "Chauffeur", cell: (c) => (
@@ -142,7 +128,7 @@ function DriversContent() {
         actions={(
           <>
             {can(PERMISSIONS.TRAINING_CENTERS_MANAGE) && <Button variant="outline" onClick={() => setCentersOpen(true)}><GraduationCap className="mr-2 h-4 w-4" /> Centres de formation</Button>}
-            {can(PERMISSIONS.DRIVERS_EXPORT) && <Button variant="outline" onClick={exportCsv} isLoading={isExporting}><Download className="mr-2 h-4 w-4" /> Exporter</Button>}
+            {can(PERMISSIONS.DRIVERS_EXPORT) && <ExportMenu path={(format) => driversService.exportPath({ ...server, q: query.q, from: range.from, to: range.to }, format)} filename="chauffeurs" failure="Impossible d'exporter les chauffeurs." />}
             {can(PERMISSIONS.DRIVERS_CREATE) && (
               <div className="text-right">
                 {mustPickCountry ? <Button disabled><Plus className="mr-2 h-4 w-4" /> Nouveau chauffeur</Button> : <Link href="/drivers/new"><Button><Plus className="mr-2 h-4 w-4" /> Nouveau chauffeur</Button></Link>}
@@ -170,7 +156,7 @@ function DriversContent() {
         )} />
         <ActiveFilters filters={active} onClear={query.reset} />
         <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(driver) => driver.id} initiallyHidden={["createdAt"]}
-          rowMarker={(driver) => ({ NONE: undefined, LATE: "bg-slate-400", YELLOW: "bg-yellow-400", DARK_YELLOW: "bg-orange-500", RED: "bg-red-600" } as const)[driver.arrears.level]}
+          rowMarker={(driver) => LEVEL_MARKER[driver.arrears.level]}
           server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: query.sorting, onSortingChange: query.setSorting }}
           empty={<EmptyState title="Aucun chauffeur" description={(s?.total ?? 0) === 0 ? "Créez le premier chauffeur." : "Aucun chauffeur ne correspond à ces filtres."} />} />
       </Panel>

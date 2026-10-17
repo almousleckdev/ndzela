@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.test.web.servlet.ResultActions;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -190,18 +189,23 @@ class ChargingApiTest extends AbstractDriverTest {
     }
 
     @Test
-    void theExportCoversEachPeriodWithTotalsAndIsAudited() throws Exception {
+    void theExportFollowsTheDatesAndSearchWithTotalsAndIsAudited() throws Exception {
         charge(manager, 20, 80).andExpect(status().isCreated());
         LocalDate today = LocalDate.now(ZoneId.of("Africa/Libreville"));
-        for (String period : new String[]{"DAY", "WEEK", "MONTH", "YEAR"}) {
-            String csv = new String(send(get("/api/v1/charging/export?period=" + period), accountant).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-            assertTrue(csv.startsWith("﻿\"Date\"") && csv.contains("TOTAL (1 recharges non annulées)") && csv.contains("\"5000\""), period + ": " + csv);
-        }
-        String empty = new String(send(get("/api/v1/charging/export?period=DAY&date=" + today.minusDays(3)), accountant).andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-        assertTrue(empty.contains("TOTAL (0 recharges"));
-        send(get("/api/v1/charging/export?period=DECADE"), accountant).andExpect(status().isBadRequest());
-        send(get("/api/v1/charging/export?period=DAY"), manager).andExpect(status().isForbidden());
-        assertEquals(5, auditRows("CHARGING_EXPORTED"));
+        var sheet = com.ndzela.admin.support.ExportSheets.rows(send(get("/api/v1/charging/export?from=" + today.minusDays(7) + "&to=" + today), accountant).andExpect(status().isOk()));
+        var data = com.ndzela.admin.support.ExportSheets.data(sheet);
+        assertEquals("NDZELA", sheet.get(0).get(1));
+        assertEquals("Recharges", sheet.get(1).get(1));
+        assertTrue(sheet.get(2).get(1).startsWith("Période : du "), sheet.get(2).get(1));
+        assertEquals("Date", sheet.get(com.ndzela.admin.support.ExportSheets.HEADER).get(0));
+        assertEquals(2, data.size(), "one recharge and the totals row");
+        assertTrue(data.get(1).contains("TOTAL (1 recharge non annulée)") && data.get(1).contains("5,000"), data.get(1).toString());
+        var empty = com.ndzela.admin.support.ExportSheets.data(com.ndzela.admin.support.ExportSheets.rows(send(get("/api/v1/charging/export?from=" + today.minusDays(3) + "&to=" + today.minusDays(3)), accountant)));
+        assertTrue(empty.get(0).contains("TOTAL (0 recharge non annulée)"));
+        assertTrue(com.ndzela.admin.support.ExportSheets.isPdf(send(get("/api/v1/charging/export?format=PDF"), accountant).andExpect(status().isOk())));
+        send(get("/api/v1/charging/export?from=nope"), accountant).andExpect(status().isBadRequest());
+        send(get("/api/v1/charging/export"), manager).andExpect(status().isForbidden());
+        assertEquals(3, auditRows("CHARGING_EXPORTED"));
     }
 
     @Test

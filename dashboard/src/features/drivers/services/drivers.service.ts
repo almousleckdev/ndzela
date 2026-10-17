@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
+import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
 import type { Contract } from "@/features/contracts/types";
@@ -13,7 +14,7 @@ export const driversService = {
 
   stats: () => apiClient<DriverStats>("/drivers/stats"),
 
-  exportPath: ({ status, onLeave, late, q, from, to }: Pick<DriverQuery, "status" | "onLeave" | "late" | "q" | "from" | "to">) => `/drivers/export?${queryString({ status: status === "ALL" ? undefined : status, onLeave, late, q: q.trim(), from, to })}`,
+  exportPath: ({ status, onLeave, late, q, from, to }: Pick<DriverQuery, "status" | "onLeave" | "late" | "q" | "from" | "to">, format: ExportFormat) => `/drivers/export?${queryString({ status: status === "ALL" ? undefined : status, onLeave, late, q: q.trim(), from, to, format })}`,
 
   leaves: (id: string) => apiClient<Leave[]>(`/drivers/${id}/leaves`),
 

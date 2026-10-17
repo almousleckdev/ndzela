@@ -30,6 +30,9 @@ export interface AccountRow {
   vehicle: string | null;
   level: ArrearsLevel;
   overdueAmount: number;
+  // Rent of the day that ended but whose deadline (noon) has not come yet.
+  awaitingDays: number;
+  awaitingAmount: number;
   overdueSince: string | null;
   lastPaymentAt: string | null;
   // Money received in the chosen period; null when no period is chosen.
@@ -79,6 +82,9 @@ export interface PaymentSummary {
   collectedToday: number;
   collectedRange: number | null;
   totalOverdue: number;
+  totalAwaiting: number;
+  // Riders who reach 3 unpaid days at noon if yesterday's rent is not paid.
+  atRisk: number;
   upToDate: number;
   late: number;
   yellow: number;

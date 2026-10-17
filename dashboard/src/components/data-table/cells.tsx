@@ -1,9 +1,9 @@
 import { formatFcfa } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
-export type Tone = "good" | "watch" | "alert" | "bad" | "neutral" | "info";
+export type Tone = "good" | "watch" | "alert" | "bad" | "critical" | "neutral" | "info";
 
-const DOT: Record<Tone, string> = { good: "bg-emerald-600", watch: "bg-amber-500", alert: "bg-orange-600", bad: "bg-red-600", neutral: "bg-slate-400", info: "bg-sky-600" };
+const DOT: Record<Tone, string> = { good: "bg-emerald-600", watch: "bg-amber-500", alert: "bg-orange-600", bad: "bg-red-600", critical: "bg-red-900", neutral: "bg-slate-400", info: "bg-sky-600" };
 
 // A status as a coloured dot and a word
 export function Status({ tone, children }: { tone: Tone; children: React.ReactNode }) {

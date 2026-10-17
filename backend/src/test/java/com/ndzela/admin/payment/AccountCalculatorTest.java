@@ -88,12 +88,48 @@ class AccountCalculatorTest {
     }
 
     @Test
-    void theLevelsFollowTheHoursPastTheNoonDeadline() {
-        assertEquals(ArrearsLevel.LATE, stateAt("2026-10-02T12:00:00").level());
-        assertEquals(ArrearsLevel.LATE, stateAt("2026-10-03T11:59:00").level());
-        assertEquals(ArrearsLevel.YELLOW, stateAt("2026-10-03T12:00:00").level());
-        assertEquals(ArrearsLevel.DARK_YELLOW, stateAt("2026-10-04T12:00:00").level());
-        assertEquals(ArrearsLevel.RED, stateAt("2026-10-05T12:00:00").level());
+    void theLevelFollowsTheNumberOfUnpaidDaysLikeThePreviousPlatform() {
+        assertEquals(ArrearsLevel.NONE, stateAt("2026-10-02T11:59:00").level(), "the first rent is only due at noon");
+        assertEquals(ArrearsLevel.YELLOW, stateAt("2026-10-02T12:00:00").level(), "one unpaid day: reminder");
+        assertEquals(ArrearsLevel.YELLOW, stateAt("2026-10-03T11:59:00").level(), "waiting longer does not raise the level");
+        assertEquals(ArrearsLevel.DARK_YELLOW, stateAt("2026-10-03T12:00:00").level(), "two unpaid days: urgent");
+        assertEquals(ArrearsLevel.RED, stateAt("2026-10-04T12:00:00").level(), "three unpaid days: suspension");
+        assertEquals(ArrearsLevel.RED, stateAt("2026-10-20T12:00:00").level());
+    }
+
+    @Test
+    void yesterdaysRentIsOwedBeforeItsDeadlineButNotLateYet() {
+        AccountState morning = stateAt("2026-10-03T06:00:00");
+        assertEquals(1, morning.unpaid(), "the rent of Oct 1 was due on Oct 2 at noon");
+        assertEquals(1, morning.awaitingDays(), "the rent of Oct 2 ended yesterday, its deadline is today at noon");
+        assertEquals(0, new BigDecimal("23000").compareTo(morning.awaitingAmount()));
+        assertEquals(ArrearsLevel.YELLOW, morning.level(), "the level counts late days only");
+
+        AccountState afterNoon = stateAt("2026-10-03T12:00:00");
+        assertEquals(2, afterNoon.unpaid());
+        assertEquals(0, afterNoon.awaitingDays());
+    }
+
+    @Test
+    void creditCoversTheOldestDayFirstThenTheAwaitingOne() {
+        AccountState onePaid = stateAt("2026-10-03T06:00:00", payment("2026-10-03T05:00:00", 23000));
+        assertEquals(0, onePaid.unpaid());
+        assertEquals(1, onePaid.awaitingDays(), "the payment settled the oldest day");
+        AccountState bothPaid = stateAt("2026-10-03T06:00:00", payment("2026-10-03T05:00:00", 46000));
+        assertEquals(0, bothPaid.unpaid());
+        assertEquals(0, bothPaid.awaitingDays());
+    }
+
+    @Test
+    void sundayLeavesNothingAwaitingOnMondayMorning() {
+        AccountState monday = stateAt("2026-10-05T06:00:00");
+        assertEquals(0, monday.awaitingDays(), "Saturday's rent was due on Sunday at noon and Sunday is not billed");
+    }
+
+    @Test
+    void payingADayLowersTheLevelAgain() {
+        assertEquals(ArrearsLevel.DARK_YELLOW, stateAt("2026-10-04T12:00:00", payment("2026-10-04T08:00:00", 23000)).level());
+        assertEquals(ArrearsLevel.NONE, stateAt("2026-10-04T12:00:00", payment("2026-10-04T08:00:00", 69000)).level());
     }
 
     @Test

@@ -2,7 +2,11 @@ package com.ndzela.admin.payment.application;
 
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
-import com.ndzela.admin.common.web.CsvWriter;
+import com.ndzela.admin.common.export.ExportFile;
+import com.ndzela.admin.common.export.ExportFormat;
+import com.ndzela.admin.common.export.ExportTable;
+import com.ndzela.admin.common.export.ExportTable.Column;
+import com.ndzela.admin.country.application.ExportBranding;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.SortParam;
 import com.ndzela.admin.contract.api.dto.ContractResponse;
@@ -62,6 +66,7 @@ public class PaymentQueryService {
     private final AccountService accounts;
     private final CountryService countryService;
     private final AuditService audit;
+    private final ExportBranding branding;
 
     @Transactional(readOnly = true)
     public PageResponse<AccountRow> accounts(String filter, String q, LocalDate lateFrom, LocalDate lateTo, LocalDate paidFrom, LocalDate paidTo, String sort, int page, int size) {
@@ -92,7 +97,7 @@ public class PaymentQueryService {
             return new AccountRow(d.id(), d.fullName(), d.phone(), d.status().name(), c == null ? null : c.id(), c == null ? null : c.contractNumber(), c == null ? null : c.dailyRent(),
                     v == null ? null : v.fleetNumber() + " · " + v.plate(), d.level(), d.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP), d.overdueSince(), lastPayment.get(d.id()),
                     ranged ? collected.getOrDefault(d.id(), BigDecimal.ZERO).setScale(0, java.math.RoundingMode.HALF_UP) : null,
-                    d.paidDays(), d.unpaidDays(), elapsed, total, Math.max(0, total - elapsed));
+                    d.paidDays(), d.unpaidDays(), elapsed, total, Math.max(0, total - elapsed), d.awaitingDays(), d.awaitingAmount().setScale(0, java.math.RoundingMode.HALF_UP));
         });
     }
 
@@ -117,7 +122,8 @@ public class PaymentQueryService {
         Map<ArrearsLevel, Long> counts = driverArrears.countsByLevel();
         ZoneId zone = requestZone();
         BigDecimal range = from == null && to == null ? null : ledger.collectedBetween(startOf(from, zone), endOf(to, zone)).setScale(0, java.math.RoundingMode.HALF_UP);
-        return new PaymentSummary(collectedToday(), range, driverArrears.totalOverdue().setScale(0, java.math.RoundingMode.HALF_UP), counts.get(ArrearsLevel.NONE),
+        return new PaymentSummary(collectedToday(), range, driverArrears.totalOverdue().setScale(0, java.math.RoundingMode.HALF_UP),
+                driverArrears.totalAwaiting().setScale(0, java.math.RoundingMode.HALF_UP), driverArrears.countAtRisk(), counts.get(ArrearsLevel.NONE),
                 counts.get(ArrearsLevel.LATE) + counts.get(ArrearsLevel.YELLOW) + counts.get(ArrearsLevel.DARK_YELLOW) + counts.get(ArrearsLevel.RED),
                 counts.get(ArrearsLevel.YELLOW), counts.get(ArrearsLevel.DARK_YELLOW), counts.get(ArrearsLevel.RED));
     }
@@ -133,16 +139,19 @@ public class PaymentQueryService {
     }
 
     @Transactional
-    public byte[] export(UUID driverId, LedgerEntryType type, PaymentMethod method, String q, LocalDate from, LocalDate to) {
+    public ExportFile export(UUID driverId, LedgerEntryType type, PaymentMethod method, String q, LocalDate from, LocalDate to, ExportFormat format) {
         List<LedgerEntry> rows = ledger.findAll(filter(driverId, type, method, q, from, to), PageRequest.of(0, EXPORT_LIMIT, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")))).getContent();
         Map<UUID, DriverRef> drivers = driverArrears.refs(rows.stream().map(LedgerEntry::getDriverId).collect(Collectors.toSet()));
         Set<UUID> reversed = reversedAmong(rows);
-        List<List<String>> lines = rows.stream().map(e -> List.of(e.getCreatedAt().toLocalDate().toString(), e.getCreatedAt().toLocalTime().withNano(0).toString(),
-                drivers.containsKey(e.getDriverId()) ? drivers.get(e.getDriverId()).fullName() : "", e.getType().name(), e.getAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString(),
-                e.getMethod() == null ? "" : e.getMethod().name(), e.getReference() == null ? "" : e.getReference(), e.getReason() == null ? "" : e.getReason(),
+        List<List<Object>> lines = rows.stream().map(e -> java.util.Arrays.<Object>asList(branding.day(e.getCreatedAt()), branding.time(e.getCreatedAt()),
+                drivers.containsKey(e.getDriverId()) ? drivers.get(e.getDriverId()).fullName() : "", e.getType().label(), e.getAmount().setScale(0, java.math.RoundingMode.HALF_UP),
+                e.getMethod() == null ? "" : e.getMethod().label(), e.getReference() == null ? "" : e.getReference(), e.getReason() == null ? "" : e.getReason(),
                 reversed.contains(e.getId()) ? "Oui" : "", e.getRecordedBy())).toList();
         audit.record("PAYMENTS_EXPORTED", "PAYMENT", null, "Export des paiements", TenantHolder.current().countryId(), lines.size() + " lignes");
-        return CsvWriter.toBytes(List.of("Date", "Heure", "Chauffeur", "Type", "Montant (FCFA)", "Moyen", "Référence", "Motif", "Annulé", "Saisi par"), lines);
+        ExportTable table = new ExportTable("Historique des paiements", branding.header(from, to), List.of(Column.of("Date", ExportTable.Kind.DATE, 14), Column.text("Heure", 10),
+                Column.text("Chauffeur", 24), Column.text("Type", 14), Column.of("Montant (FCFA)", ExportTable.Kind.MONEY, 14), Column.text("Moyen", 14), Column.text("Référence", 20),
+                Column.text("Motif", 24), Column.text("Annulé", 9), Column.text("Saisi par", 20)), lines, null);
+        return ExportFile.of(table, format, "paiements");
     }
 
     EntryResponse toResponse(LedgerEntry entry, DriverRef driver) {

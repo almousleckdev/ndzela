@@ -1,6 +1,5 @@
 import type { PaymentMethod } from "@/features/payments/types";
 
-export type ChargingPeriod = "DAY" | "WEEK" | "MONTH" | "YEAR";
 
 export interface Station {
   id: string;

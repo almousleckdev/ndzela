@@ -1,5 +1,6 @@
 package com.ndzela.admin.driver.api;
 
+import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.dto.ReasonRequest;
@@ -27,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -70,9 +70,8 @@ public class DriverController {
     @PreAuthorize("hasAuthority('drivers:export')")
     public ResponseEntity<byte[]> export(@RequestParam(required = false) DriverStatus status, @RequestParam(required = false) Boolean onLeave,
                                          @RequestParam(required = false) String q, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ResponseEntity.ok().contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"chauffeurs.csv\"").body(exports.csv(status, onLeave, q, from, to));
+                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
+        return exports.export(status, onLeave, q, from, to, format).response();
     }
 
     @GetMapping("/{id}")

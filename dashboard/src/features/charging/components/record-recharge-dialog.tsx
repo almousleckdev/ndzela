@@ -32,7 +32,7 @@ export function RecordRechargeDialog({ session, onClose, onSaved }: { session?: 
   const [reference, setReference] = useState("");
   const [before, setBefore] = useState(session?.socBefore != null ? String(session.socBefore) : "");
   const [after, setAfter] = useState(session?.socAfter != null ? String(session.socAfter) : "");
-  const [kwh, setKwh] = useState(session?.energyKwh != null ? String(session.energyKwh) : "");
+  const [kwh, setKwh] = useState(session?.energyKwh != null && Math.round(session.energyKwh * 100) >= 1 ? String(Math.round(session.energyKwh * 100) / 100) : "");
   const [error, setError] = useState<string>();
   const [isSaving, setIsSaving] = useState(false);
   const chosen = vehicles.data?.find((option) => option.id === vehicleId);

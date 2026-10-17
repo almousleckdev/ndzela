@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
+import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
 import type { Vehicle, VehicleCounts, VehicleQuery, VehicleStatus } from "@/features/vehicles/types";
@@ -24,7 +25,7 @@ export const vehiclesService = {
 
   get: (id: string) => apiClient<Vehicle>(`/vehicles/${id}`),
 
-  exportPath: ({ status, q, from, to }: Pick<VehicleQuery, "status" | "q" | "from" | "to">) => `/vehicles/export?${queryString({ status: status === "ALL" ? undefined : status, q: q.trim(), from, to })}`,
+  exportPath: ({ status, q, from, to }: Pick<VehicleQuery, "status" | "q" | "from" | "to">, format: ExportFormat) => `/vehicles/export?${queryString({ status: status === "ALL" ? undefined : status, q: q.trim(), from, to, format })}`,
 
   currentDriver: (id: string) => apiClient<Driver | undefined>(`/vehicles/${id}/driver`),
 

@@ -67,7 +67,7 @@ class OcppFleetClientTest {
         server.expect(once(), requestTo(BASE + "/api/v1/sessions/sync?limit=10")).andRespond(withSuccess("""
                 {"items":[
                   {"transactionId":123,"deviceId":"DY202609110007","connectorId":1,"idTag":"Z-1","status":"Finished","startedAt":"2026-10-04T08:00:00Z","stoppedAt":"2026-10-04T08:40:00Z",
-                   "energyKwh":21.5,"durationSeconds":2400,"stopReason":"EVDisconnected","costMinor":7525,"currency":"XAF","currencyDecimals":0,"pricePerKwhMinor":350,"updatedAt":"2026-10-04T08:41:00Z"},
+                   "energyKwh":21.5,"durationSeconds":2400,"stopReason":"EVDisconnected","costMinor":7525,"currency":"XAF","currencyDecimals":0,"pricePerKwhMinor":350,"socStartPercent":87,"socEndPercent":91,"updatedAt":"2026-10-04T08:41:00Z"},
                   {"transactionId":124,"deviceId":"DY202609110007","connectorId":null,"idTag":null,"status":null,"startedAt":null,"stoppedAt":null,"energyKwh":null,"durationSeconds":null,
                    "stopReason":null,"costMinor":null,"currency":null,"currencyDecimals":null,"pricePerKwhMinor":null,"updatedAt":null},
                   {"deviceId":"no-transaction"}
@@ -81,9 +81,12 @@ class OcppFleetClientTest {
         assertEquals(0, new BigDecimal("21.5").compareTo(full.energyKwh()));
         assertEquals(7525L, full.costMinor());
         assertEquals(0, full.currencyDecimals());
+        assertEquals(87, full.socStartPercent());
+        assertEquals(91, full.socEndPercent());
         assertEquals("2026-10-04T08:41Z", full.updatedAt().toString());
         FleetSession sparse = page.items().get(1);
         assertNull(sparse.energyKwh());
+        assertNull(sparse.socStartPercent());
         assertNull(sparse.updatedAt());
         assertTrue(page.hasMore());
     }

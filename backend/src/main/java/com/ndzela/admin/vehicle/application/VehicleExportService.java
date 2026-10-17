@@ -1,7 +1,11 @@
 package com.ndzela.admin.vehicle.application;
 
 import com.ndzela.admin.audit.application.AuditService;
-import com.ndzela.admin.common.web.CsvWriter;
+import com.ndzela.admin.common.export.ExportFile;
+import com.ndzela.admin.common.export.ExportFormat;
+import com.ndzela.admin.common.export.ExportTable;
+import com.ndzela.admin.common.export.ExportTable.Column;
+import com.ndzela.admin.country.application.ExportBranding;
 import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.vehicle.api.dto.VehicleResponse;
 import com.ndzela.admin.vehicle.domain.VehicleStatus;
@@ -10,10 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-// The vehicles table as a CSV file, with the same filters; every export is audited.
+// The vehicles table as a spreadsheet or a PDF, with the same filters; every export is audited.
 @Service
 @RequiredArgsConstructor
 public class VehicleExportService {
@@ -23,13 +28,17 @@ public class VehicleExportService {
 
     private final VehicleService vehicleService;
     private final AuditService audit;
+    private final ExportBranding branding;
 
     @Transactional
-    public byte[] csv(VehicleStatus status, String q, java.time.LocalDate from, java.time.LocalDate to) {
+    public ExportFile export(VehicleStatus status, String q, java.time.LocalDate from, java.time.LocalDate to, ExportFormat format) {
         List<VehicleResponse> rows = vehicleService.listForExport(status, q, from, to);
-        List<List<String>> lines = rows.stream().map(v -> List.of(v.fleetNumber(), v.brand(), v.model(), String.valueOf(v.year()), v.plate(), v.color(),
-                v.dailyRent().toPlainString(), v.purchasePrice().toPlainString(), STATUS.get(v.status()), v.statusReason() == null ? "" : v.statusReason())).toList();
+        List<List<Object>> lines = rows.stream().map(v -> Arrays.<Object>asList(v.fleetNumber(), v.brand(), v.model(), String.valueOf(v.year()), v.plate(), v.color(),
+                v.dailyRent(), v.purchasePrice(), STATUS.get(v.status()), v.statusReason() == null ? "" : v.statusReason())).toList();
         audit.record("VEHICLES_EXPORTED", "VEHICLE", null, "Export véhicules", TenantHolder.current().countryId(), lines.size() + " lignes");
-        return CsvWriter.toBytes(List.of("Numéro", "Marque", "Modèle", "Année", "Immatriculation", "Couleur", "Loyer journalier (FCFA)", "Prix d'achat (FCFA)", "Statut", "Motif"), lines);
+        ExportTable table = new ExportTable("Liste des véhicules", branding.header(from, to), List.of(Column.text("Numéro", 10), Column.text("Marque", 14), Column.text("Modèle", 16),
+                Column.text("Année", 8), Column.text("Immatriculation", 15), Column.text("Couleur", 12), Column.of("Loyer journalier (FCFA)", ExportTable.Kind.MONEY, 14),
+                Column.of("Prix d'achat (FCFA)", ExportTable.Kind.MONEY, 16), Column.text("Statut", 12), Column.text("Motif", 24)), lines, null);
+        return ExportFile.of(table, format, "vehicules");
     }
 }

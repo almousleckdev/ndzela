@@ -34,7 +34,7 @@ public class DriverPasswordResetService {
 
     // Not transactional: the country is known only after the lookup.
     public void requestCode(String identifier, String address) {
-        limiter.check("reset-address", address, props.rateLimit().passwordResetPerAddress(), Duration.ofHours(1));
+        limiter.check("driver-reset-address", address, props.rateLimit().passwordResetPerAddress(), Duration.ofHours(1));
         LoginCandidate candidate = auth.findCandidate(identifier.trim());
         if (candidate == null) {
             return;

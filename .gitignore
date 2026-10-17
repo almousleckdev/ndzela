@@ -56,3 +56,9 @@ docs/superpowers/
 .superpowers/
 .junie/
 .claude/
+
+# Example documents the team shared as models for the exports
+documents/
+
+# One-off legacy-platform migration scripts (they reach personal data, kept local)
+tools/

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, Plus, Zap } from "lucide-react";
+import { Plus, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
@@ -25,7 +25,7 @@ import { RequirePermission } from "@/features/access/components/require-permissi
 import { useBrand } from "@/features/tenancy/hooks/use-brand";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
-import { ExportDialog } from "@/features/charging/components/export-dialog";
+import { ExportMenu } from "@/components/export-menu";
 import { RecordRechargeDialog } from "@/features/charging/components/record-recharge-dialog";
 import { SessionsTab } from "@/features/charging/components/sessions-tab";
 import { StationsDialog } from "@/features/charging/components/stations-dialog";
@@ -46,7 +46,6 @@ function ChargingContent() {
   const [recording, setRecording] = useState(false);
   const [recordingSession, setRecordingSession] = useState<ChargingSessionRow | null>(null);
   const [stationsOpen, setStationsOpen] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [tab, setTab] = useState<"recharges" | "sessions">("recharges");
   const [cancelling, setCancelling] = useState<Recharge | null>(null);
   const refresh = () => { list.reload(); summary.reload(); };
@@ -92,7 +91,7 @@ function ChargingContent() {
         actions={(
           <>
             {can(PERMISSIONS.CHARGING_MANAGE) && <Button variant="outline" onClick={() => setStationsOpen(true)}><Zap className="mr-2 h-4 w-4" /> Stations</Button>}
-            {can(PERMISSIONS.CHARGING_EXPORT) && <Button variant="outline" onClick={() => setExporting(true)}><Download className="mr-2 h-4 w-4" /> Exporter</Button>}
+            {can(PERMISSIONS.CHARGING_EXPORT) && tab === "recharges" && <ExportMenu path={(f) => chargingService.exportPath({ q: query.q, from: range.from, to: range.to }, f)} filename="recharges" failure="Impossible d'exporter les recharges." />}
             {can(PERMISSIONS.CHARGING_CREATE) && <Button onClick={() => setRecording(true)}><Plus className="mr-2 h-4 w-4" /> Enregistrer une recharge</Button>}
           </>
         )}
@@ -117,7 +116,6 @@ function ChargingContent() {
       {recording && <RecordRechargeDialog onClose={() => setRecording(false)} onSaved={() => { setRecording(false); query.setRange(rangeOf("today")); refresh(); }} />}
       {recordingSession && <RecordRechargeDialog session={recordingSession} onClose={() => setRecordingSession(null)} onSaved={() => { setRecordingSession(null); summary.reload(); list.reload(); }} />}
       {stationsOpen && <StationsDialog onClose={() => setStationsOpen(false)} />}
-      {exporting && <ExportDialog day={range.to || format(new Date(), "yyyy-MM-dd")} onClose={() => setExporting(false)} />}
       {cancelling && (
         <ReasonDialog title="Annuler cette recharge ?" description={`${cancelling.vehicle} · ${formatFcfa(cancelling.amount)}. Une écriture d'annulation sera ajoutée : l'originale reste visible.`}
           confirmText="Annuler la recharge" destructive onClose={() => setCancelling(null)}

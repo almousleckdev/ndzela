@@ -7,7 +7,11 @@ import com.ndzela.admin.charging.domain.ChargingEntry;
 import com.ndzela.admin.charging.domain.ChargingEntryRepository;
 import com.ndzela.admin.charging.domain.ChargingEntryType;
 import com.ndzela.admin.charging.domain.ChargingPeriod;
-import com.ndzela.admin.common.web.CsvWriter;
+import com.ndzela.admin.common.export.ExportFile;
+import com.ndzela.admin.common.export.ExportFormat;
+import com.ndzela.admin.common.export.ExportTable;
+import com.ndzela.admin.common.export.ExportTable.Column;
+import com.ndzela.admin.country.application.ExportBranding;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.SortParam;
 import com.ndzela.admin.country.domain.Country;
@@ -32,6 +36,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +59,7 @@ public class ChargingQueryService {
     private final VehicleService vehicleService;
     private final DriverArrearsService driverArrears;
     private final AuditService audit;
+    private final ExportBranding branding;
     private final com.ndzela.admin.country.application.DayRanges dayRanges;
 
     @Transactional(readOnly = true)
@@ -79,13 +85,13 @@ public class ChargingQueryService {
     }
 
     @Transactional
-    public byte[] export(ChargingPeriod period, LocalDate reference) {
-        List<ChargingEntry> rows = entries.findAll(within(period, reference), PageRequest.of(0, EXPORT_LIMIT, Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id")))).getContent();
+    public ExportFile export(String q, LocalDate from, LocalDate to, ExportFormat format) {
+        List<ChargingEntry> rows = entries.findAll(dayRanges.<ChargingEntry>within("createdAt", from, to).and(search(q)), PageRequest.of(0, EXPORT_LIMIT, Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id")))).getContent();
         Set<UUID> reversed = reversedAmong(rows);
         Map<UUID, RechargeResponse> detail = responses(rows).stream().collect(Collectors.toMap(RechargeResponse::id, r -> r));
         BigDecimal total = BigDecimal.ZERO;
         long count = 0;
-        List<List<String>> lines = new ArrayList<>();
+        List<List<Object>> lines = new ArrayList<>();
         for (ChargingEntry e : rows) {
             RechargeResponse r = detail.get(e.getId());
             boolean live = e.getType() == ChargingEntryType.RECHARGE && !reversed.contains(e.getId());
@@ -93,15 +99,18 @@ public class ChargingQueryService {
                 total = total.add(e.getAmount());
                 count++;
             }
-            lines.add(List.of(e.getCreatedAt().toLocalDate().toString(), e.getCreatedAt().toLocalTime().withNano(0).toString(), e.getType() == ChargingEntryType.RECHARGE ? "Recharge" : "Annulation",
-                    r.vehicle() == null ? "" : r.vehicle(), r.driverName() == null ? "" : r.driverName(), r.station() == null ? "" : r.station(), text(e.getAmount()),
-                    e.getMethod() == null ? "" : e.getMethod().name(), e.getReference() == null ? "" : e.getReference(), e.getBatteryBefore() == null ? "" : e.getBatteryBefore() + " %",
-                    e.getBatteryAfter() == null ? "" : e.getBatteryAfter() + " %", e.getKwh() == null ? "" : e.getKwh().toPlainString(), e.getReason() == null ? "" : e.getReason(),
-                    live ? "" : e.getType() == ChargingEntryType.RECHARGE ? "Annulée" : "", e.getRecordedBy()));
+            lines.add(Arrays.<Object>asList(branding.day(e.getCreatedAt()), branding.time(e.getCreatedAt()), e.getType() == ChargingEntryType.RECHARGE ? "Recharge" : "Annulation",
+                    r.vehicle() == null ? "" : r.vehicle(), r.driverName() == null ? "" : r.driverName(), r.station() == null ? "" : r.station(), whole(e.getAmount()),
+                    e.getMethod() == null ? "" : e.getMethod().label(), e.getReference() == null ? "" : e.getReference(), e.getBatteryBefore(), e.getBatteryAfter(), e.getKwh(),
+                    e.getReason() == null ? "" : e.getReason(), live ? "" : e.getType() == ChargingEntryType.RECHARGE ? "Annulée" : "", e.getRecordedBy()));
         }
-        lines.add(List.of("", "", "TOTAL (" + count + " recharges non annulées)", "", "", "", text(total), "", "", "", "", "", "", "", ""));
-        audit.record("CHARGING_EXPORTED", "CHARGING", null, "Export des recharges", TenantHolder.current().countryId(), period + " " + (reference == null ? "" : reference) + ", " + rows.size() + " lignes");
-        return CsvWriter.toBytes(List.of("Date", "Heure", "Type", "Véhicule", "Chauffeur", "Station", "Montant (FCFA)", "Moyen", "Référence", "Batterie avant", "Solde après", "kWh", "Motif", "Statut", "Saisi par"), lines);
+        List<Object> totals = Arrays.<Object>asList("TOTAL (" + count + (count > 1 ? " recharges non annulées)" : " recharge non annulée)"), null, null, null, null, null, whole(total), null, null, null, null, null, null, null, null);
+        audit.record("CHARGING_EXPORTED", "CHARGING", null, "Export des recharges", TenantHolder.current().countryId(), "recharges, " + rows.size() + " lignes");
+        ExportTable table = new ExportTable("Recharges", branding.header(from, to), List.of(Column.of("Date", ExportTable.Kind.DATE, 14), Column.text("Heure", 10),
+                Column.text("Type", 12), Column.text("Véhicule", 12), Column.text("Chauffeur", 24), Column.text("Station", 18), Column.of("Montant (FCFA)", ExportTable.Kind.MONEY, 14), Column.text("Moyen", 14),
+                Column.text("Référence", 18), Column.of("Batterie avant", ExportTable.Kind.PERCENT, 12), Column.of("Batterie après", ExportTable.Kind.PERCENT, 12), Column.of("kWh", ExportTable.Kind.DECIMAL, 8),
+                Column.text("Motif", 22), Column.text("Statut", 10), Column.text("Saisi par", 18)), lines, totals);
+        return ExportFile.of(table, format, "recharges" + suffix(from, to));
     }
 
     @Transactional(readOnly = true)
@@ -136,8 +145,11 @@ public class ChargingQueryService {
         return content.stream().map(field).filter(Objects::nonNull).distinct().toList();
     }
 
-    private static String text(BigDecimal amount) {
-        return amount.setScale(0, RoundingMode.HALF_UP).toPlainString();
+    private static String suffix(LocalDate from, LocalDate to) {
+        if (from == null && to == null) {
+            return "";
+        }
+        return from != null && from.equals(to) ? "-" + from : "-" + (from == null ? "" : from) + "_" + (to == null ? "" : to);
     }
 
     private BigDecimal whole(BigDecimal amount) {

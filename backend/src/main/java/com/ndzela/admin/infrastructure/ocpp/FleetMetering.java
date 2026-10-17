@@ -4,12 +4,12 @@ import tools.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
 
-// The latest reading of a session (GET /sessions/{transactionId}/metering); the battery level and the power may be missing
+// The latest reading of a session (GET /sessions/{transactionId}/metering); the battery level (0 is the charge point's start value, not a reading) and the power may be missing
 public record FleetMetering(Integer stateOfChargePercent, BigDecimal powerKw) {
     static FleetMetering from(JsonNode json) {
         JsonNode soc = json.path("stateOfChargePercent");
         Integer level = null;
-        if (soc.isNumber() && soc.asInt() >= 0 && soc.asInt() <= 100) {
+        if (soc.isNumber() && soc.asInt() > 0 && soc.asInt() <= 100) {
             level = soc.asInt();
         }
         JsonNode power = json.path("currentPowerKw");

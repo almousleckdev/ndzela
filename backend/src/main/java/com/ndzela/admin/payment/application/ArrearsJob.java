@@ -16,7 +16,7 @@ import java.time.Instant;
 public class ArrearsJob {
     private final ArrearsService arrears;
 
-    @Scheduled(cron = "${app.arrears.cron:0 */5 * * * *}")
+    @Scheduled(cron = "${app.arrears.cron:0 * * * * *}")
     public void run() {
         int count = arrears.evaluateAll(Instant.now());
         log.debug("Arrears evaluated for {} contracts", count);

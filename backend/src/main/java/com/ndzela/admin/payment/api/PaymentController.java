@@ -1,5 +1,6 @@
 package com.ndzela.admin.payment.api;
 
+import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.dto.ReasonRequest;
 import com.ndzela.admin.payment.api.dto.AccountDetail;
@@ -19,9 +20,7 @@ import com.ndzela.admin.payment.domain.PaymentMethod;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -86,9 +85,8 @@ public class PaymentController {
             @RequestParam(required = false) UUID driverId, @RequestParam(required = false) LedgerEntryType type,
             @RequestParam(required = false) PaymentMethod method, @RequestParam(required = false) String q,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ResponseEntity.ok().contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"paiements.csv\"").body(queries.export(driverId, type, method, q, from, to));
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
+        return queries.export(driverId, type, method, q, from, to, format).response();
     }
 
     @PostMapping("/api/v1/payments")

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.test.web.servlet.ResultActions;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -220,10 +219,13 @@ class PaymentApiTest extends AbstractDriverTest {
         send(get("/api/v1/payments/history?method=NOPE"), viewer).andExpect(status().isBadRequest());
         send(get("/api/v1/payments/history?size=500"), viewer).andExpect(jsonPath("$.size").value(100));
 
-        String csv = new String(send(get("/api/v1/payments/export?method=MOOV_MONEY"), accountant).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-        assertTrue(csv.startsWith("﻿\"Date\"") && csv.contains("\"MM-1\"") && csv.lines().count() == 2);
+        var sheet = com.ndzela.admin.support.ExportSheets.rows(send(get("/api/v1/payments/export?method=MOOV_MONEY"), accountant).andExpect(status().isOk()));
+        var data = com.ndzela.admin.support.ExportSheets.data(sheet);
+        assertEquals("Date", sheet.get(com.ndzela.admin.support.ExportSheets.HEADER).get(0));
+        assertTrue(data.size() == 1 && data.get(0).contains("MM-1") && data.get(0).contains("Moov Money"));
+        assertTrue(com.ndzela.admin.support.ExportSheets.isPdf(send(get("/api/v1/payments/export?format=PDF"), accountant).andExpect(status().isOk())));
         send(get("/api/v1/payments/export"), manager).andExpect(status().isForbidden());
-        assertEquals(1, auditRows("PAYMENTS_EXPORTED"));
+        assertEquals(2, auditRows("PAYMENTS_EXPORTED"));
     }
 
     @Test

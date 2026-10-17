@@ -14,6 +14,7 @@ import java.util.List;
 
 import static com.ndzela.admin.support.FakeFleetClient.recent;
 import static com.ndzela.admin.support.FakeFleetClient.session;
+import static com.ndzela.admin.support.FakeFleetClient.withSoc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -133,17 +134,31 @@ class OcppSyncTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void aRunningSessionKeepsTheFirstBatteryLevelSeenAsBeforeAndTheLatestAsAfter() {
-        fleet.serve("", new FleetPage(List.of(recent("7", 5, null)), "c1", false));
-        fleet.serveMetering("7", 40);
+    void theStartLevelComesFromTheSyncAndTheMeteringOnlyMovesTheLatestLevel() {
+        fleet.serve("", new FleetPage(List.of(withSoc(recent("7", 5, null), 55, null)), "c1", false));
+        fleet.serveMetering("7", 56);
         sync.sync();
-        assertEquals(40, soc("soc_before", "7"));
-        assertEquals(40, soc("soc_after", "7"));
+        assertEquals(55, soc("soc_before", "7"));
+        assertEquals(56, soc("soc_after", "7"));
 
-        fleet.serveMetering("7", 47);
+        fleet.serveMetering("7", 63);
         sync.sync();
-        assertEquals(40, soc("soc_before", "7"));
-        assertEquals(47, soc("soc_after", "7"));
+        assertEquals(55, soc("soc_before", "7"));
+        assertEquals(63, soc("soc_after", "7"));
+    }
+
+    @Test
+    void aMeteringReadingNeverSetsTheStartLevelNorStoresTheZeroOfTheChargePoint() {
+        fleet.serve("", new FleetPage(List.of(recent("12", 5, null)), "c1", false));
+        fleet.serveMetering("12", 0);
+        sync.sync();
+        assertNull(soc("soc_before", "12"));
+        assertNull(soc("soc_after", "12"));
+
+        fleet.serveMetering("12", 40);
+        sync.sync();
+        assertNull(soc("soc_before", "12"));
+        assertEquals(40, soc("soc_after", "12"));
     }
 
     @Test

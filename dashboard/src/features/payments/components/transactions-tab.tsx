@@ -2,6 +2,7 @@
 
 import { toOptions } from "@/lib/options";
 import { useMemo, useState } from "react";
+import { ExportMenu } from "@/components/export-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
@@ -53,6 +54,8 @@ export function TransactionsTab() {
           <FilterPill label="Méthode" value={filters.method ?? ""} options={methodOptions} onChange={(value) => query.setFilter("method", value)} />
           <DateRangePicker value={range} onChange={query.setRange} />
         </>
+      )} end={can(PERMISSIONS.PAYMENTS_EXPORT) && (
+        <ExportMenu path={(format) => paymentsService.exportPath({ type: "PAYMENT", method: params.method, q: query.q, from: range.from, to: range.to }, format)} filename="paiements" failure="Impossible d'exporter les paiements." />
       )} />
       <ActiveFilters filters={active} onClear={query.reset} />
       <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} numeric={["amount"]}
