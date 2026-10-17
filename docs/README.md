@@ -41,6 +41,7 @@ Where the code deviates from the intended rule, the deviation is recorded in
 | API | [api/conventions.md](api/conventions.md) | REST conventions, error format, DTOs |
 | Testing | [testing/strategy.md](testing/strategy.md) | What to test, how, required isolation tests |
 | Infrastructure | [infrastructure/infrastructure-and-deployment.md](infrastructure/infrastructure-and-deployment.md) | Environments, config, Docker, deployment |
+| Migration of the old platform | [migration/legacy-import.md](migration/legacy-import.md) | The old Firebase platform, the dry run on 2 riders, the decisions before the real import |
 | Workflow | [workflow/git-workflow.md](workflow/git-workflow.md) | Branches, commits, reviews, definition of done |
 | Decisions | [adr/README.md](adr/README.md) | Architecture Decision Records |
 | Standards | [standards/forbidden-patterns.md](standards/forbidden-patterns.md) | What must never be done |

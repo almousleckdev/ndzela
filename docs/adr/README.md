@@ -20,9 +20,10 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0013](0013-driver-api-token-audience-and-login-lookup.md) | Driver API: own token audience, filter and permissions, cross-country sign-in lookup | Accepted |
 | [0014](0014-pvit-mobile-money-payments.md) | Mobile-money payments through PVit: the callback is a hint, PVit's status API is the truth | Accepted |
 | [0015](0015-public-website.md) | The public website is a separate Next.js project (`web/`), static-first, no admin code | Accepted |
-
 | [0016](0016-cloudinary-file-storage.md) | Files live in Cloudinary: private assets read through the backend, public CDN images only for profile pictures | Accepted |
 | [0017](0017-ocpp-sessions-from-the-fleet-api-sync.md) | OCPP sessions come from the Fleet API incremental sync; webhooks only ask for a sync | Accepted |
 | [0018](0018-railway-hosting-and-domains.md) | The backend runs on Railway; the API is `api.ndzela.com` | Accepted |
+| [0019](0019-arrears-levels-follow-the-number-of-unpaid-days.md) | Arrears levels follow the number of unpaid days (1 reminder, 2 urgent, 3+ suspension) | Accepted |
+| [0020](0020-table-exports-as-excel-or-pdf.md) | Table exports are an Excel file or a PDF, never a CSV | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

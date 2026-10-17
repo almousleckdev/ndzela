@@ -1,16 +1,16 @@
 # Payments and arrears (impayés)
 
-**Status: Built for Gabon, phase 1 (2026-09-30): staff-recorded payments, ledger, arrears engine with the 24/48/72 h levels, email warnings, automatic suspension, and the Finance screens. PVit and the driver app come later. Rules below remain the reference.**
+**Status: Built for Gabon, phase 1 (2026-09-30): staff-recorded payments, ledger, arrears engine whose levels follow the number of unpaid days (1 reminder, 2 urgent, 3 or more suspension), email warnings, automatic suspension, and the Finance screens. PVit and the driver app come later. Rules below remain the reference.**
 
 ## As built (migration V15)
 
 - **Ledger** `ledger_entries` (country-owned, **append-only: a database trigger refuses UPDATE and DELETE**): `PAYMENT` (credit), `REVERSAL` (cancels one payment or waiver, with a reason; unique per reversed row), `WAIVER` (rent forgiven by an administrator, with a reason, a credit that settles the oldest charges), `PENALTY` (charge, one per unpaid day, `UNIQUE (contract_id, business_day)`). Whole-FCFA amounts, `amount > 0`. A client `requestId` (unique per country) makes a double submit record one payment; the driver row is locked while recording, so simultaneous identical requests collapse to one.
 - **Methods:** cash, Airtel Money, Moov Money, other (no bank transfer); a reference is required except for cash. **No backdating**: a payment is dated when it is recorded; a mistake is reversed and re-recorded. Recording needs an **active contract** (`NO_ACTIVE_CONTRACT`).
 - **Nothing is stored per day.** `AccountCalculator` (pure) derives the account from the contract (start, end, rent), the leaves and the ledger at a given instant: rent days Monday to Saturday from the day after the start, skipping leave days, each due **the next day at 12:00 in the country's timezone**; charges (rents and penalties) are settled **oldest first, whole charges only** by the net credits (payments and waivers not reversed); the rest of a partial payment stays as **credit**. Output: unpaid charges, overdue amount, credit, oldest unpaid deadline, level, per-day status (paid on time, paid late, unpaid) and the counts.
-- **Levels** from the oldest unpaid deadline: `LATE` (under 24 h), `YELLOW` (24 h), `DARK_YELLOW` (48 h), `RED` (72 h). The level, overdue amount and "since" are copied onto the driver row (`arrears_level`, `overdue_amount`, `overdue_since`) by the payment feature, so the Chauffeurs list filters "En retard" without the driver feature depending on payments.
-- **Job** (`ArrearsJob`, every 5 minutes, `app.arrears.job-enabled`, `app.arrears.cron`): per active country, the tenant context set explicitly, per active contract in its own transaction (`ArrearsEvaluator`). Each step is recorded once per (contract, unpaid day, level) in `arrears_events` (`INSERT ... ON CONFLICT DO NOTHING`), so emails, notifications and the suspension never repeat, even with two servers. 24 h: warning email; 48 h: urgent email and the **penalty** (`countries.late_penalty`, **0 by default**, so no row is created until set); 72 h: email, **automatic suspension** of an active or inactive driver (reason "Impayés...", audited as DRIVER_SUSPENDED by `system`; a suspended or blocked driver is left alone) and a notification to the holders of `arrears:manage` ("bloquez le véhicule dans l'outil GPS"). Only one email per contract per run, for the highest new step.
+- **Levels** follow the **number of unpaid rent days** (changed 2026-10-14 to match the previous platform and the contract's sanctions table): 1 unpaid day = `YELLOW` (reminder), 2 = `DARK_YELLOW` (urgent), 3 or more = `RED` (suspension). `LATE` (under 24 h) is no longer produced. A rent day is unpaid once its deadline (D+1 12:00) has passed and the credits do not cover it. The level, overdue amount and "since" (the oldest unpaid deadline) are copied onto the driver row (`arrears_level`, `overdue_amount`, `overdue_since`) by the payment feature, so the Chauffeurs list filters "En retard" without the driver feature depending on payments.
+- **Job** (`ArrearsJob`, every minute, `app.arrears.job-enabled`, `app.arrears.cron`): per active country, the tenant context set explicitly, per active contract in its own transaction (`ArrearsEvaluator`). Each step is recorded once per (contract, unpaid day, level) in `arrears_events` (`INSERT ... ON CONFLICT DO NOTHING`), so emails, notifications and the suspension never repeat, even with two servers. 1st unpaid day: warning email; 2nd: urgent email and the **penalty** (`countries.late_penalty`, **0 by default**, so no row is created until set); 3rd: email, **automatic suspension** of an active or inactive driver (reason "Impayés...", audited as DRIVER_SUSPENDED by `system`; a suspended or blocked driver is left alone) and a notification to the holders of `arrears:manage` ("bloquez le véhicule dans l'outil GPS"). Only one email per contract per run, for the highest new step.
 - **Paying everything clears the level but not the suspension**: only an administrator reactivates (`drivers:suspend`). An administrator can also grant a delay (waiver).
-- **Screens:** Suivi paiements (day's collection, total overdue, tabs by level, record a payment), Gérer impayés (overdue drivers, oldest first, red alert banner, record a payment, grant a delay), Historique (ledger with filters, reversal, CSV export), a Paiements card on each driver (level, amount due, credit, on time / late / unpaid, last 14 days, last entries), "En retard" metric, tab and row colours on Chauffeurs, and the dashboard's Paiements card.
+- **Screens:** Suivi paiements (day's collection, total overdue, tabs by level, record a payment), Gérer impayés (overdue drivers, oldest first, red alert banner, record a payment, grant a delay), Historique (ledger with filters, reversal, Excel or PDF export), a Paiements card on each driver (level, amount due, credit, on time / late / unpaid, last 14 days, last entries), "En retard" metric, tab and row colours on Chauffeurs, and the dashboard's Paiements card.
 - **Permissions:** `payments:read` (all finance roles and VIEWER), `payments:create` (GESTIONNAIRE, CAISSIER, SUPER_ADMIN), `payments:reverse` and `payments:export` (ADMIN, SUPER_ADMIN; export also COMPTABLE), `arrears:manage` (ADMIN, SUPER_ADMIN).
 - **API:** `GET /payments/accounts?filter=&q=`, `GET /payments/accounts/{driverId}`, `GET /payments/summary`, `GET /payments/history`, `GET /payments/export`, `POST /payments`, `POST /payments/{id}/reverse`, `POST /arrears/waivers`. Audit: `PAYMENT_RECORDED`, `PAYMENT_REVERSED`, `ARREARS_WAIVED`, `ARREARS_LEVEL_REACHED`, `PAYMENTS_EXPORTED`.
 - **Not in this round:** the caution (deposit refund or retention), unpaid rent on contracts ended by a vehicle removal (the job tracks active contracts only), PVit and driver-app payments, the restricted session of a suspended driver, the inactivity alert.
@@ -38,24 +38,26 @@ Every payment is a **ledger row** (append-only, exact decimal amounts, country c
 
 Payments settle **whole daily rents, oldest first**. If the driver owes **3 days** and pays **1 day**, **2 days remain** and the driver stays in arrears; the account returns to normal only when **everything due is paid** (the contract: unblocking only after full settlement). The **penalty** (day 2) also has to be paid. A payment below one daily rent is accepted and kept as **credit** that counts once it reaches a full day (Decided).
 
-## Escalation (Decided levels; timing to reconcile)
+## Escalation (Decided; reconciled with the contract on 2026-10-14)
 
-Your rule: **unpaid 24 h = warning + yellow row; 48 h = dark yellow; 72 h = red and urgent; beyond that: the account is suspended automatically and the driver's login redirects to payment.** Warnings go by **push notification and email** (Decided; no SMS).
+**The level follows the number of unpaid days, as on the previous platform's "Gestion des impayés" screen:** 1 unpaid day = **Rappel** (yellow row, reminder e-mail); 2 = **Urgent** (red row, urgent e-mail; a penalty applies to a day unpaid for more than 48 h when the country sets one); 3 or more = **Suspendu** (deep red row, e-mail, the driver is **suspended automatically**, staff are notified to block the vehicle in the GPS tool). Warnings go by **e-mail and in-app notification** (no SMS). Each step is recorded **once** per contract, rent day and level: the day that made the count reach 1, 2 and 3.
 
-The contract's sanctions table (art. 7) states the same idea by day:
+This is the contract's article 7 by day (the earlier 24/48/72-hour timing is dropped):
 
-| Contract | Consequence in the contract | Your levels |
+| Contract | Consequence in the contract | Level |
 | --- | --- | --- |
-| Day 1 unpaid | Warning by notification | 24 h: yellow + warning |
-| Day 2 unpaid | **Urgent reminder + penalty** | 48 h: dark yellow |
-| Day 3 unpaid | **Remote blocking of the vehicle**; NDZELA may keep the deposit and recover the car | 72 h: red, urgent |
-| After day 3 (4th day) | Right to withdraw the vehicle and keep the deposit; unblocking only after full settlement | Suspension of the app account |
+| Day 1 unpaid | Warning by notification | Rappel (yellow) |
+| Day 2 unpaid | **Urgent reminder + penalty** | Urgent (red) |
+| Day 3 unpaid or more | **Remote blocking of the vehicle**; NDZELA may keep the deposit and recover the car; unblocking only after full settlement | Suspendu (deep red), account suspended |
 
 Decided: the suspension is **automatic and enforced by the backend**; a suspended driver only reaches the payment flow; the admin driver-list colours come from the same server-side state.
 
+### Rent awaiting its deadline (2026-10-14, ADR-0019 addendum)
+Yesterday's rent is *awaiting* until its deadline (12:00). It is shown in "À régler avant midi" and counted in "À recouvrer (hier inclus)" but does not change the level. Riders who will reach 3 unpaid days at noon are counted as *at risk* and announced by a banner. The list is sorted by unpaid days, most first; archived (`INACTIVE`) riders are excluded. The job runs every minute and the pages refresh every 15 s.
+
 ### Decisions from the latest answers
 
-- **Clock (Decided):** the rent of day D is due **D+1 at 12:00** (Gabon: Africa/Libreville). Rents are due **Monday to Saturday**; Sunday is not a payment or billing day. Levels are counted from the moment the deadline passes: **+24 h yellow + warning, +48 h dark yellow + urgent reminder + penalty, +72 h red/urgent**, then automatic **suspension** (**72 hours**, confirmed).
+- **Clock (Decided):** the rent of day D is due **D+1 at 12:00** (Gabon: Africa/Libreville). Rents are due **Monday to Saturday**; Sunday is not a payment or billing day. Levels follow the number of unpaid days once their deadline has passed (ADR-0019): **1st yellow + warning, 2nd dark yellow + urgent reminder + penalty, 3rd red/urgent** with automatic **suspension**.
 - **Penalty:** the driver must pay it and must pay every day. **Amount or formula: not provided yet.** Modelled as a per-country configurable value, default 0 until the product owner sets it.
 - **Who lifts a suspension or grants a delay:** the **ADMIN** role (Decided), with SUPER_ADMIN.
 - **Warnings:** push and email. Until the driver app exists only **email** can be sent.
@@ -64,7 +66,7 @@ Decided: the suspension is **automatic and enforced by the backend**; a suspende
 
 1. **Saturday's rent is due Sunday 12:00** (Decided): the rule is the same every day (due before 12:00 the next day); Sunday itself carries no rent. The deadline calendar is configurable per country.
 2. **Penalty**: amount **to be provided later**; a per-country setting, **default 0** (Decided).
-3. **Remote vehicle blocking and GPS** (cars have a GPS and a remote-blocking box): **out of this platform for now** (Decided). The dashboard raises a clear **"block the car" alert** at +72 h; staff block the car in the GPS supplier's own tool. A later integration with the supplier is possible.
+3. **Remote vehicle blocking and GPS** (cars have a GPS and a remote-blocking box): **out of this platform for now** (Decided). The dashboard raises a clear **"block the car" alert** at the 3rd unpaid day; staff block the car in the GPS supplier's own tool. A later integration with the supplier is possible.
 4. **Inactivity clause** (6 consecutive inactive days: NDZELA may recover the car): **Proposed** an alert for staff only.
 5. **Suspended driver experience** (driver app, later): after login only a payment screen with the amount due.
 

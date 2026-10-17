@@ -11,7 +11,7 @@ A quick-access area of the web admin to **follow up the drivers**. The product o
 
 ## Drivers list behaviour (Decided)
 
-Each driver's row is coloured by arrears level: none, **yellow** (24 h), **dark yellow** (48 h), **red/urgent** (72 h), and suspended after that. The list, filters and the colours come from server-computed state.
+Each driver's row is coloured by arrears level: none, **yellow** "Rappel" (1 unpaid day), **red** "Urgent" (2 days) and **deep red** "Suspendu" (3 days or more, the driver is suspended). The list, filters and the colours come from server-computed state.
 
 ## Rules
 
