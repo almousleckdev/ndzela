@@ -23,16 +23,21 @@ class SessionController extends Notifier<Session> {
     }
   }
 
-  // Ends the session locally; also used when the server rejects the token.
-  Future<void> signOut() async {
+  // Ends the session locally; also used when the server rejects the token (forced: true).
+  Future<void> signOut({bool forced = false}) async {
     await ref.read(tokenStorageProvider).clear();
-    state = const SignedOut();
+    state = SignedOut(forced: forced);
   }
 
   // The driver's own sign-out
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).signOut();
     await signOut();
+  }
+
+  // The login screen shows the "signed out elsewhere" message once, then clears the flag.
+  void acknowledgeForcedSignOut() {
+    if (state case SignedOut(forced: true)) state = const SignedOut();
   }
 }
 

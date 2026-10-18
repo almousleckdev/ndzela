@@ -14,7 +14,9 @@ import '../../../core/widgets/adaptive/app_password_field.dart';
 import '../../../core/widgets/adaptive/app_tappable.dart';
 import '../../../core/widgets/adaptive/app_text_field.dart';
 import '../../../core/widgets/feedback/error_banner.dart';
+import '../domain/session.dart';
 import 'login_controller.dart';
+import 'session_controller.dart';
 import 'widgets/login_header.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -50,6 +52,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final login = ref.watch(loginControllerProvider);
+    final session = ref.watch(sessionControllerProvider);
+    final signedOutElsewhere = switch (session) {
+      SignedOut(forced: true) => true,
+      _ => false,
+    };
+    if (signedOutElsewhere) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => ref.read(sessionControllerProvider.notifier).acknowledgeForcedSignOut(),
+      );
+    }
     return Scaffold(
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -98,6 +110,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         validator: (v) =>
                             _required(v, 'Saisissez votre mot de passe.'),
                       ),
+                      if (signedOutElsewhere) ...[
+                        const SizedBox(height: 16),
+                        const ErrorBanner(
+                          message:
+                              'Vous avez été déconnecté : votre compte a été utilisé sur un autre appareil.',
+                        ),
+                      ],
                       if (login.hasError) ...[
                         const SizedBox(height: 16),
                         ErrorBanner(message: messageFor(login.error!)),

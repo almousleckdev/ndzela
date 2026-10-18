@@ -21,7 +21,7 @@ final dioProvider = Provider<Dio>((ref) {
     AuthInterceptor(
       tokens: ref.watch(tokenStorageProvider),
       onUnauthorized: () =>
-          ref.read(sessionControllerProvider.notifier).signOut(),
+          ref.read(sessionControllerProvider.notifier).signOut(forced: true),
     ),
   ]);
   return dio;
