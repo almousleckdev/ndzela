@@ -14,7 +14,10 @@
     <p th:text="${message}">Message</p>
     <p style="font-size: 18px; font-weight: 600;">Montant à régler : <span style="color: #EA580C;" th:text="${amount}">0 FCFA</span></p>
     <p>Vous pouvez régler auprès de votre gestionnaire <span th:text="${brand}">NDZELA</span>. Si vous avez déjà payé, ignorez ce message.</p>
-    <p style="color: #888888; font-size: 12px; margin-top: 32px;"><span th:text="${company}">NDZELA SARL</span> - Mobilité Électrique</p>
+    <div style="text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #eeeeee;">
+        <p style="color: #94a3b8; font-size: 12px; margin: 0 0 12px;">&copy; <span th:text="${#dates.year(#dates.createNow())}"></span> <span th:text="${company}">NDZela SARL</span>. Tous droits réservés.</p>
+        <img th:if="${logo}" th:src="${logo}" alt="" style="height: 32px; width: auto;" />
+    </div>
 </div>
 </body>
 </html>

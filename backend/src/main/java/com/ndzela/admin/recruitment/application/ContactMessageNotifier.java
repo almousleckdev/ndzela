@@ -27,7 +27,7 @@ public class ContactMessageNotifier {
         try {
             email.sendHtmlEmail(message.getEmail(), brand.name() + " : réponse à votre message", "contact-reply-email",
                     Map.of("name", message.getName(), "subject", message.getSubject(), "reply", reply,
-                            "brand", brand.name(), "company", brand.company(), "color", brand.accentHex()));
+                            "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(), "logo", brand.logoDataUri()));
             return true;
         } catch (RuntimeException e) {
             log.warn("Could not send the reply to contact message {}", message.getId(), e);

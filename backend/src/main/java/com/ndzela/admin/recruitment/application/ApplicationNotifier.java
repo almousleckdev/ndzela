@@ -35,7 +35,7 @@ public class ApplicationNotifier {
         try {
             email.sendHtmlEmail(application.getEmail(), brand.name() + " : votre candidature", "application-decision-email",
                     Map.of("name", application.getFirstName(), "accepted", accepted, "when", when, "message", application.getCandidateMessage() == null ? "" : application.getCandidateMessage(),
-                            "brand", brand.name(), "company", brand.company(), "color", brand.accentHex()));
+                            "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(), "logo", brand.logoDataUri()));
             return true;
         } catch (RuntimeException e) {
             log.warn("Could not send the application answer to {}", application.getId(), e);

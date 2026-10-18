@@ -86,14 +86,15 @@ public class AuthService {
             throw failed(email, INVALID_LOGIN);
         }
 
-        sendOtp(email);
+        sendOtp(user);
         return new LoginStepResponse(challenges.start(email), LoginStep.EMAIL_OTP, otpService.resendCooldownSeconds());
     }
 
     public LoginStepResponse resendOtp(String challengeToken) {
         LoginChallenge challenge = challenges.require(challengeToken, LoginStage.PASSWORD_VERIFIED);
-        loginAttempts.assertCanAuthenticate(loadForChallenge(challenge));
-        sendOtp(challenge.email());
+        User user = loadForChallenge(challenge);
+        loginAttempts.assertCanAuthenticate(user);
+        sendOtp(user);
         return new LoginStepResponse(challengeToken, LoginStep.EMAIL_OTP, otpService.resendCooldownSeconds());
     }
 
@@ -164,9 +165,11 @@ public class AuthService {
         refreshTokens.revoke(refreshToken);
     }
 
-    private void sendOtp(String email) {
-        String otp = otpService.generateAndStore(email);
-        emailProvider.sendHtmlEmail(email, "NDZela Admin - Login OTP", "otp-email", Map.of("otp", otp));
+    private void sendOtp(User user) {
+        String otp = otpService.generateAndStore(user.getEmail());
+        var brand = com.ndzela.admin.country.application.CountryBrand.ofCountry(user.getCountry() == null ? null : user.getCountry().getCode());
+        emailProvider.sendHtmlEmail(user.getEmail(), brand.name() + " : code de vérification", "otp-email",
+                Map.of("otp", otp, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(), "logo", brand.logoDataUri()));
     }
 
     private AuthTokens issueTokens(User user, String refreshToken) {

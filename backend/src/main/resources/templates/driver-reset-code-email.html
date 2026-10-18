@@ -12,9 +12,12 @@
     </div>
     <p>Bonjour <span th:text="${name}">Chauffeur</span>,</p>
     <p>Voici votre code pour choisir un nouveau mot de passe dans l'application. Il est valable quelques minutes.</p>
-    <p style="text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; background: #f5f7fa; padding: 16px; border-radius: 8px;" th:text="${code}">000000</p>
+    <p style="text-align: center; font-size: 36px; font-weight: 700; letter-spacing: 10px;" th:style="'text-align: center; font-size: 36px; font-weight: 700; letter-spacing: 10px; color: ' + ${color}" th:text="${code}">000000</p>
     <p style="color: #888888; font-size: 13px;">Si vous n'avez pas fait cette demande, ignorez ce message : votre mot de passe reste inchangé.</p>
-    <p style="color: #888888; font-size: 12px; margin-top: 32px;"><span th:text="${company}">NDZELA SARL</span> - Mobilité Électrique</p>
+    <div style="text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #eeeeee;">
+        <p style="color: #94a3b8; font-size: 12px; margin: 0 0 12px;">&copy; <span th:text="${#dates.year(#dates.createNow())}"></span> <span th:text="${company}">NDZela SARL</span>. Tous droits réservés.</p>
+        <img th:if="${logo}" th:src="${logo}" alt="" style="height: 32px; width: auto;" />
+    </div>
 </div>
 </body>
 </html>

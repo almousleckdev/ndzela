@@ -109,7 +109,7 @@ public class ArrearsEvaluator {
         };
         try {
             email.sendHtmlEmail(driver.email(), subject, "arrears-email", Map.of("name", driver.firstName(), "message", message, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(),
-                    "amount", state.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " FCFA"));
+                    "logo", brand.logoDataUri(), "amount", state.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " FCFA"));
         } catch (RuntimeException e) {
             log.warn("Could not send the arrears email to driver {}", driver.id(), e);
         }

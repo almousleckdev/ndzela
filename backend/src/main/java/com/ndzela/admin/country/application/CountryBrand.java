@@ -5,6 +5,7 @@ import com.lowagie.text.FontFactory;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.util.Base64;
 
 // The look and the wording that change from one country to the next (contract, receipt)
 public record CountryBrand(String name, String company, String place, String city, String adjective, String adjectiveFeminine, String area, Color accent, Color soft, byte[] logo) {
@@ -30,6 +31,12 @@ public record CountryBrand(String name, String company, String place, String cit
     // The accent colour as `#RRGGBB`, for HTML e-mails.
     public String accentHex() {
         return String.format("#%06X", accent.getRGB() & 0xFFFFFF);
+    }
+
+    // The logo as a self-contained data: URI, so an e-mail never depends on an externally hosted image.
+    // Never null (Map.of rejects null values): an absent logo is an empty string, which templates treat as "no logo".
+    public String logoDataUri() {
+        return logo == null ? "" : "data:image/png;base64," + Base64.getEncoder().encodeToString(logo);
     }
 
     public Font title() { return FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, accent); }

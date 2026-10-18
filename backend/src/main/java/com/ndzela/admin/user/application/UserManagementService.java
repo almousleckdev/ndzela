@@ -81,7 +81,7 @@ public class UserManagementService {
                 .country(country)
                 .build());
 
-        passwordResetService.sendInvitation(email);
+        passwordResetService.sendInvitation(email, country);
         notifications.notifyHolders("users:read", user.countryIdOrNull(), actor.email(), "USER_CREATED", "Nouvel utilisateur",
                 "Le compte " + email + " a été créé par " + actor.email() + ".");
         record("USER_CREATED", user, "roles: " + roleNames(roles));

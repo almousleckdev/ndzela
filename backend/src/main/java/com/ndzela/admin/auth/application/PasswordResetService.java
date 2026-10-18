@@ -4,6 +4,8 @@ import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.SessionExpiredException;
 import com.ndzela.admin.common.ratelimit.RateLimiter;
 import com.ndzela.admin.config.properties.AppProperties;
+import com.ndzela.admin.country.application.CountryBrand;
+import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.infrastructure.email.EmailProvider;
 import com.ndzela.admin.security.OpaqueTokens;
 import com.ndzela.admin.user.domain.User;
@@ -50,7 +52,7 @@ public class PasswordResetService {
         }
         userRepository.findByEmail(email)
                 .filter(user -> user.getStatus() != UserStatus.DISABLED)
-                .ifPresent(user -> sendCode(user.getEmail()));
+                .ifPresent(user -> sendCode(user.getEmail(), user.getCountry()));
     }
 
     @Transactional
@@ -75,8 +77,9 @@ public class PasswordResetService {
         refreshTokens.revokeAll(email);
     }
 
-    public void sendInvitation(String email) {
-        sendLink(email, props.auth().invitationTtl(), "Bienvenue sur NDZela Admin", "invitation-email");
+    public void sendInvitation(String email, Country country) {
+        CountryBrand brand = CountryBrand.ofCountry(country == null ? null : country.getCode());
+        sendLink(email, props.auth().invitationTtl(), brand.name() + " : bienvenue", "invitation-email", brand);
     }
 
     // A brand-new account choosing its first password from the invitation link.
@@ -96,21 +99,23 @@ public class PasswordResetService {
         refreshTokens.revokeAll(email);
     }
 
-    private void sendCode(String email) {
+    private void sendCode(String email, Country country) {
         String code;
         try {
             code = otp.generateAndStore(otpKey(email));
         } catch (BusinessRuleViolationException cooldown) {
             return;
         }
+        CountryBrand brand = CountryBrand.ofCountry(country == null ? null : country.getCode());
         try {
-            emailProvider.sendHtmlEmail(email, "NDZela Admin - Code de réinitialisation", "reset-password-code-email", Map.of("code", code));
+            emailProvider.sendHtmlEmail(email, brand.name() + " : code de réinitialisation", "reset-password-code-email",
+                    Map.of("code", code, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(), "logo", brand.logoDataUri()));
         } catch (RuntimeException e) {
             log.warn("Could not send the reset code to {}", email, e);
         }
     }
 
-    private void sendLink(String email, Duration ttl, String subject, String template) {
+    private void sendLink(String email, Duration ttl, String subject, String template, CountryBrand brand) {
         String token = OpaqueTokens.generate();
         redis.opsForValue().set(INVITATION_KEY_PREFIX + OpaqueTokens.hash(token), email, ttl);
 
@@ -118,7 +123,8 @@ public class PasswordResetService {
                 .path("/reset-password")
                 .queryParam("token", token)
                 .build().toUriString();
-        emailProvider.sendHtmlEmail(email, subject, template, Map.of("link", link));
+        emailProvider.sendHtmlEmail(email, subject, template,
+                Map.of("link", link, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(), "logo", brand.logoDataUri()));
     }
 
     private static String otpKey(String email) {
