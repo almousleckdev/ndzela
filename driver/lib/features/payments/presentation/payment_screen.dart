@@ -16,6 +16,7 @@ import 'widgets/access_restriction_banner.dart';
 import 'widgets/payment_form.dart';
 import 'widgets/payment_result_view.dart';
 import 'widgets/payment_tracking_view.dart';
+import 'widgets/week_banner.dart';
 
 class PaymentScreen extends ConsumerWidget {
   const PaymentScreen({super.key});
@@ -50,6 +51,8 @@ class PaymentScreen extends ConsumerWidget {
           data: (arrears) => Column(
             children: [
               if (arrears.restricted) AccessRestrictionBanner(arrears: arrears),
+              if (arrears.showsWeekWarning(DateTime.now()))
+                WeekBanner(arrears: arrears),
               Expanded(
                 child: arrears.isLate
                     ? PaymentForm(arrears: arrears)

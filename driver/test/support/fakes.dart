@@ -128,6 +128,7 @@ class FakeBackend {
       () => payments.quote(
         operatorCode: any(named: 'operatorCode'),
         phone: any(named: 'phone'),
+        days: any(named: 'days'),
       ),
     ).thenAnswer(
       (_) async => const PaymentQuote(

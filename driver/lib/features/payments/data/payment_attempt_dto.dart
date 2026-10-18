@@ -1,6 +1,7 @@
 import '../../../core/money/money.dart';
 import '../domain/payment_attempt.dart';
 import '../domain/payment_status.dart';
+import 'paid_day_dto.dart';
 
 class PaymentAttemptDto {
   const PaymentAttemptDto({
@@ -16,6 +17,7 @@ class PaymentAttemptDto {
     this.providerReference,
     this.fee,
     this.completedAt,
+    this.days = const [],
   });
 
   factory PaymentAttemptDto.fromJson(Map<String, dynamic> json) =>
@@ -32,6 +34,10 @@ class PaymentAttemptDto {
         providerReference: json['providerReference'] as String?,
         createdAt: json['createdAt'] as String,
         completedAt: json['completedAt'] as String?,
+        days: [
+          for (final item in json['days'] as List<dynamic>? ?? const [])
+            PaidDayDto.fromJson(item as Map<String, dynamic>),
+        ],
       );
 
   final String id;
@@ -46,6 +52,7 @@ class PaymentAttemptDto {
   final String? providerReference;
   final String createdAt;
   final String? completedAt;
+  final List<PaidDayDto> days;
 
   PaymentAttempt toDomain() => PaymentAttempt(
     id: id,
@@ -61,5 +68,6 @@ class PaymentAttemptDto {
     completedAt: completedAt == null
         ? null
         : DateTime.parse(completedAt!).toLocal(),
+    days: [for (final day in days) day.toDomain(currency)],
   );
 }

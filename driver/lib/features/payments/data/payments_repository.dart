@@ -33,19 +33,28 @@ class PaymentsRepository {
   Future<PaymentQuote> quote({
     required String operatorCode,
     required String phone,
+    int? days,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/payments/quote',
-      queryParameters: {'operator': operatorCode, 'phone': phone},
+      queryParameters: {
+        'operator': operatorCode,
+        'phone': phone,
+        'days': ?days,
+      },
     );
     return PaymentQuoteDto.fromJson(response.data!).toDomain();
   }
 
-  // Asks the server to start the payment; the amount is decided there, from the driver's arrears.
+  // Asks the server to start the payment; the amount is decided there, from the days chosen.
   Future<PaymentAttempt> start(PaymentRequest request) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/payments',
-      data: {'operator': request.operator.code, 'phoneNumber': request.phone},
+      data: {
+        'operator': request.operator.code,
+        'phoneNumber': request.phone,
+        'days': ?request.days,
+      },
     );
     return PaymentAttemptDto.fromJson(response.data!).toDomain();
   }

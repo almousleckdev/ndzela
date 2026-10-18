@@ -30,7 +30,10 @@ class PaymentSummaryCard extends StatelessWidget {
     return AppCard(
       child: Column(
         children: [
-          LabelValueRow('Nombre de jours', '${arrears.unpaidDays}'),
+          LabelValueRow(
+            'Nombre de jours',
+            '${form.days ?? arrears.unpaidDays}',
+          ),
           LabelValueRow('Opérateur', operatorName ?? 'À choisir'),
           LabelValueRow('Numéro', form.phone.isEmpty ? 'À saisir' : form.phone),
           if (quoted?.accountHolder != null)

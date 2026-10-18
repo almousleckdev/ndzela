@@ -1,4 +1,5 @@
 import '../../../core/money/money.dart';
+import 'paid_day.dart';
 import 'payment_status.dart';
 
 // A mobile-money payment the driver started, from request to the operator's answer.
@@ -15,6 +16,7 @@ class PaymentAttempt {
     this.providerReference,
     this.fee,
     this.completedAt,
+    this.days = const [],
   });
 
   final String id;
@@ -32,6 +34,9 @@ class PaymentAttempt {
   final String? beneficiary;
   final DateTime createdAt;
   final DateTime? completedAt;
+
+  // The rent days this payment settled
+  final List<PaidDay> days;
 
   // What left the driver's account
   Money get totalPaid =>

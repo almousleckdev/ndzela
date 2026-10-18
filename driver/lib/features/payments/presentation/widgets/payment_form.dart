@@ -15,6 +15,7 @@ import '../../domain/mobile_money_number.dart';
 import '../operator_label.dart';
 import '../payment_form_controller.dart';
 import '../payments_providers.dart';
+import 'day_count_selector.dart';
 import 'operator_selector.dart';
 import 'payment_amount_card.dart';
 import 'payment_summary_card.dart';
@@ -69,13 +70,33 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
     final form = ref.watch(paymentFormControllerProvider);
     final controller = ref.read(paymentFormControllerProvider.notifier);
     final operators = ref.watch(operatorsProvider);
-    final key = form.quoteKey;
+    final options = widget.arrears.options;
+    // A choice the account no longer offers is dropped, and nothing is quoted or sent for it.
+    final stale =
+        form.days != null && !options.any((option) => option.days == form.days);
+    if (stale) Future.microtask(controller.clearDays);
+    final key = stale ? null : form.quoteKey;
     final quote = key == null ? null : ref.watch(paymentQuoteProvider(key));
     final quoted = quote?.asData?.value;
+    final days = stale
+        ? null
+        : form.days ?? (options.isEmpty ? null : options.last.days);
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        PaymentAmountCard(arrears: widget.arrears),
+        PaymentAmountCard(
+          arrears: widget.arrears,
+          selected: options.where((option) => option.days == days).firstOrNull,
+        ),
+        if (options.length > 1) ...[
+          const SizedBox(height: 24),
+          const SectionTitle('Jours à régler'),
+          DayCountSelector(
+            options: options,
+            selected: days ?? options.last.days,
+            onSelected: controller.selectDays,
+          ),
+        ],
         const SizedBox(height: 24),
         const SectionTitle('Numéro Mobile Money'),
         AppTextField(

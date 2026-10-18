@@ -31,8 +31,8 @@ final paymentAttemptProvider = FutureProvider.autoDispose
 
 // The fee and the amount for one operator and number; asked again when either changes.
 final paymentQuoteProvider = FutureProvider.autoDispose
-    .family<PaymentQuote, ({String operator, String phone})>(
+    .family<PaymentQuote, ({String operator, String phone, int? days})>(
       (ref, key) => ref
           .watch(paymentsRepositoryProvider)
-          .quote(operatorCode: key.operator, phone: key.phone),
+          .quote(operatorCode: key.operator, phone: key.phone, days: key.days),
     );
