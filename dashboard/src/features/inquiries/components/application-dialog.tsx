@@ -2,8 +2,9 @@
 
 import { toOptions } from "@/lib/options";
 import { useState } from "react";
-import { ExternalLink, MessageCircle } from "lucide-react";
+import { AlertTriangle, ExternalLink, MessageCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SelectField } from "@/components/ui/select-field";
@@ -54,10 +55,11 @@ interface ApplicationDialogProps {
   application: Application;
   onClose: () => void;
   onSaved: () => void;
+  onDeleted: () => void;
 }
 
 // One application
-export function ApplicationDialog({ application, onClose, onSaved }: ApplicationDialogProps) {
+export function ApplicationDialog({ application, onClose, onSaved, onDeleted }: ApplicationDialogProps) {
   const { can } = usePermissions();
   const { addToast } = useToast();
   const [status, setStatus] = useState<ApplicationStatus>(application.status);
@@ -66,6 +68,21 @@ export function ApplicationDialog({ application, onClose, onSaved }: Application
   const [candidateMessage, setCandidateMessage] = useState(application.candidateMessage ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const deleteApplication = async () => {
+    setIsDeleting(true);
+    try {
+      await inquiriesService.deleteApplication(application.id);
+      addToast({ title: "Succès", description: "Candidature supprimée.", type: "success" });
+      onDeleted();
+    } catch (failure) {
+      addToast({ title: "Erreur", description: getErrorMessage(failure, "Impossible de supprimer la candidature."), type: "error" });
+      setIsDeleting(false);
+      setConfirmingDelete(false);
+    }
+  };
 
   const decides = status === "ACCEPTED" || status === "REJECTED";
   const answer = answerText(application);
@@ -93,6 +110,7 @@ export function ApplicationDialog({ application, onClose, onSaved }: Application
   };
 
   return (
+    <>
     <Dialog isOpen onClose={onClose} title={`${application.firstName} ${application.lastName}`} description={`Reçue le ${formatDateTime(application.createdAt)}`} className="max-w-xl">
       <div className="space-y-5">
         <div className="flex items-center justify-between">
@@ -112,6 +130,12 @@ export function ApplicationDialog({ application, onClose, onSaved }: Application
             <p className="font-medium">Réponse donnée au candidat</p>
             <p className="mt-1 whitespace-pre-line text-slate-600">{answer}</p>
             <a href={whatsappLink(application.phone, answer)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 font-medium text-green-700 hover:underline"><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</a>
+          </div>
+        )}
+        {application.notificationFailed && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>L&apos;e-mail n&apos;a pas pu être envoyé au candidat : il n&apos;a pas reçu cette réponse. Contactez-le par WhatsApp, ou enregistrez à nouveau pour réessayer l&apos;envoi.</p>
           </div>
         )}
         {application.message && <p className="rounded-lg bg-slate-50 p-3 text-sm">{application.message}</p>}
@@ -149,13 +173,22 @@ export function ApplicationDialog({ application, onClose, onSaved }: Application
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             {error && <p role="alert" className="text-xs font-medium text-red-600">{error}</p>}
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={onClose} disabled={isSaving}>Fermer</Button>
-              <Button onClick={save} isLoading={isSaving}>Enregistrer</Button>
+            <div className="flex items-center justify-between gap-3">
+              <Button variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setConfirmingDelete(true)} disabled={isSaving}>
+                <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={onClose} disabled={isSaving}>Fermer</Button>
+                <Button onClick={save} isLoading={isSaving}>Enregistrer</Button>
+              </div>
             </div>
           </div>
         )}
       </div>
     </Dialog>
+    <ConfirmDialog isOpen={confirmingDelete} onClose={() => setConfirmingDelete(false)} onConfirm={deleteApplication} isLoading={isDeleting} destructive
+      title="Supprimer cette candidature ?" description={`${application.firstName} ${application.lastName} et ses documents seront supprimés définitivement.`}
+      confirmText="Supprimer" cancelText="Annuler" />
+    </>
   );
 }

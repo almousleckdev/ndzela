@@ -48,7 +48,11 @@ export function ApplicationsTab({ onChanged }: { onChanged: () => void }) {
       <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id}
         server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: [], onSortingChange: () => {} }}
         empty={<EmptyState title="Aucune candidature" description="Les candidatures envoyées depuis le site apparaissent ici." />} />
-      {opened && <ApplicationDialog application={opened} onClose={() => setOpened(null)} onSaved={() => { setOpened(null); list.reload(); onChanged(); }} />}
+      {opened && (
+        <ApplicationDialog application={opened} onClose={() => setOpened(null)}
+          onSaved={() => { setOpened(null); list.reload(); onChanged(); }}
+          onDeleted={() => { setOpened(null); list.reload(); onChanged(); }} />
+      )}
     </>
   );
 }

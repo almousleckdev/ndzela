@@ -19,8 +19,8 @@ export interface Application {
   staffNote: string | null;
   interviewAt: string | null;
   candidateMessage: string | null;
-  // True when the candidate left an e-mail, so the answer is also sent by e-mail.
-  notified: boolean;
+  // True when the decision e-mail was attempted and failed to send: the candidate was NOT notified.
+  notificationFailed: boolean;
   reviewedBy: string | null;
   reviewedAt: string | null;
   createdAt: string;
@@ -37,6 +37,10 @@ export interface ContactMessage {
   status: MessageStatus;
   handledBy: string | null;
   handledAt: string | null;
+  replyMessage: string | null;
+  repliedBy: string | null;
+  repliedAt: string | null;
+  replyFailed: boolean;
   createdAt: string;
 }
 

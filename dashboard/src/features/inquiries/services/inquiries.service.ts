@@ -7,10 +7,13 @@ export const inquiriesService = {
   applications: (status: ApplicationStatus | "", q: string, page: number, size: number) =>
     apiClient<Page<Application>>(`/applications?${queryString({ status: status || undefined, q: q.trim() || undefined, page, size })}`),
   updateApplication: (id: string, decision: ApplicationDecision) => apiClient<Application>(`/applications/${id}/status`, { method: "POST", body: decision }),
+  deleteApplication: (id: string) => apiClient(`/applications/${id}`, { method: "DELETE" }),
   // The file as a blob
   applicationFile: (id: string, kind: ApplicationFileKind) => apiBlob(`/applications/${id}/files/${kind}`),
   messages: (status: MessageStatus | "", q: string, page: number, size: number) =>
     apiClient<Page<ContactMessage>>(`/contact-messages?${queryString({ status: status || undefined, q: q.trim() || undefined, page, size })}`),
   handleMessage: (id: string) => apiClient<ContactMessage>(`/contact-messages/${id}/handle`, { method: "POST" }),
+  replyToMessage: (id: string, message: string) => apiClient<ContactMessage>(`/contact-messages/${id}/reply`, { method: "POST", body: { message } }),
+  deleteMessage: (id: string) => apiClient(`/contact-messages/${id}`, { method: "DELETE" }),
   newCount: async () => (await apiClient<{ count: number }>("/inquiries/new-count")).count,
 };

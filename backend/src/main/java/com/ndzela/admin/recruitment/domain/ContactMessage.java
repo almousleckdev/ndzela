@@ -58,6 +58,19 @@ public class ContactMessage extends TenantOwned {
     @Column(name = "handled_at")
     private OffsetDateTime handledAt;
 
+    @Column(name = "reply_message")
+    private String replyMessage;
+
+    @Column(name = "replied_by")
+    private String repliedBy;
+
+    @Column(name = "replied_at")
+    private OffsetDateTime repliedAt;
+
+    // True when a reply was sent and the e-mail failed; the visitor never saw it.
+    @Column(name = "reply_failed", nullable = false)
+    private boolean replyFailed;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
