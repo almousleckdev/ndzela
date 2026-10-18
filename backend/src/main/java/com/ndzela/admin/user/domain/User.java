@@ -64,6 +64,9 @@ public class User {
     @Column(name = "lock_expiration")
     private OffsetDateTime lockExpiration;
 
+    @Column(name = "session_id")
+    private String sessionId;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "country_id")
     private Country country;

@@ -166,6 +166,9 @@ public class Driver extends TenantOwned {
     @Column(name = "last_login_at")
     private OffsetDateTime lastLoginAt;
 
+    @Column(name = "session_id")
+    private String sessionId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DriverStatus status;

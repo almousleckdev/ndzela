@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN session_id VARCHAR(64);
+ALTER TABLE drivers ADD COLUMN session_id VARCHAR(64);
