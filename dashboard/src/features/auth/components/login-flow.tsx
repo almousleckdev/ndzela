@@ -4,7 +4,9 @@ import { Lock, Mail } from "lucide-react";
 import { useLoginFlow } from "@/features/auth/hooks/use-login-flow";
 import { CodeStep } from "@/features/auth/components/code-step";
 import { CredentialsStep } from "@/features/auth/components/credentials-step";
-import { ForgotPasswordSent, ForgotPasswordStep } from "@/features/auth/components/forgot-password-step";
+import { ForgotPasswordStep } from "@/features/auth/components/forgot-password-step";
+import { ForgotPasswordCodeStep } from "@/features/auth/components/forgot-password-code-step";
+import { ForgotPasswordDone } from "@/features/auth/components/forgot-password-done";
 import { MfaSetupStep } from "@/features/auth/components/mfa-setup-step";
 
 export function LoginFlow() {
@@ -21,8 +23,15 @@ export function LoginFlow() {
       );
     case "FORGOT_PASSWORD":
       return <ForgotPasswordStep onSubmit={flow.submitForgotPassword} onBack={flow.backToStart} />;
-    case "FORGOT_PASSWORD_SENT":
-      return <ForgotPasswordSent onBack={flow.backToStart} />;
+    case "FORGOT_PASSWORD_CODE":
+      return (
+        <ForgotPasswordCodeStep
+          onSubmit={(values) => flow.submitResetWithCode(step.email, values)}
+          onBack={flow.backToStart}
+        />
+      );
+    case "FORGOT_PASSWORD_DONE":
+      return <ForgotPasswordDone onBack={flow.backToStart} />;
     case "OTP":
       return (
         <CodeStep

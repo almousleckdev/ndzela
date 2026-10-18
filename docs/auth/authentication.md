@@ -49,7 +49,14 @@ like a disabled account. Logging in elsewhere therefore: revokes every refresh t
 ## Invitation and password reset (Implemented)
 
 New staff are created with an unusable random password and receive an emailed link (`/reset-password?token=...`, TTL 48 h) to choose one.
-Forgot-password uses the same mechanism (TTL 15 min) and never reveals whether the email exists. Tokens are single-use and stored hashed in Redis.
+Tokens are single-use and stored hashed in Redis.
+
+Forgot-password is **OTP-code based**, matching the driver app: `POST /api/v1/auth/forgot-password` emails a 6-digit code
+(reusing `OtpService` — expiring, single-use, limited verification attempts, resend cooldown) and `POST /api/v1/auth/forgot-password/reset`
+takes the email, code and new password. It never reveals whether the email exists: an unknown email gets the same response,
+and a wrong code on an unknown email fails exactly like a wrong code on a known one. A successful reset revokes every refresh token the
+account held. This is a separate flow from invitation redemption, which stays link-based (a brand-new account has nothing to guess).
+
 Password policy: 8-128 chars with digit, lower, upper and special (`@StrongPassword`, mirrored in `features/auth/schemas/password.ts`).
 
 ## Secrets at rest

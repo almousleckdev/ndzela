@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage, isSessionExpired } from "@/lib/errors";
 import { authService } from "@/features/auth/services/auth.service";
-import type { CredentialsValues, ForgotPasswordValues } from "@/features/auth/schemas/auth";
+import type { CredentialsValues, ForgotPasswordValues, ResetPasswordWithCodeValues } from "@/features/auth/schemas/auth";
 import type { MfaSetupResponse } from "@/features/auth/types";
 
 export type LoginFlowStep =
   | { name: "CREDENTIALS" }
   | { name: "FORGOT_PASSWORD" }
-  | { name: "FORGOT_PASSWORD_SENT" }
+  | { name: "FORGOT_PASSWORD_CODE"; email: string }
+  | { name: "FORGOT_PASSWORD_DONE" }
   | { name: "OTP"; challengeToken: string; resendInSeconds: number }
   | { name: "MFA_SETUP"; challengeToken: string; setup: MfaSetupResponse }
   | { name: "TOTP"; challengeToken: string };
@@ -48,8 +49,14 @@ export function useLoginFlow() {
     submitForgotPassword: ({ email }: ForgotPasswordValues) =>
       attempt(async () => {
         await authService.forgotPassword(email);
-        setStep({ name: "FORGOT_PASSWORD_SENT" });
-      }, "Impossible d'envoyer le lien de réinitialisation."),
+        setStep({ name: "FORGOT_PASSWORD_CODE", email });
+      }, "Impossible d'envoyer le code de réinitialisation."),
+
+    submitResetWithCode: (email: string, { code, newPassword }: ResetPasswordWithCodeValues) =>
+      attempt(async () => {
+        await authService.resetPasswordWithCode(email, code, newPassword);
+        setStep({ name: "FORGOT_PASSWORD_DONE" });
+      }, "Code incorrect ou expiré."),
 
     resendOtp: async (challengeToken: string): Promise<number | null> => {
       let seconds: number | null = null;

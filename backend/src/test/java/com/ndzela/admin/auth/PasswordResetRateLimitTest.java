@@ -16,18 +16,14 @@ class PasswordResetRateLimitTest extends AbstractIntegrationTest {
         return mvc.perform(post("/api/v1/auth/forgot-password").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"" + email + "\"}"));
     }
 
-    private int resetLinks() {
-        return redis.keys("auth:reset:*").size();
-    }
-
     @Test
-    void anAccountReceivesAFewResetLinksAnHourAndTheAnswerNeverChanges() throws Exception {
+    void repeatedRequestsInQuickSuccessionSendOnlyOneCodeAndTheAnswerNeverChanges() throws Exception {
         staff("ga.reset@ndzela.test", "GA", "ADMIN");
-        int before = resetLinks();
-        for (int i = 0; i < 5; i++) {
-            forgot("ga.reset@ndzela.test").andExpect(status().isOk()).andExpect(jsonPath("$.message").value("If the email exists, a reset link was sent."));
+        for (int i = 0; i < 3; i++) {
+            forgot("ga.reset@ndzela.test").andExpect(status().isOk()).andExpect(jsonPath("$.message").value("If the email exists, a reset code was sent."));
         }
-        assertEquals(3, resetLinks() - before);
+        assertEquals(1, redis.keys("auth:otp-cooldown:staff-reset:*").size());
+        assertEquals(1, redis.keys("auth:otp:staff-reset:*").size());
     }
 
     @Test
