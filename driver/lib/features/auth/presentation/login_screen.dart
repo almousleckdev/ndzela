@@ -30,6 +30,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _identifier = TextEditingController();
   final _password = TextEditingController();
+  // Captured once at mount so it survives later rebuilds, after the controller's own flag is acknowledged/cleared.
+  bool _signedOutElsewhere = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (ref.read(sessionControllerProvider) case SignedOut(forced: true)) {
+      _signedOutElsewhere = true;
+      ref.read(sessionControllerProvider.notifier).acknowledgeForcedSignOut();
+    }
+  }
 
   @override
   void dispose() {
@@ -52,16 +63,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final login = ref.watch(loginControllerProvider);
-    final session = ref.watch(sessionControllerProvider);
-    final signedOutElsewhere = switch (session) {
-      SignedOut(forced: true) => true,
-      _ => false,
-    };
-    if (signedOutElsewhere) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => ref.read(sessionControllerProvider.notifier).acknowledgeForcedSignOut(),
-      );
-    }
     return Scaffold(
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -110,11 +111,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         validator: (v) =>
                             _required(v, 'Saisissez votre mot de passe.'),
                       ),
-                      if (signedOutElsewhere) ...[
+                      if (_signedOutElsewhere) ...[
                         const SizedBox(height: 16),
                         const ErrorBanner(
                           message:
-                              'Vous avez été déconnecté : votre compte a été utilisé sur un autre appareil.',
+                              'Votre session a pris fin (connexion sur un autre appareil ou session expirée). Reconnectez-vous.',
                         ),
                       ],
                       if (login.hasError) ...[
