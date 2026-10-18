@@ -134,7 +134,7 @@ public class InquiryService {
     @Transactional
     public void deleteApplication(UUID id) {
         DriverApplication application = application(id);
-        List.of(application.getPhotoFile(), application.getLicenceFile(), application.getIdFile(), application.getAddressProofFile())
+        java.util.stream.Stream.of(application.getPhotoFile(), application.getLicenceFile(), application.getIdFile(), application.getAddressProofFile())
                 .forEach(storage::delete);
         applications.delete(application);
         audit.record("APPLICATION_DELETED", "DRIVER_APPLICATION", id.toString(), application.getFirstName() + " " + application.getLastName(), application.getCountryId(), null);
