@@ -42,6 +42,6 @@ public final class TestProperties {
                 new DriverAppProperties(3),
                 new PublicSiteProperties("GA", 5, List.of("https://ndzela.test")),
                 new OcppProperties("https://ocpp.test", "test-key", "whsecret", "X-Webhook-Secret", "GA", false, Duration.ofMinutes(1), 500, Duration.ofSeconds(5)),
-                new RateLimitProperties(10, 3));
+                new RateLimitProperties(10, 3, 120));
     }
 }

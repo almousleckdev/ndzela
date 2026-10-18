@@ -64,11 +64,13 @@ public final class AccountCalculator {
                 charges.add(new AccountCharge(e.businessDay(), dueAt(e.businessDay(), in.zone()).plus(URGENT), e.amount(), true));
             }
         }
-        charges.sort(Comparator.comparing(AccountCharge::due).thenComparing(AccountCharge::penalty));
+        // A day's penalty is settled right after its rent, so paying a day pays its penalty too.
+        charges.sort(Comparator.comparing(AccountCharge::day).thenComparing(AccountCharge::penalty));
 
         BigDecimal totalCredit = credits.stream().map(AccountEntry::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
         List<AccountDay> days = new ArrayList<>();
         List<LocalDate> penaltyDays = new ArrayList<>();
+        List<AccountCharge> unpaidCharges = new ArrayList<>();
         Set<LocalDate> penalised = new HashSet<>();
         in.entries().stream().filter(e -> e.type() == LedgerEntryType.PENALTY).forEach(e -> penalised.add(e.businessDay()));
         BigDecimal cumulative = BigDecimal.ZERO;
@@ -85,6 +87,7 @@ public final class AccountCalculator {
                 covered = cumulative;
             } else {
                 overdue = overdue.add(charge.amount());
+                unpaidCharges.add(charge);
                 oldest = oldest == null || charge.due().isBefore(oldest) ? charge.due() : oldest;
             }
             if (charge.penalty()) {
@@ -114,7 +117,7 @@ public final class AccountCalculator {
                 awaitingAmount = awaitingAmount.add(charge.amount());
             }
         }
-        return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(unpaid), penaltyDays, onTime, late, unpaid, awaitingDays, awaitingAmount);
+        return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(unpaid), penaltyDays, onTime, late, unpaid, awaitingDays, awaitingAmount, List.copyOf(unpaidCharges));
     }
 
     // Like the previous platform's screen: one unpaid day is a reminder, two are urgent, three or more are critical (suspension).

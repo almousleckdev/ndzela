@@ -36,7 +36,15 @@ Every payment is a **ledger row** (append-only, exact decimal amounts, country c
 
 ## Settlement of arrears (Decided)
 
-Payments settle **whole daily rents, oldest first**. If the driver owes **3 days** and pays **1 day**, **2 days remain** and the driver stays in arrears; the account returns to normal only when **everything due is paid** (the contract: unblocking only after full settlement). The **penalty** (day 2) also has to be paid. A payment below one daily rent is accepted and kept as **credit** that counts once it reaches a full day (Decided).
+Payments settle **whole daily rents, oldest first** ([ADR-0021](../adr/0021-day-based-rent-payments-and-receipts.md)). **In the driver app:** with 1 or 2 unpaid days the driver chooses how many days to pay (1..N, the oldest first, never skipping a day); with **3 or more** all of them must be paid in one payment. The server computes the options and the amount (a day's price is its rent plus its penalty, minus credit already held); the app sends only a number of days. The **penalty** (day 2) is settled together with its day. A payment below one daily rent is accepted and kept as **credit** that counts once it reaches a full day (Decided). Staff-recorded payments are unchanged: they record what was received.
+
+**Which day a payment paid.** Each recorded payment freezes the days (and penalties) it settled in `ledger_entry_days` (V35, append-only), computed at that instant. Example: Monday and Tuesday are unpaid, the driver pays one day on Wednesday at 11:05: the snapshot says Monday, the receipt reads "Loyer du lundi … payé le mercredi … à 11:05", the history and the driver card show Monday paid at 11:05 and Tuesday unpaid. A reversal later changes balances, never an issued receipt. Days are allocated from the amount PVit **confirmed**, not the amount asked; a shortfall is credit and is audited `PAYMENT_UNDERPAID`.
+
+**The payment week.** The week's rents (Monday to Saturday) are due by **Sunday 12:00** (Saturday's deadline). `weekClosesAt` and `weekSettled` are exposed on the account; the app warns from Friday, the driver card shows "Semaine réglée / non réglée". Nothing new blocks a driver.
+
+**Receipt.** One server-drawn ticket-style PDF (80 mm wide) per confirmed or recorded payment: company, number, date and time, driver, contract, operator, masked phone, transaction, a line per rent day with the exact payment time, penalties, credit kept, fee, total, a QR code with the reference only. **No RCCM.** Staff download it from the Transactions table ("Reçu"); a reversed payment's receipt says ANNULÉ.
+
+**Former riders** are the archived (`INACTIVE`) drivers: Chauffeurs has the tabs Actuels and Anciens, and the Transactions table a Chauffeurs filter (`scope=CURRENT|FORMER`).
 
 ## Escalation (Decided; reconciled with the contract on 2026-10-14)
 

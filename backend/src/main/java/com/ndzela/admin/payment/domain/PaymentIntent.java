@@ -65,6 +65,9 @@ public class PaymentIntent extends TenantOwned {
     @Column(name = "provider_reference")
     private String providerReference;
 
+    @Column(name = "days_requested", updatable = false)
+    private Integer daysRequested;
+
     @Column(name = "failure_reason")
     private String failureReason;
 

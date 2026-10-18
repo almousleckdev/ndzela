@@ -9,7 +9,8 @@ import com.ndzela.admin.infrastructure.pvit.PvitClient;
 import com.ndzela.admin.infrastructure.pvit.PvitPaymentRequest;
 import com.ndzela.admin.infrastructure.pvit.PvitPaymentStarted;
 import com.ndzela.admin.infrastructure.pvit.PvitStatus;
-import com.ndzela.admin.payment.api.dto.AccountDetail;
+import com.ndzela.admin.payment.application.model.PayableDays;
+import com.ndzela.admin.payment.application.model.PaymentOption;
 import com.ndzela.admin.payment.api.dto.OperatorResponse;
 import com.ndzela.admin.payment.application.PaymentIntentService;
 import com.ndzela.admin.payment.application.PaymentIntentStore;
@@ -55,16 +56,15 @@ class PaymentIntentServiceSandboxTest {
 
         when(operators.requireActive("AIRTEL_MONEY")).thenReturn(new OperatorResponse("AIRTEL_MONEY", "Airtel Money"));
         when(countries.findById(countryId)).thenReturn(Optional.of(Country.builder().id(countryId).phoneCode("+241").currencyCode("XAF").build()));
-        when(queries.account(driverId)).thenReturn(new AccountDetail(driverId, "Awa", "ACTIVE", contractId, "NDZ-1", new BigDecimal("23000"), null,
-                new BigDecimal("69000"), BigDecimal.ZERO, null, 0, 0, 3, java.util.List.of(), java.util.List.of()));
+        when(queries.payable(driverId)).thenReturn(new PayableDays(contractId, java.util.List.of(new PaymentOption(3, new BigDecimal("69000")))));
         UUID intentId = UUID.randomUUID();
-        when(store.createPending(eq(driverId), eq(contractId), eq("AIRTEL_MONEY"), eq("074111111"), any(), eq("XAF"))).thenAnswer(call -> PaymentIntent.builder().id(intentId)
+        when(store.createPending(eq(driverId), eq(contractId), eq("AIRTEL_MONEY"), eq("074111111"), any(), eq("XAF"), eq(3))).thenAnswer(call -> PaymentIntent.builder().id(intentId)
                 .reference("NDZREF").amount(call.getArgument(4)).status(PaymentIntentStatus.PENDING).build());
         when(store.find(intentId)).thenAnswer(call -> Optional.of(PaymentIntent.builder().id(intentId).reference("NDZREF").amount(BigDecimal.ONE).status(PaymentIntentStatus.PENDING).build()));
         when(client.startPayment(any())).thenReturn(new PvitPaymentStarted("PAY1", PvitStatus.PENDING, "ok"));
 
         var service = new PaymentIntentService(store, operators, queries, countries, client, props);
-        TenantHolder.runAs(TenantContext.country(countryId), () -> service.start(driverId, "AIRTEL_MONEY", "+24174111111"));
+        TenantHolder.runAs(TenantContext.country(countryId), () -> service.start(driverId, "AIRTEL_MONEY", "+24174111111", null));
 
         ArgumentCaptor<PvitPaymentRequest> sent = ArgumentCaptor.forClass(PvitPaymentRequest.class);
         verify(client).startPayment(sent.capture());

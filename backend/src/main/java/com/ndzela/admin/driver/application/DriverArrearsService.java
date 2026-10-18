@@ -100,6 +100,12 @@ public class DriverArrearsService {
         return drivers.findAll(spec, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), order)).map(DriverRef::from);
     }
 
+    // The archived (INACTIVE) riders, whose payments are the former riders' history
+    @Transactional(readOnly = true)
+    public List<UUID> formerIds() {
+        return drivers.findAll((root, query, cb) -> cb.equal(root.get("status"), DriverStatus.INACTIVE)).stream().map(Driver::getId).toList();
+    }
+
     @Transactional(readOnly = true)
     public List<UUID> idsMatching(String q) {
         return drivers.findAll(filters.spec(null, null, null, q), PageRequest.of(0, 500)).map(Driver::getId).getContent();

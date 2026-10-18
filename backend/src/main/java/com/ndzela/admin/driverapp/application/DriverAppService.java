@@ -78,7 +78,7 @@ public class DriverAppService {
         Driver driver = drivers.findById(driverId).orElseThrow();
         AccountDetail account = payments.account(driverId);
         return new DriverAccountResponse(account.unpaid(), account.overdueAmount().setScale(0, RoundingMode.HALF_UP), driver.getCountry().getCurrencyCode(), props.driverApp().locks(account.unpaid()),
-                driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED);
+                driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED, account.weekClosesAt(), account.weekSettled(), payments.payable(driverId).options());
     }
 
     private ContractResponse activeContract(UUID driverId) {

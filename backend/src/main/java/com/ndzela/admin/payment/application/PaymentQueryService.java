@@ -20,10 +20,13 @@ import com.ndzela.admin.payment.api.dto.AccountDetail;
 import com.ndzela.admin.payment.api.dto.AccountRow;
 import com.ndzela.admin.payment.api.dto.AccountDayView;
 import com.ndzela.admin.payment.api.dto.EntryResponse;
+import com.ndzela.admin.payment.api.dto.PaidDayView;
 import com.ndzela.admin.payment.api.dto.PaymentSummary;
 import com.ndzela.admin.payment.application.model.AccountDay;
 import com.ndzela.admin.payment.application.model.AccountState;
+import com.ndzela.admin.payment.application.model.PayableDays;
 import com.ndzela.admin.payment.domain.LedgerEntry;
+import com.ndzela.admin.payment.domain.LedgerEntryDayRepository;
 import com.ndzela.admin.payment.domain.LedgerEntryRepository;
 import com.ndzela.admin.payment.domain.LedgerEntryType;
 import com.ndzela.admin.payment.domain.PaymentMethod;
@@ -67,6 +70,7 @@ public class PaymentQueryService {
     private final CountryService countryService;
     private final AuditService audit;
     private final ExportBranding branding;
+    private final LedgerEntryDayRepository entryDays;
 
     @Transactional(readOnly = true)
     public PageResponse<AccountRow> accounts(String filter, String q, LocalDate lateFrom, LocalDate lateTo, LocalDate paidFrom, LocalDate paidTo, String sort, int page, int size) {
@@ -107,14 +111,26 @@ public class PaymentQueryService {
         ContractResponse contract = contractService.activeOf(List.of(driverId)).get(driverId);
         List<EntryResponse> entries = responses(ledger.findTop20ByDriverIdOrderByCreatedAtDescIdDesc(driverId), Map.of(driverId, driver));
         if (contract == null) {
-            return new AccountDetail(driverId, driver.fullName(), driver.status().name(), null, null, null, ArrearsLevel.NONE, BigDecimal.ZERO, BigDecimal.ZERO, null, 0, 0, 0, List.of(), entries);
+            return new AccountDetail(driverId, driver.fullName(), driver.status().name(), null, null, null, ArrearsLevel.NONE, BigDecimal.ZERO, BigDecimal.ZERO, null, 0, 0, 0, List.of(), entries,
+                    PaymentWeek.closesAt(Instant.now(), accounts.zoneOf(driver.countryId())), true);
         }
         AccountState state = accounts.state(driver.countryId(), contract, Instant.now());
         List<AccountDayView> days = state.days().stream().sorted(Comparator.comparing(AccountDay::day).reversed()).limit(60)
                 .map(d -> new AccountDayView(d.day(), d.dueAt(), d.amount(), d.status(), d.settledAt())).toList();
         ZoneId zone = accounts.zoneOf(driver.countryId());
         return new AccountDetail(driverId, driver.fullName(), driver.status().name(), contract.id(), contract.contractNumber(), contract.dailyRent(), state.level(), state.overdueAmount(), state.credit(),
-                state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime(), state.paidOnTime(), state.paidLate(), state.unpaid(), days, entries);
+                state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime(), state.paidOnTime(), state.paidLate(), state.unpaid(), days, entries,
+                PaymentWeek.closesAt(Instant.now(), zone), PaymentWeek.settled(state));
+    }
+
+    @Transactional(readOnly = true)
+    public PayableDays payable(UUID driverId) {
+        DriverRef driver = driverArrears.get(driverId);
+        ContractResponse contract = contractService.activeOf(List.of(driverId)).get(driverId);
+        if (contract == null) {
+            return new PayableDays(null, List.of());
+        }
+        return new PayableDays(contract.id(), PaymentSelection.options(accounts.state(driver.countryId(), contract, Instant.now())));
     }
 
     @Transactional(readOnly = true)
@@ -129,13 +145,14 @@ public class PaymentQueryService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<EntryResponse> history(UUID driverId, LedgerEntryType type, PaymentMethod method, String q, LocalDate from, LocalDate to, String sort, int page, int size) {
+    public PageResponse<EntryResponse> history(UUID driverId, LedgerEntryType type, PaymentMethod method, String q, LocalDate from, LocalDate to, String scope, String sort, int page, int size) {
         var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), SortParam.parse(sort, HISTORY_SORTS, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))));
-        var result = ledger.findAll(filter(driverId, type, method, q, from, to), pageable);
+        var result = ledger.findAll(filter(driverId, type, method, q, from, to).and(scopeOf(scope)), pageable);
         List<LedgerEntry> content = result.getContent();
         Map<UUID, DriverRef> drivers = driverArrears.refs(content.stream().map(LedgerEntry::getDriverId).collect(Collectors.toSet()));
         Set<UUID> reversed = reversedAmong(content);
-        return PageResponse.from(result, e -> response(e, drivers.get(e.getDriverId()), reversed.contains(e.getId())));
+        Map<UUID, List<PaidDayView>> days = daysOf(content);
+        return PageResponse.from(result, e -> response(e, drivers.get(e.getDriverId()), reversed.contains(e.getId()), days.getOrDefault(e.getId(), List.of())));
     }
 
     @Transactional
@@ -155,7 +172,7 @@ public class PaymentQueryService {
     }
 
     EntryResponse toResponse(LedgerEntry entry, DriverRef driver) {
-        return response(entry, driver, ledger.existsByReversesEntryId(entry.getId()));
+        return response(entry, driver, ledger.existsByReversesEntryId(entry.getId()), daysOf(List.of(entry)).getOrDefault(entry.getId(), List.of()));
     }
 
     private ZoneId requestZone() {
@@ -188,7 +205,32 @@ public class PaymentQueryService {
 
     private List<EntryResponse> responses(List<LedgerEntry> entries, Map<UUID, DriverRef> drivers) {
         Set<UUID> reversed = reversedAmong(entries);
-        return entries.stream().map(e -> response(e, drivers.get(e.getDriverId()), reversed.contains(e.getId()))).toList();
+        Map<UUID, List<PaidDayView>> days = daysOf(entries);
+        return entries.stream().map(e -> response(e, drivers.get(e.getDriverId()), reversed.contains(e.getId()), days.getOrDefault(e.getId(), List.of()))).toList();
+    }
+
+    // The days each payment settled, in one query
+    private Map<UUID, List<PaidDayView>> daysOf(List<LedgerEntry> entries) {
+        if (entries.isEmpty()) {
+            return Map.of();
+        }
+        return entryDays.findAllByLedgerEntryIdIn(entries.stream().map(LedgerEntry::getId).toList()).stream()
+                .sorted(Comparator.comparing(com.ndzela.admin.payment.domain.LedgerEntryDay::getBusinessDay).thenComparing(com.ndzela.admin.payment.domain.LedgerEntryDay::getKind))
+                .collect(Collectors.groupingBy(com.ndzela.admin.payment.domain.LedgerEntryDay::getLedgerEntryId,
+                        Collectors.mapping(d -> new PaidDayView(d.getBusinessDay(), d.getKind(), d.getAmount().setScale(0, java.math.RoundingMode.HALF_UP), d.isPaidOnTime()), Collectors.toList())));
+    }
+
+    // CURRENT: riders who are not archived, FORMER: the archived (INACTIVE) ones, anything else: everyone
+    private Specification<LedgerEntry> scopeOf(String scope) {
+        boolean former = "FORMER".equals(scope);
+        if (!former && !"CURRENT".equals(scope)) {
+            return (root, query, cb) -> cb.conjunction();
+        }
+        List<UUID> formerIds = driverArrears.formerIds();
+        if (formerIds.isEmpty()) {
+            return former ? (root, query, cb) -> cb.disjunction() : (root, query, cb) -> cb.conjunction();
+        }
+        return former ? (root, query, cb) -> root.get("driverId").in(formerIds) : (root, query, cb) -> cb.not(root.get("driverId").in(formerIds));
     }
 
     private Set<UUID> reversedAmong(List<LedgerEntry> entries) {
@@ -200,9 +242,9 @@ public class PaymentQueryService {
         return reversed;
     }
 
-    private static EntryResponse response(LedgerEntry e, DriverRef driver, boolean reversed) {
+    private static EntryResponse response(LedgerEntry e, DriverRef driver, boolean reversed, List<PaidDayView> days) {
         return new EntryResponse(e.getId(), e.getType(), e.getAmount().setScale(0, java.math.RoundingMode.HALF_UP), e.getMethod(), e.getReference(), e.getReason(), e.getDriverId(),
-                driver == null ? null : driver.fullName(), e.getReversesEntryId(), reversed, e.getBusinessDay(), e.getRecordedBy(), e.getCreatedAt());
+                driver == null ? null : driver.fullName(), e.getReversesEntryId(), reversed, e.getBusinessDay(), e.getRecordedBy(), e.getCreatedAt(), days);
     }
 
     private Specification<LedgerEntry> filter(UUID driverId, LedgerEntryType type, PaymentMethod method, String q, LocalDate from, LocalDate to) {

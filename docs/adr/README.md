@@ -25,5 +25,6 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0018](0018-railway-hosting-and-domains.md) | The backend runs on Railway; the API is `api.ndzela.com` | Accepted |
 | [0019](0019-arrears-levels-follow-the-number-of-unpaid-days.md) | Arrears levels follow the number of unpaid days (1 reminder, 2 urgent, 3+ suspension) | Accepted |
 | [0020](0020-table-exports-as-excel-or-pdf.md) | Table exports are an Excel file or a PDF, never a CSV | Accepted |
+| [0021](0021-day-based-rent-payments-and-receipts.md) | Rent is paid by day, and each payment records the days it settled | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

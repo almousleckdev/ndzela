@@ -111,6 +111,13 @@
             <version>2.0.3</version>
         </dependency>
 
+        <!-- QR code on the payment receipt -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
         <!-- Excel exports -->
         <dependency>
             <groupId>org.apache.poi</groupId>

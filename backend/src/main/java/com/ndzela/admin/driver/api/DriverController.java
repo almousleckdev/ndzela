@@ -55,9 +55,9 @@ public class DriverController {
     public PageResponse<DriverResponse> list(@RequestParam(required = false) DriverStatus status, @RequestParam(required = false) Boolean onLeave, @RequestParam(required = false) Boolean late,
                                              @RequestParam(required = false) String q,
                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(required = false) String sort,
-                                             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        return drivers.list(status, onLeave, late, q, from, to, sort, page, size);
+                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(required = false) String scope,
+                                             @RequestParam(required = false) String sort, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return drivers.list(status, onLeave, late, q, from, to, scope, sort, page, size);
     }
 
     @GetMapping("/stats")

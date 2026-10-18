@@ -65,9 +65,9 @@ public class DriverService {
     private final AuditService audit;
 
     @Transactional(readOnly = true)
-    public PageResponse<DriverResponse> list(DriverStatus status, Boolean onLeave, Boolean late, String q, LocalDate from, LocalDate to, String sort, int page, int size) {
+    public PageResponse<DriverResponse> list(DriverStatus status, Boolean onLeave, Boolean late, String q, LocalDate from, LocalDate to, String scope, String sort, int page, int size) {
         var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), SortParam.parse(sort, SORTS, Sort.by("lastName", "firstName", "id")));
-        var result = drivers.findAll(filters.spec(status, onLeave, late, q, from, to), pageable);
+        var result = drivers.findAll(filters.spec(status, onLeave, late, q, from, to).and(filters.scope(scope)), pageable);
         Map<UUID, VehicleResponse> vehicles = vehiclesOf(result.getContent().stream().map(Driver::getId).toList());
         Set<UUID> onLeaveIds = leaveService.onLeave(result.getContent());
         Map<UUID, ContractResponse> contractOf = contractService.activeOf(result.getContent().stream().map(Driver::getId).toList());

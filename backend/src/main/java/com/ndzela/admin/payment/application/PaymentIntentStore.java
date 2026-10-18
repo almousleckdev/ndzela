@@ -1,5 +1,6 @@
 package com.ndzela.admin.payment.application;
 
+import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.payment.api.dto.RecordPaymentRequest;
@@ -34,12 +35,13 @@ public class PaymentIntentStore {
 
     private final PaymentIntentRepository intents;
     private final PaymentService payments;
+    private final AuditService audit;
     private final LedgerEntryRepository ledger;
     private final AppProperties props;
     private final SecureRandom random = new SecureRandom();
 
     @Transactional
-    public PaymentIntent createPending(UUID driverId, UUID contractId, String operatorCode, String phone, BigDecimal amount, String currency) {
+    public PaymentIntent createPending(UUID driverId, UUID contractId, String operatorCode, String phone, BigDecimal amount, String currency, int days) {
         intents.findFirstByDriverIdAndStatus(driverId, PaymentIntentStatus.PENDING).ifPresent(existing -> {
             if (existing.getCreatedAt().plus(props.pvit().expireAfter()).isBefore(OffsetDateTime.now())) {
                 close(existing, PaymentIntentStatus.EXPIRED, "No answer from the operator.");
@@ -49,7 +51,7 @@ public class PaymentIntentStore {
         });
         try {
             return intents.saveAndFlush(PaymentIntent.builder().driverId(driverId).contractId(contractId).reference(newReference()).operatorCode(operatorCode)
-                    .customerPhone(phone).amount(amount).currencyCode(currency).status(PaymentIntentStatus.PENDING).build());
+                    .customerPhone(phone).amount(amount).daysRequested(days).currencyCode(currency).status(PaymentIntentStatus.PENDING).build());
         } catch (DataIntegrityViolationException e) {
             throw inProgress();
         }
@@ -82,6 +84,9 @@ public class PaymentIntentStore {
         // A reference already taken must not stop money PVit holds from being recorded: ours is unique.
         String reference = ledger.existsActivePayment(method, providerReference) ? intent.getReference() : providerReference;
         payments.record(new RecordPaymentRequest(intent.getDriverId(), paid, method, reference, intent.getId()), AUTOMATIC);
+        if (paid.compareTo(intent.getAmount().setScale(0, RoundingMode.HALF_UP)) < 0) {
+            audit.record("PAYMENT_UNDERPAID", "DRIVER", intent.getDriverId().toString(), intent.getReference(), intent.getCountryId(), "asked " + intent.getAmount().toPlainString() + ", confirmed " + paid.toPlainString());
+        }
         if (fee != null && fee.signum() > 0) {
             payments.recordProviderFee(intent.getDriverId(), intent.getContractId(), fee, method, reference,
                     UUID.nameUUIDFromBytes(("fee:" + intent.getId()).getBytes(StandardCharsets.UTF_8)));

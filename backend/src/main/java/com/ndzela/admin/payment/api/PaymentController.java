@@ -13,6 +13,8 @@ import com.ndzela.admin.payment.api.dto.WaiverRequest;
 import com.ndzela.admin.payment.api.dto.OperatorResponse;
 import com.ndzela.admin.payment.application.PaymentOperatorService;
 import com.ndzela.admin.payment.application.PaymentQueryService;
+import com.ndzela.admin.payment.application.PaymentReceiptService;
+import com.ndzela.admin.payment.application.model.PaymentReceiptFile;
 import com.ndzela.admin.payment.application.PaymentService;
 import com.ndzela.admin.payment.domain.LedgerEntryType;
 import com.ndzela.admin.payment.domain.PaymentMethod;
@@ -20,7 +22,11 @@ import com.ndzela.admin.payment.domain.PaymentMethod;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +41,7 @@ public class PaymentController {
     private final PaymentService payments;
     private final PaymentQueryService queries;
     private final PaymentOperatorService operators;
+    private final PaymentReceiptService receipts;
 
     // The mobile-money operators of the caller's country
     @GetMapping("/api/v1/payments/operators")
@@ -75,8 +82,8 @@ public class PaymentController {
             @RequestParam(required = false) PaymentMethod method, @RequestParam(required = false) String q,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) String sort, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        return queries.history(driverId, type, method, q, from, to, sort, page, size);
+            @RequestParam(required = false) String scope, @RequestParam(required = false) String sort, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return queries.history(driverId, type, method, q, from, to, scope, sort, page, size);
     }
 
     @GetMapping("/api/v1/payments/export")
@@ -87,6 +94,14 @@ public class PaymentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
         return queries.export(driverId, type, method, q, from, to, format).response();
+    }
+
+    @GetMapping("/api/v1/payments/{id}/receipt")
+    @PreAuthorize("hasAuthority('payments:read')")
+    public ResponseEntity<byte[]> receipt(@PathVariable UUID id) {
+        PaymentReceiptFile receipt = receipts.receiptOfEntry(id);
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(receipt.filename()).build().toString()).body(receipt.pdf());
     }
 
     @PostMapping("/api/v1/payments")

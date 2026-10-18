@@ -434,10 +434,12 @@ class DriverPaymentTest extends AbstractDriverAppTest {
         String text = pdfText(pdf);
 
         assertEquals("%PDF", new String(pdf, 0, 4));
-        for (String expected : new String[] {"REÇU DE PAIEMENT", "N° " + reference(), "PAY1", "Airtel Money", "074111111", "Contrat N°", "NDZ-", "PAYÉ", "Total payé", "Frais opérateur", "4 FCFA",
-                "BÉNÉFICIAIRE", "Date et heure", String.valueOf(body.personalValue("firstName")), String.valueOf(body.personalValue("lastName"))}) {
+        for (String expected : new String[] {"REÇU DE PAIEMENT", "N° " + reference(), "PAY1", "Airtel Money", "07*****11", "Contrat", "NDZ-", "PAYÉ", "TOTAL PAYÉ", "Frais opérateur", "4 FCFA",
+                "Chauffeur", "Loyer du", String.valueOf(body.personalValue("firstName")), String.valueOf(body.personalValue("lastName"))}) {
             org.junit.jupiter.api.Assertions.assertTrue(text.contains(expected), "the receipt should contain: " + expected + "\n" + text);
         }
+        org.junit.jupiter.api.Assertions.assertFalse(text.contains("RCCM"));
+        org.junit.jupiter.api.Assertions.assertFalse(text.contains("074111111"));
     }
 
     @Test
@@ -531,10 +533,12 @@ class DriverPaymentTest extends AbstractDriverAppTest {
     }
 
     @Test
-    void aPaymentCoversAllTheArrearsNeverJustOneOrTwoDays() throws Exception {
+    void fromThreeUnpaidDaysAPaymentCoversAllTheArrearsAndNeverJustOneOrTwoDays() throws Exception {
         asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.unpaidDays").value(org.hamcrest.Matchers.greaterThan(2)));
         mvc.perform(post("/api/v1/driver/payments").header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"operator\":\"AIRTEL_MONEY\",\"phoneNumber\":\"074111111\",\"amount\":23000,\"days\":1}")).andExpect(status().isAccepted());
+                .content("{\"operator\":\"AIRTEL_MONEY\",\"phoneNumber\":\"074111111\",\"amount\":23000,\"days\":1}")).andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("INVALID_PAYMENT_DAYS"));
+        startOk();
 
         int due = JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.totalDue");
         assertEquals(0, amount().compareTo(new BigDecimal(due)));

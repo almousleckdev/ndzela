@@ -5,7 +5,7 @@
 A quick-access area of the web admin to **follow up the drivers**. The product owner named:
 
 - **Suivi paiements**: follow daily payments per driver/contract (who paid, who is late).
-- **Gérer impayés**: manage arrears, with the 24/48/72 h colour levels from [payments-and-arrears.md](payments-and-arrears.md).
+- **Gérer impayés**: manage arrears, with the colour levels (1, 2, 3 or more unpaid days) from [payments-and-arrears.md](payments-and-arrears.md).
 - **Historique**: history of payments and events.
 - "...and so on": **the remaining shortcuts are Open**.
 

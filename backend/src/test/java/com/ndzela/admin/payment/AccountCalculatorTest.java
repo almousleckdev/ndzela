@@ -213,4 +213,14 @@ class AccountCalculatorTest {
         assertEquals(2, state.unpaid());
         assertNull(AccountCalculator.compute(new AccountInput(START, START.plusDays(5), null, RENT, List.of(), List.of(), List.of(), ZONE, at("2026-10-01T10:00:00"))).oldestUnpaidDueAt());
     }
+
+    @Test
+    void aDaysPenaltyIsSettledTogetherWithItsRent() {
+        AccountEntry penalty = new AccountEntry(UUID.randomUUID(), LedgerEntryType.PENALTY, new BigDecimal("5000"), at("2026-10-03T13:00:00"), null, LocalDate.of(2026, 10, 1));
+        AccountState state = stateAt("2026-10-03T13:00:00", List.of(), new ArrayList<>(List.of(payment("2026-10-03T13:00:00", 28000), penalty)));
+
+        assertEquals(1, state.unpaid());
+        assertEquals(List.of(LocalDate.of(2026, 10, 2)), state.unpaidCharges().stream().map(c -> c.day()).toList());
+        assertEquals(0, new BigDecimal("23000").compareTo(state.overdueAmount()));
+    }
 }
