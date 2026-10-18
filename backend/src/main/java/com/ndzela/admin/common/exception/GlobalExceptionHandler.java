@@ -48,6 +48,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.LOCKED, "ACCOUNT_LOCKED", "Your account is temporarily locked due to multiple failed attempts. Please try again later.", request, null);
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyRequests(TooManyRequestsException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_REQUESTS", ex.getMessage(), request, null);
+    }
+
     @ExceptionHandler(BusinessRuleViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleBusinessRule(BusinessRuleViolationException ex, HttpServletRequest request) {
         log.warn("Business rule violation: {}", ex.getMessage());

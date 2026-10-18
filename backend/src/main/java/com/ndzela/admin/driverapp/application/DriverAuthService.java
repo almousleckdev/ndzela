@@ -5,6 +5,10 @@ import com.ndzela.admin.auth.application.model.TokenRotation;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.InvalidCredentialsException;
 import com.ndzela.admin.common.exception.SessionExpiredException;
+import com.ndzela.admin.common.exception.TooManyRequestsException;
+import com.ndzela.admin.common.ratelimit.RateLimiter;
+import com.ndzela.admin.common.web.ClientAddress;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
 import com.ndzela.admin.driver.domain.DriverStatus;
@@ -19,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,19 +39,27 @@ public class DriverAuthService {
     private final JwtService jwt;
     private final RefreshTokenService refreshTokens;
     private final DriverLoginAttempts attempts;
+    private final RateLimiter limiter;
+    private final AppProperties props;
     private final String unknownDriverHash;
 
-    public DriverAuthService(DriverRepository drivers, PasswordEncoder encoder, JwtService jwt, RefreshTokenService refreshTokens, DriverLoginAttempts attempts) {
+    public DriverAuthService(DriverRepository drivers, PasswordEncoder encoder, JwtService jwt, RefreshTokenService refreshTokens,
+                             DriverLoginAttempts attempts, RateLimiter limiter, AppProperties props) {
         this.drivers = drivers;
         this.encoder = encoder;
         this.jwt = jwt;
         this.refreshTokens = refreshTokens;
         this.attempts = attempts;
+        this.limiter = limiter;
+        this.props = props;
         this.unknownDriverHash = encoder.encode("no-such-driver");
     }
 
     // Deliberately not transactional: it runs in the driver's country, which is only known after the lookup.
     public DriverTokens login(String identifier, String password) {
+        if (!limiter.tryAcquire("login-ip", ClientAddress.current(), props.rateLimit().loginAttemptsPerIpPerMinute(), Duration.ofMinutes(1))) {
+            throw new TooManyRequestsException("Too many login attempts. Please try again later.");
+        }
         LoginCandidate candidate = findCandidate(identifier.trim());
         if (candidate == null) {
             encoder.matches(password, unknownDriverHash);

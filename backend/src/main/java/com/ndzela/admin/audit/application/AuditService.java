@@ -2,10 +2,10 @@ package com.ndzela.admin.audit.application;
 
 import com.ndzela.admin.audit.domain.AuditLog;
 import com.ndzela.admin.audit.domain.AuditLogRepository;
+import com.ndzela.admin.common.web.ClientAddress;
 import com.ndzela.admin.common.web.RequestCorrelationFilter;
 import com.ndzela.admin.country.domain.CountryRepository;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
 import org.springframework.security.core.Authentication;
@@ -13,8 +13,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.UUID;
 
@@ -51,7 +49,7 @@ public class AuditService {
                 .reason(reason)
                 .details(details)
                 .requestId(MDC.get(RequestCorrelationFilter.REQUEST_ID_MDC_KEY))
-                .ipAddress(clientAddress())
+                .ipAddress(ClientAddress.current())
                 .country(countryId == null ? null : countries.getReferenceById(countryId))
                 .build());
     }
@@ -59,10 +57,5 @@ public class AuditService {
     private static String currentActor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null && authentication.isAuthenticated() ? authentication.getName() : "system";
-    }
-
-    private static String clientAddress() {
-        return RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes
-                ? ((HttpServletRequest) attributes.getRequest()).getRemoteAddr() : null;
     }
 }

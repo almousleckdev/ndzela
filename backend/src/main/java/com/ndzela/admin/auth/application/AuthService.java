@@ -11,6 +11,10 @@ import com.ndzela.admin.auth.application.model.TokenRotation;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.InvalidCredentialsException;
 import com.ndzela.admin.common.exception.SessionExpiredException;
+import com.ndzela.admin.common.exception.TooManyRequestsException;
+import com.ndzela.admin.common.ratelimit.RateLimiter;
+import com.ndzela.admin.common.web.ClientAddress;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.infrastructure.email.EmailProvider;
 import com.ndzela.admin.security.LoginAttemptService;
 import com.ndzela.admin.security.OpaqueTokens;
@@ -43,12 +47,14 @@ public class AuthService {
     private final LoginAttemptService loginAttempts;
     private final PasswordEncoder passwordEncoder;
     private final AuditService audit;
+    private final RateLimiter limiter;
+    private final AppProperties props;
     private final String decoyPasswordHash;
 
     public AuthService(UserRepository userRepository, LoginChallengeService challenges, OtpService otpService,
                        MfaService mfaService, JwtService jwtService, RefreshTokenService refreshTokens,
                        EmailProvider emailProvider, LoginAttemptService loginAttempts, PasswordEncoder passwordEncoder,
-                       AuditService audit) {
+                       AuditService audit, RateLimiter limiter, AppProperties props) {
         this.userRepository = userRepository;
         this.challenges = challenges;
         this.otpService = otpService;
@@ -59,10 +65,15 @@ public class AuthService {
         this.loginAttempts = loginAttempts;
         this.passwordEncoder = passwordEncoder;
         this.audit = audit;
+        this.limiter = limiter;
+        this.props = props;
         this.decoyPasswordHash = passwordEncoder.encode("decoy-password-for-timing");
     }
 
     public LoginStepResponse startLogin(String rawEmail, String password) {
+        if (!limiter.tryAcquire("login-ip", ClientAddress.current(), props.rateLimit().loginAttemptsPerIpPerMinute(), java.time.Duration.ofMinutes(1))) {
+            throw new TooManyRequestsException("Too many login attempts. Please try again later.");
+        }
         String email = normalize(rawEmail);
         User user = userRepository.findByEmail(email).orElse(null);
 

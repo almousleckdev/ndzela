@@ -46,15 +46,17 @@ class AuthServiceTest {
     @Mock private LoginAttemptService loginAttempts;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private AuditService audit;
+    @Mock private com.ndzela.admin.common.ratelimit.RateLimiter limiter;
 
     private AuthService authService;
     private User user;
 
     @BeforeEach
     void setUp() {
-        when(passwordEncoder.encode(anyString())).thenReturn("decoy-hash");
+        lenient().when(passwordEncoder.encode(anyString())).thenReturn("decoy-hash");
+        lenient().when(limiter.tryAcquire(anyString(), any(), anyInt(), any())).thenReturn(true);
         authService = new AuthService(userRepository, challenges, otpService, mfaService, jwtService,
-                refreshTokens, emailProvider, loginAttempts, passwordEncoder, audit);
+                refreshTokens, emailProvider, loginAttempts, passwordEncoder, audit, limiter, com.ndzela.admin.TestProperties.create());
         user = User.builder().email(EMAIL).password("hash").status(UserStatus.ACTIVE).mfaEnabled(true).build();
     }
 
