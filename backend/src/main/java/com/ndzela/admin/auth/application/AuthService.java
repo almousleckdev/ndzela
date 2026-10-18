@@ -13,6 +13,7 @@ import com.ndzela.admin.common.exception.InvalidCredentialsException;
 import com.ndzela.admin.common.exception.SessionExpiredException;
 import com.ndzela.admin.infrastructure.email.EmailProvider;
 import com.ndzela.admin.security.LoginAttemptService;
+import com.ndzela.admin.security.OpaqueTokens;
 import com.ndzela.admin.security.SecurityUser;
 import com.ndzela.admin.security.jwt.JwtService;
 import com.ndzela.admin.user.domain.User;
@@ -120,6 +121,9 @@ public class AuthService {
         loginAttempts.loginSucceeded(challenge.email());
         log.info("Login completed for {}", challenge.email());
         audit.recordSignIn(user.getEmail(), true, user.countryIdOrNull(), null);
+        user.setSessionId(OpaqueTokens.generate());
+        userRepository.save(user);
+        refreshTokens.revokeAll(user.getEmail());
         return issueTokens(user, refreshTokens.issue(user.getEmail()));
     }
 

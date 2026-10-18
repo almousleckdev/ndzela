@@ -159,6 +159,25 @@ class AuthServiceTest {
     }
 
     @Test
+    void validTotpStampsAFreshSessionAndRevokesOldRefreshTokensBeforeIssuingANewOne() {
+        LoginChallenge challenge = new LoginChallenge("c", EMAIL, LoginStage.OTP_VERIFIED);
+        when(challenges.require("c", LoginStage.OTP_VERIFIED)).thenReturn(challenge);
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+        when(mfaService.verifyLoginCode(user, "123456")).thenReturn(true);
+        when(jwtService.generateAccessToken(any(), any())).thenReturn("access");
+        when(jwtService.accessTokenTtlSeconds()).thenReturn(900L);
+        when(refreshTokens.issue(EMAIL)).thenReturn("refresh");
+
+        authService.completeLogin("c", "123456");
+
+        assertNotNull(user.getSessionId());
+        var inOrder = inOrder(refreshTokens);
+        inOrder.verify(refreshTokens).revokeAll(EMAIL);
+        inOrder.verify(refreshTokens).issue(EMAIL);
+        verify(jwtService).generateAccessToken(any(), eq(user.getSessionId()));
+    }
+
+    @Test
     void invalidTotpCountsFailureAndIssuesNothing() {
         LoginChallenge challenge = new LoginChallenge("c", EMAIL, LoginStage.OTP_VERIFIED);
         when(challenges.require("c", LoginStage.OTP_VERIFIED)).thenReturn(challenge);
@@ -190,5 +209,18 @@ class AuthServiceTest {
         when(jwtService.generateAccessToken(any(), any())).thenReturn("access2");
 
         assertEquals("new", authService.refresh("old").refreshToken());
+    }
+
+    @Test
+    void refreshKeepsTheExistingSessionIdUnchanged() {
+        user.setSessionId("session-already-active");
+        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "new"));
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+        when(jwtService.generateAccessToken(any(), any())).thenReturn("access2");
+
+        authService.refresh("old");
+
+        verify(jwtService).generateAccessToken(any(), eq("session-already-active"));
+        assertEquals("session-already-active", user.getSessionId());
     }
 }
