@@ -1,6 +1,7 @@
 package com.ndzela.admin.security;
 
 import com.ndzela.admin.TestProperties;
+import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.AccountLockedException;
 import com.ndzela.admin.notification.application.NotificationService;
 import com.ndzela.admin.user.domain.User;
@@ -25,14 +26,16 @@ class LoginAttemptServiceTest {
     private UserRepository userRepository;
     @Mock
     private NotificationService notifications;
+    @Mock
+    private AuditService audit;
 
     private LoginAttemptService service;
     private User user;
 
     @BeforeEach
     void setUp() {
-        service = new LoginAttemptService(userRepository, TestProperties.create(), notifications);
-        user = User.builder().email("test@ndzela.com").status(UserStatus.ACTIVE).mfaEnabled(true).build();
+        service = new LoginAttemptService(userRepository, TestProperties.create(), notifications, audit);
+        user = User.builder().id(java.util.UUID.randomUUID()).email("test@ndzela.com").status(UserStatus.ACTIVE).mfaEnabled(true).build();
     }
 
     @Test
@@ -54,6 +57,25 @@ class LoginAttemptServiceTest {
 
         assertEquals(UserStatus.LOCKED, user.getStatus());
         assertTrue(user.getLockExpiration().isAfter(OffsetDateTime.now()));
+    }
+
+    @Test
+    void reachingThresholdRecordsAnAuditEntry() {
+        user.setFailedAttempts(4);
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+        service.loginFailed(user.getEmail());
+
+        verify(audit).record(eq("ACCOUNT_LOCKED"), eq("USER"), any(), eq(user.getEmail()), eq(user.countryIdOrNull()), anyString());
+    }
+
+    @Test
+    void failuresBelowThresholdRecordNoAuditEntry() {
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+        service.loginFailed(user.getEmail());
+
+        verifyNoInteractions(audit);
     }
 
     @Test

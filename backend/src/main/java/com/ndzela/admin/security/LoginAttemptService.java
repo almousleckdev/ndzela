@@ -1,5 +1,6 @@
 package com.ndzela.admin.security;
 
+import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.AccountLockedException;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.notification.application.NotificationService;
@@ -22,6 +23,7 @@ public class LoginAttemptService {
     private final UserRepository userRepository;
     private final AppProperties props;
     private final NotificationService notifications;
+    private final AuditService audit;
 
     @Transactional
     public void loginSucceeded(String email) {
@@ -47,6 +49,7 @@ public class LoginAttemptService {
                 log.warn("Account locked after {} failed attempts: {}", failures, email);
                 notifications.notifyHolders("users:update", user.countryIdOrNull(), email, "ACCOUNT_LOCKED", "Compte verrouillé",
                         "Le compte " + email + " a été verrouillé après " + failures + " tentatives échouées.");
+                audit.record("ACCOUNT_LOCKED", "USER", user.getId().toString(), email, user.countryIdOrNull(), "failed attempts: " + failures);
             }
             userRepository.save(user);
         });
