@@ -10,6 +10,7 @@ import com.ndzela.admin.driver.domain.DriverRepository;
 import com.ndzela.admin.driver.domain.DriverStatus;
 import com.ndzela.admin.driver.domain.LoginCandidate;
 import com.ndzela.admin.driverapp.api.dto.DriverTokens;
+import com.ndzela.admin.security.OpaqueTokens;
 import com.ndzela.admin.security.jwt.JwtService;
 import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.tenant.model.TenantContext;
@@ -92,7 +93,6 @@ public class DriverAuthService {
         }
         driver.setPasswordHash(encoder.encode(newPassword));
         driver.setMustChangePassword(false);
-        refreshTokens.revokeAll(subjectOf(driver));
         return tokensFor(driver);
     }
 
@@ -121,10 +121,16 @@ public class DriverAuthService {
             throw new InvalidCredentialsException(INVALID_LOGIN);
         }
         attempts.succeeded(driverId);
+        // attempts.succeeded() just committed lastLoginAt/failedLoginAttempts in its own transaction;
+        // re-fetch so tokensFor's save() below doesn't write back the stale pre-login values.
+        driver = drivers.findById(driverId).orElseThrow();
         return tokensFor(driver);
     }
 
     private DriverTokens tokensFor(Driver driver) {
+        driver.setSessionId(OpaqueTokens.generate());
+        drivers.save(driver);
+        refreshTokens.revokeAll(subjectOf(driver));
         return new DriverTokens(jwt.generateDriverAccessToken(driver.getId(), driver.getCountryId(), driver.getSessionId()), refreshTokens.issue(subjectOf(driver)),
                 jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
     }
