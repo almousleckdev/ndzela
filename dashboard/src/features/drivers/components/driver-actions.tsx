@@ -8,7 +8,7 @@ import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions"
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver } from "@/features/drivers/types";
 
-export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "remove-vehicle" | "delete";
+export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "remove-vehicle" | "delete";
 export interface DriverAction { kind: DriverActionKind; driver: Driver }
 
 // The state-changing actions offered for a driver, according to their state and the viewer's permissions.
@@ -20,6 +20,7 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
   const lifter = liftedBy[driver.status];
   if (lifter && can(lifter)) items.push({ kind: "reactivate", label: "Réactiver" });
   if (can(PERMISSIONS.DRIVERS_BLOCK) && driver.status !== "BLOCKED") items.push({ kind: "block", label: "Bloquer", destructive: true });
+  if (can(PERMISSIONS.DRIVERS_UNLOCK) && driver.loginLocked) items.push({ kind: "unlock-login", label: "Débloquer la connexion" });
   if (can(PERMISSIONS.DRIVERS_UPDATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Retirer le véhicule" });
   if (can(PERMISSIONS.DRIVERS_DELETE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
   return items;
@@ -59,10 +60,13 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
   }
 
   const isDelete = kind === "delete";
+  const isUnlock = kind === "unlock-login";
   const confirm = async () => {
     try {
-      await (isDelete ? driversService.remove(driver.id) : driversService.reactivate(driver.id));
-      addToast({ title: "Succès", description: isDelete ? "Chauffeur supprimé." : "Chauffeur réactivé.", type: "success" });
+      if (isDelete) await driversService.remove(driver.id);
+      else if (isUnlock) await driversService.unlockLogin(driver.id);
+      else await driversService.reactivate(driver.id);
+      addToast({ title: "Succès", description: isDelete ? "Chauffeur supprimé." : isUnlock ? "Connexion débloquée." : "Chauffeur réactivé.", type: "success" });
       onDone(kind);
     } catch (error) {
       addToast({ title: "Erreur", description: getErrorMessage(error, "L'action a échoué."), type: "error" });
@@ -71,8 +75,14 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
   };
   return (
     <ConfirmDialog isOpen onClose={onClose} onConfirm={confirm} destructive={isDelete}
-      title={isDelete ? "Supprimer ce chauffeur ?" : "Réactiver ce chauffeur ?"}
-      description={isDelete ? `${name} sera supprimé définitivement avec ses contrats, ses arrêts et ses affectations, et son véhicule redeviendra disponible. Impossible si un paiement ou une recharge est enregistré : suspendez-le alors.` : `${name} redeviendra actif.`}
-      confirmText={isDelete ? "Supprimer" : "Réactiver"} cancelText="Annuler" />
+      title={isDelete ? "Supprimer ce chauffeur ?" : isUnlock ? "Débloquer la connexion de ce chauffeur ?" : "Réactiver ce chauffeur ?"}
+      description={
+        isDelete
+          ? `${name} sera supprimé définitivement avec ses contrats, ses arrêts et ses affectations, et son véhicule redeviendra disponible. Impossible si un paiement ou une recharge est enregistré : suspendez-le alors.`
+          : isUnlock
+            ? `${name} a été bloqué après plusieurs tentatives de connexion échouées. Il pourra se reconnecter immédiatement, sans attendre la fin du blocage.`
+            : `${name} redeviendra actif.`
+      }
+      confirmText={isDelete ? "Supprimer" : isUnlock ? "Débloquer" : "Réactiver"} cancelText="Annuler" />
   );
 }

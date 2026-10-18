@@ -43,6 +43,8 @@ export const driversService = {
 
   reactivate: (id: string) => apiClient<Driver>(`/drivers/${id}/reactivate`, { method: "POST" }),
 
+  unlockLogin: (id: string) => apiClient<Driver>(`/drivers/${id}/unlock-login`, { method: "POST" }),
+
   remove: (id: string) => apiClient(`/drivers/${id}`, { method: "DELETE" }),
 
   assignVehicle: (id: string, vehicleId: string, deposit: number) => apiClient<Driver>(`/drivers/${id}/vehicle`, { method: "POST", body: { vehicleId, deposit } }),

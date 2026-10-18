@@ -3,7 +3,9 @@ package com.ndzela.admin.driver;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // An admin can lift a driver's login lockout before the 30-minute wait, without touching the account's business status.
@@ -21,8 +23,10 @@ class DriverLoginLockTest extends AbstractDriverTest {
             login(email, WRONG_PASSWORD).andExpect(status().isUnauthorized());
         }
         login(email, RIGHT_PASSWORD).andExpect(status().isLocked());
+        send(get("/api/v1/drivers/" + driverId), admin).andExpect(jsonPath("$.loginLocked").value(true));
 
-        send(post("/api/v1/drivers/" + driverId + "/unlock-login"), admin).andExpect(status().isOk());
+        send(post("/api/v1/drivers/" + driverId + "/unlock-login"), admin).andExpect(status().isOk())
+                .andExpect(jsonPath("$.loginLocked").value(false));
 
         login(email, RIGHT_PASSWORD).andExpect(status().isOk());
         assertEquals(1, auditRows("DRIVER_LOGIN_UNLOCKED"));
