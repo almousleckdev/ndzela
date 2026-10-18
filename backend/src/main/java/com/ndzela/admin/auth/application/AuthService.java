@@ -132,19 +132,29 @@ public class AuthService {
         loginAttempts.loginSucceeded(challenge.email());
         log.info("Login completed for {}", challenge.email());
         audit.recordSignIn(user.getEmail(), true, user.countryIdOrNull(), null);
+        // loginSucceeded() just committed failedAttempts/status in its own transaction; re-fetch so the
+        // session-id save below doesn't write back the stale pre-login values (same bug class as the driver side).
+        user = userRepository.findByEmail(user.getEmail()).orElseThrow();
         user.setSessionId(OpaqueTokens.generate());
         userRepository.save(user);
         refreshTokens.revokeAll(user.getEmail());
-        return issueTokens(user, refreshTokens.issue(user.getEmail()));
+        return issueTokens(user, refreshTokens.issue(user.getEmail(), user.getSessionId()));
     }
 
     public AuthTokens refresh(String refreshToken) {
         TokenRotation rotation = refreshTokens.rotate(refreshToken);
-        User user = userRepository.findByEmail(rotation.email())
+        User user = userRepository.findByEmail(rotation.subject())
                 .filter(u -> u.getStatus() == UserStatus.ACTIVE && u.isCountryActive())
                 .orElse(null);
         if (user == null) {
-            refreshTokens.revokeAll(rotation.email());
+            refreshTokens.revokeAll(rotation.subject());
+            throw new SessionExpiredException("Invalid or expired session.");
+        }
+        // A token for a session that was since replaced (a new login elsewhere) must not revive it,
+        // even though it survived rotation: the account's current session id is the only truth. Revoking
+        // only this one token (not revokeAll) avoids tearing down the new, legitimate session's tokens.
+        if (!java.util.Objects.equals(user.getSessionId(), rotation.sessionId())) {
+            refreshTokens.revoke(rotation.newToken());
             throw new SessionExpiredException("Invalid or expired session.");
         }
         return issueTokens(user, rotation.newToken());

@@ -113,7 +113,7 @@ class DriverAuthTest extends AbstractDriverAppTest {
 
     @Test
     void aStaffRefreshTokenIsNotAcceptedAndABlockedDriverCannotRefresh() throws Exception {
-        String staffToken = refreshTokens.issue("ga.manager@ndzela.test");
+        String staffToken = refreshTokens.issue("ga.manager@ndzela.test", null);
         mvc.perform(post("/api/v1/driver/auth/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\"" + staffToken + "\"}"))
                 .andExpect(status().isUnauthorized());
 

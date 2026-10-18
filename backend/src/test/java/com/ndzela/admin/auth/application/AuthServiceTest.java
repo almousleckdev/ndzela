@@ -149,7 +149,7 @@ class AuthServiceTest {
         when(mfaService.verifyLoginCode(user, "123456")).thenReturn(true);
         when(jwtService.generateAccessToken(any(), any())).thenReturn("access");
         when(jwtService.accessTokenTtlSeconds()).thenReturn(900L);
-        when(refreshTokens.issue(EMAIL)).thenReturn("refresh");
+        when(refreshTokens.issue(eq(EMAIL), any())).thenReturn("refresh");
 
         AuthTokens tokens = authService.completeLogin("c", "123456");
 
@@ -168,14 +168,14 @@ class AuthServiceTest {
         when(mfaService.verifyLoginCode(user, "123456")).thenReturn(true);
         when(jwtService.generateAccessToken(any(), any())).thenReturn("access");
         when(jwtService.accessTokenTtlSeconds()).thenReturn(900L);
-        when(refreshTokens.issue(EMAIL)).thenReturn("refresh");
+        when(refreshTokens.issue(eq(EMAIL), any())).thenReturn("refresh");
 
         authService.completeLogin("c", "123456");
 
         assertNotNull(user.getSessionId());
         var inOrder = inOrder(refreshTokens);
         inOrder.verify(refreshTokens).revokeAll(EMAIL);
-        inOrder.verify(refreshTokens).issue(EMAIL);
+        inOrder.verify(refreshTokens).issue(eq(EMAIL), any());
         verify(jwtService).generateAccessToken(any(), eq(user.getSessionId()));
     }
 
@@ -196,7 +196,7 @@ class AuthServiceTest {
     @Test
     void refreshForInactiveUserRevokesEverything() {
         user.setStatus(UserStatus.DISABLED);
-        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "new"));
+        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, null, "new"));
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
 
         assertThrows(SessionExpiredException.class, () -> authService.refresh("old"));
@@ -205,8 +205,20 @@ class AuthServiceTest {
     }
 
     @Test
+    void refreshRejectsATokenForASessionThatWasReplaced() {
+        user.setSessionId("session-current");
+        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "session-superseded", "new"));
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+
+        assertThrows(SessionExpiredException.class, () -> authService.refresh("old"));
+
+        verify(refreshTokens).revoke("new");
+        verify(refreshTokens, never()).revokeAll(EMAIL);
+    }
+
+    @Test
     void refreshRotatesToken() {
-        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "new"));
+        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, null, "new"));
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(jwtService.generateAccessToken(any(), any())).thenReturn("access2");
 
@@ -216,7 +228,7 @@ class AuthServiceTest {
     @Test
     void refreshKeepsTheExistingSessionIdUnchanged() {
         user.setSessionId("session-already-active");
-        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "new"));
+        when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "session-already-active", "new"));
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(jwtService.generateAccessToken(any(), any())).thenReturn("access2");
 

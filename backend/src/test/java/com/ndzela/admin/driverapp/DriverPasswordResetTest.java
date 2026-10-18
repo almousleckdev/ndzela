@@ -27,7 +27,10 @@ class DriverPasswordResetTest extends AbstractDriverAppTest {
 
     @Test
     void aForgottenPasswordIsResetWithTheCodeSentByEmailAndOldSessionsEnd() throws Exception {
-        String oldRefresh = com.jayway.jsonpath.JsonPath.read(login(email, DRIVER_PASSWORD).andReturn().getResponse().getContentAsString(), "$.refreshToken");
+        firstPasswordAlreadyChanged();
+        String loginBody = login(email, DRIVER_PASSWORD).andReturn().getResponse().getContentAsString();
+        String oldRefresh = com.jayway.jsonpath.JsonPath.read(loginBody, "$.refreshToken");
+        String oldAccessToken = com.jayway.jsonpath.JsonPath.read(loginBody, "$.accessToken");
         forgot(email).andExpect(status().isAccepted());
         String code = code();
         assertNotNull(code);
@@ -36,6 +39,8 @@ class DriverPasswordResetTest extends AbstractDriverAppTest {
         login(email, DRIVER_PASSWORD).andExpect(status().isUnauthorized());
         login(email, "Nouveau123").andExpect(status().isOk()).andExpect(jsonPath("$.mustChangePassword").value(false));
         mvc.perform(post("/api/v1/driver/auth/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\"" + oldRefresh + "\"}")).andExpect(status().isUnauthorized());
+        // A reset must also end any access token that was already live, not just the refresh chain.
+        asDriver("/api/v1/driver/account", oldAccessToken).andExpect(status().isUnauthorized());
         reset(email, code, "Autre12345").andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INVALID_RESET_CODE"));
     }
 

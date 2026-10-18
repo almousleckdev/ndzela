@@ -70,6 +70,7 @@ public class PasswordResetService {
                 .orElseThrow(PasswordResetService::invalidCode);
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setSessionId(OpaqueTokens.generate());
         userRepository.save(user);
         refreshTokens.revokeAll(email);
     }
@@ -90,6 +91,7 @@ public class PasswordResetService {
                 .orElseThrow(() -> new SessionExpiredException("Invalid or expired reset link."));
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setSessionId(OpaqueTokens.generate());
         userRepository.save(user);
         refreshTokens.revokeAll(email);
     }

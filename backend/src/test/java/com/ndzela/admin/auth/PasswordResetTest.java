@@ -40,8 +40,9 @@ class PasswordResetTest extends AbstractIntegrationTest {
 
     @Test
     void aForgottenPasswordIsResetWithTheCodeSentByEmailAndOldSessionsEnd() throws Exception {
-        staff(email, "GA", "ADMIN");
-        String oldRefresh = refreshTokens.issue(email);
+        User user = staff(email, "GA", "ADMIN");
+        String oldRefresh = refreshTokens.issue(email, null);
+        String oldAccessToken = bearer(user);
         String oldHash = jdbc.queryForObject("select password from users where email = ?", String.class, email);
 
         forgot(email).andExpect(status().isOk());
@@ -52,6 +53,10 @@ class PasswordResetTest extends AbstractIntegrationTest {
 
         assertThrows(com.ndzela.admin.common.exception.SessionExpiredException.class, () -> refreshTokens.rotate(oldRefresh));
         assertNotEquals(oldHash, jdbc.queryForObject("select password from users where email = ?", String.class, email));
+        // A reset must also end any access token that was already live, not just the refresh chain.
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/users")
+                        .header("Authorization", oldAccessToken))
+                .andExpect(status().isUnauthorized());
         reset(email, code, "Autre12345!").andExpect(status().isUnprocessableEntity());
     }
 

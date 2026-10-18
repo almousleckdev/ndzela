@@ -70,7 +70,7 @@ public class DriverAuthService {
 
     public DriverTokens refresh(String refreshToken) {
         TokenRotation rotation = refreshTokens.rotate(refreshToken);
-        String[] subject = rotation.email().split(":");
+        String[] subject = rotation.subject().split(":");
         if (subject.length != 3 || !SUBJECT_PREFIX.equals(subject[0] + ":")) {
             refreshTokens.revoke(rotation.newToken());
             throw new SessionExpiredException("Invalid or expired session.");
@@ -79,6 +79,12 @@ public class DriverAuthService {
         UUID driverId = UUID.fromString(subject[2]);
         Driver driver = TenantHolder.callAs(TenantContext.country(countryId), () -> drivers.findById(driverId).orElse(null));
         if (driver == null || !canUseTheApp(driver.getStatus())) {
+            refreshTokens.revoke(rotation.newToken());
+            throw new SessionExpiredException("Invalid or expired session.");
+        }
+        // A token for a session that was since replaced (a new login elsewhere) must not revive it,
+        // even though it survived rotation: the driver's current session id is the only truth.
+        if (!java.util.Objects.equals(driver.getSessionId(), rotation.sessionId())) {
             refreshTokens.revoke(rotation.newToken());
             throw new SessionExpiredException("Invalid or expired session.");
         }
@@ -117,6 +123,7 @@ public class DriverAuthService {
         driver.setMustChangePassword(false);
         driver.setFailedLoginAttempts(0);
         driver.setLoginLockedUntil(null);
+        driver.setSessionId(OpaqueTokens.generate());
         refreshTokens.revokeAll(subjectOf(driver));
     }
 
@@ -144,8 +151,8 @@ public class DriverAuthService {
         driver.setSessionId(OpaqueTokens.generate());
         drivers.save(driver);
         refreshTokens.revokeAll(subjectOf(driver));
-        return new DriverTokens(jwt.generateDriverAccessToken(driver.getId(), driver.getCountryId(), driver.getSessionId()), refreshTokens.issue(subjectOf(driver)),
-                jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
+        return new DriverTokens(jwt.generateDriverAccessToken(driver.getId(), driver.getCountryId(), driver.getSessionId()),
+                refreshTokens.issue(subjectOf(driver), driver.getSessionId()), jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
     }
 
     // A phone is matched on its end, so "074 11 11 11" finds "+24174111111"; an ambiguous number matches nobody.
