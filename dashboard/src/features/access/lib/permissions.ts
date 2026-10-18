@@ -33,6 +33,7 @@ export const PERMISSIONS = {
   DRIVERS_UPDATE: "drivers:update",
   DRIVERS_SUSPEND: "drivers:suspend",
   DRIVERS_BLOCK: "drivers:block",
+  DRIVERS_UNLOCK: "drivers:unlock",
   DRIVERS_EXPORT: "drivers:export",
   DRIVERS_DELETE: "drivers:delete",
   PAYMENTS_READ: "payments:read",
@@ -116,6 +117,7 @@ const ACTION_LABELS: Record<string, string> = {
   lock: "Bloquer",
   block: "Bloquer",
   suspend: "Suspendre",
+  unlock: "Débloquer la connexion",
   manage: "Gérer",
   delete: "Supprimer",
 };

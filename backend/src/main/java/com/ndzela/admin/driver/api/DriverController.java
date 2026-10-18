@@ -109,6 +109,12 @@ public class DriverController {
         return drivers.deactivate(id, request.reason());
     }
 
+    @PostMapping("/{id}/unlock-login")
+    @PreAuthorize("hasAuthority('drivers:unlock')")
+    public DriverResponse unlockLogin(@PathVariable UUID id) {
+        return drivers.unlockLogin(id);
+    }
+
     @PostMapping("/{id}/block")
     @PreAuthorize("hasAuthority('drivers:block')")
     public DriverResponse block(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {

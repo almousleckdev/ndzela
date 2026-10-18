@@ -18,7 +18,7 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 | `payments`, `arrears` | payments: read, create, reverse, export; arrears: manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse and export: ADMIN, export also COMPTABLE; arrears:manage: ADMIN) |
 | `charging` | read, create, reverse, export, manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse: ADMIN; export: ADMIN, COMPTABLE; manage stations: GESTIONNAIRE, ADMIN) |
 | `contracts` | read, print, update | Implemented (GESTIONNAIRE, ADMIN, COMPTABLE: read and print; VIEWER: read; GESTIONNAIRE and ADMIN also update) |
-| `drivers` | read, create, update, suspend, block, export, delete | Implemented (GESTIONNAIRE: read, create, update, delete; ADMIN: read, suspend, block; COMPTABLE, VIEWER read) |
+| `drivers` | read, create, update, suspend, block, export, delete, unlock | Implemented (GESTIONNAIRE: read, create, update, delete; ADMIN: read, suspend, block, unlock; COMPTABLE, VIEWER read). `unlock` clears a login-attempt lockout only, never the `DriverStatus` set by suspend/block. |
 | `training_centers` | manage | Implemented (GESTIONNAIRE) |
 | `countries` | read | Implemented (granted to every role by migration V7; lists countries for the super admin's selector) |
 
@@ -29,7 +29,7 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 | Role | Intent | Permissions |
 | --- | --- | --- |
 | `SUPER_ADMIN` | Global, all permissions, protected (cannot be edited or deleted) | all |
-| `ADMIN` | Manages people, not money | users: read, create, update, deactivate, lock, delete; roles: read |
+| `ADMIN` | Manages people, not money | users: read, create, update, deactivate, lock, delete; roles: read; drivers: suspend, block, unlock |
 | `GESTIONNAIRE` | Manager of money movement | transactions: read, create, approve, cancel; accounts: read, create, update; reports: read, export; users: read |
 | `COMPTABLE` | Accountant, cannot move money | transactions: read; accounts: read, update; reports: read, export |
 | `CAISSIER` | Cashier | transactions: read, create; cash: operate |

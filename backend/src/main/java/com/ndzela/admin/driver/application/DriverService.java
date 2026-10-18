@@ -154,6 +154,11 @@ public class DriverService {
     }
 
     @Transactional
+    public DriverResponse unlockLogin(UUID id) {
+        return response(statusService.unlockLogin(id));
+    }
+
+    @Transactional
     public DriverResponse reactivate(UUID id, Set<String> permissions) {
         return response(statusService.reactivate(id, permissions));
     }
