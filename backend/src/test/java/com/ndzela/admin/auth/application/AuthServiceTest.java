@@ -145,7 +145,7 @@ class AuthServiceTest {
         when(challenges.require("c", LoginStage.OTP_VERIFIED)).thenReturn(challenge);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(mfaService.verifyLoginCode(user, "123456")).thenReturn(true);
-        when(jwtService.generateAccessToken(any())).thenReturn("access");
+        when(jwtService.generateAccessToken(any(), any())).thenReturn("access");
         when(jwtService.accessTokenTtlSeconds()).thenReturn(900L);
         when(refreshTokens.issue(EMAIL)).thenReturn("refresh");
 
@@ -187,7 +187,7 @@ class AuthServiceTest {
     void refreshRotatesToken() {
         when(refreshTokens.rotate("old")).thenReturn(new TokenRotation(EMAIL, "new"));
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-        when(jwtService.generateAccessToken(any())).thenReturn("access2");
+        when(jwtService.generateAccessToken(any(), any())).thenReturn("access2");
 
         assertEquals("new", authService.refresh("old").refreshToken());
     }

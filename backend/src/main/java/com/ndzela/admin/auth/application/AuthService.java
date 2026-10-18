@@ -145,7 +145,7 @@ public class AuthService {
     }
 
     private AuthTokens issueTokens(User user, String refreshToken) {
-        String accessToken = jwtService.generateAccessToken(new SecurityUser(user));
+        String accessToken = jwtService.generateAccessToken(new SecurityUser(user), user.getSessionId());
         return new AuthTokens(accessToken, jwtService.accessTokenTtlSeconds(), refreshToken);
     }
 

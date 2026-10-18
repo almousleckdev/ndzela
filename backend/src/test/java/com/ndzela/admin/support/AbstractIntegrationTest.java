@@ -115,6 +115,6 @@ public abstract class AbstractIntegrationTest {
     }
 
     protected String bearer(User user) {
-        return "Bearer " + jwt.generateAccessToken(new SecurityUser(user));
+        return "Bearer " + jwt.generateAccessToken(new SecurityUser(user), user.getSessionId());
     }
 }

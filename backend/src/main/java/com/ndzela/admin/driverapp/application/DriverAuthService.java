@@ -68,7 +68,7 @@ public class DriverAuthService {
             refreshTokens.revoke(rotation.newToken());
             throw new SessionExpiredException("Invalid or expired session.");
         }
-        return new DriverTokens(jwt.generateDriverAccessToken(driverId, countryId), rotation.newToken(), jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
+        return new DriverTokens(jwt.generateDriverAccessToken(driverId, countryId, driver.getSessionId()), rotation.newToken(), jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
     }
 
     public void logout(String refreshToken) {
@@ -125,7 +125,7 @@ public class DriverAuthService {
     }
 
     private DriverTokens tokensFor(Driver driver) {
-        return new DriverTokens(jwt.generateDriverAccessToken(driver.getId(), driver.getCountryId()), refreshTokens.issue(subjectOf(driver)),
+        return new DriverTokens(jwt.generateDriverAccessToken(driver.getId(), driver.getCountryId(), driver.getSessionId()), refreshTokens.issue(subjectOf(driver)),
                 jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
     }
 
