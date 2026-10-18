@@ -57,7 +57,7 @@ The next page shows the **contract as a printable PDF** containing all the infor
 
 ## Permissions (Proposed)
 
-`drivers:read`, `drivers:create`, `drivers:update`, `drivers:suspend`, `drivers:block`, `drivers:delete`. **Only the gestionnaire role creates, edits and deletes drivers** (Decided); the **ADMIN** role suspends and reactivates them (Decided). The contract also prints the **documents provided** (licence, ID, justificatif de domicile under 3 months): an **upload in step 3** (Decided 2026-09-30, replaces the earlier checkbox idea).
+`drivers:read`, `drivers:create`, `drivers:update`, `drivers:suspend`, `drivers:block`, `drivers:unlock`, `drivers:delete`. **Only the gestionnaire role creates, edits and deletes drivers** (Decided); the **ADMIN** role suspends and reactivates them (Decided). The contract also prints the **documents provided** (licence, ID, justificatif de domicile under 3 months): an **upload in step 3** (Decided 2026-09-30, replaces the earlier checkbox idea).
 
 ## Screens, leaves and exports (Implemented, V13, 2026-09-30)
 

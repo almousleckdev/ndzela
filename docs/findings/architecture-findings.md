@@ -26,7 +26,7 @@ these docs, or a risk. Severity: **High** (fix before building on it), **Medium*
 | B6 | Hard-coded strings: the `SUPER_ADMIN` role name in `RoleManagementService` and frontend; French notification titles/messages written by the backend. | Low | Centralise constants; decide the i18n approach (see D3). |
 | B7 | `RoleController` `GET /roles` allows `roles:read` **or** `users:create` **or** `users:update`. Intentional (user form) but undocumented in code. | Low | Documented in [authorization](../auth/authorization.md); keep explicit. |
 | B8 | Refresh rotation deletes the used token, but **reuse of an already-rotated token is not treated as theft** (no token-family revocation). | Low | Optional hardening: on reuse, revoke all of the user's tokens. |
-| B9 | No general **rate limiting** beyond login lockout and OTP cooldown; public `/auth/forgot-password` can be hammered. | Medium | **Partly resolved (2026-10-13):** password-reset requests are limited per address and per account (`common/ratelimit/RateLimiter`, Redis). Login is still limited only by the account lockout; consider a per-address limit on sign-in. |
+| B9 | No general **rate limiting** beyond login lockout and OTP cooldown; public `/auth/forgot-password` can be hammered. | Medium | **Resolved (2026-10-18):** password-reset requests are limited per address and per account (`common/ratelimit/RateLimiter`, Redis, since 2026-10-13); `POST /auth/login` and `POST /driver/auth/login` are now also limited per IP address (`RATE_LIMIT_LOGIN_PER_IP`, default 20/min), before account lookup runs. |
 | B10 | **Fixed:** the `StrongPassword` Javadoc now names `features/auth/schemas/password.ts`. | Done | None. |
 
 ## C. Frontend structure
