@@ -3,6 +3,14 @@ export type EntryType = "PAYMENT" | "REVERSAL" | "WAIVER" | "PENALTY" | "FEE";
 export type PaymentMethod = "CASH" | "AIRTEL_MONEY" | "MOOV_MONEY" | "ORANGE_MONEY" | "OTHER";
 export type DayStatus = "PAID_ON_TIME" | "PAID_LATE" | "UNPAID";
 
+// A rent day (or penalty) a payment settled
+export interface PaidDay {
+  day: string;
+  kind: "RENT" | "PENALTY";
+  amount: number;
+  onTime: boolean;
+}
+
 export interface LedgerEntry {
   id: string;
   type: EntryType;
@@ -17,6 +25,7 @@ export interface LedgerEntry {
   businessDay: string | null;
   recordedBy: string;
   createdAt: string;
+  days: PaidDay[];
 }
 
 export interface AccountRow {
@@ -69,6 +78,9 @@ export interface AccountDetail {
   unpaid: number;
   days: DayView[];
   entries: LedgerEntry[];
+  // Sunday at noon: the week's rents must be settled by then.
+  weekClosesAt: string;
+  weekSettled: boolean;
 }
 
 export interface PaymentResult {
@@ -107,6 +119,9 @@ export interface TransactionRow {
   reference: string;
   providerReference: string | null;
   source: "PVIT" | "MANUAL";
+  // When the payment was recorded, and the days it settled.
+  paidAt: string | null;
+  days: PaidDay[];
 }
 
 export type IncidentKind = "HALF_DAY" | "STOP";
@@ -120,9 +135,12 @@ export interface IncidentInput {
   note?: string;
 }
 
+export type RiderScope = "CURRENT" | "FORMER";
+
 export interface TransactionQuery {
   status: TransactionStatus | "ALL";
   method: PaymentMethod | "ALL";
+  scope?: RiderScope;
   q: string;
   from?: string;
   to?: string;

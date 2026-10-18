@@ -10,7 +10,7 @@ import type { Uploads } from "@/features/drivers/lib/driver-form";
 export type DriverDetailsBody = Record<string, unknown>;
 
 export const driversService = {
-  list: ({ status, onLeave, late, q, from, to, sort, page, size }: DriverQuery) => apiClient<Page<Driver>>(`/drivers?${queryString({ status: status === "ALL" ? undefined : status, onLeave, late, q: q.trim(), from, to, sort, page, size })}`),
+  list: ({ status, scope, onLeave, late, q, from, to, sort, page, size }: DriverQuery) => apiClient<Page<Driver>>(`/drivers?${queryString({ status: status === "ALL" ? undefined : status, scope, onLeave, late, q: q.trim(), from, to, sort, page, size })}`),
 
   stats: () => apiClient<DriverStats>("/drivers/stats"),
 

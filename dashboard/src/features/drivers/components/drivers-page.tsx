@@ -8,6 +8,7 @@ import { ExportMenu } from "@/components/export-menu";
 import { Button } from "@/components/ui/button";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Tabs } from "@/components/ui/tabs";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { None, Stack, Status, type Tone } from "@/components/data-table/cells";
 import { DataTable } from "@/components/data-table/data-table";
@@ -37,6 +38,8 @@ import { CountryFlag } from "@/features/tenancy/components/country-flag";
 import { useCountrySelectionStore } from "@/features/tenancy/store/country-selection.store";
 
 type Filter = "ACTIVE" | "ON_LEAVE" | "LATE" | "INACTIVE" | "SUSPENDED" | "BLOCKED";
+type Scope = NonNullable<DriverQuery["scope"]>;
+const SCOPE_TABS: { value: Scope; label: string }[] = [{ value: "CURRENT", label: "Actuels" }, { value: "FORMER", label: "Anciens" }];
 
 // What a choice asks the server for
 function queryOf(filter: string): Pick<DriverQuery, "status" | "onLeave" | "late"> {
@@ -60,8 +63,9 @@ function DriversContent() {
   const selectedCountry = useCountrySelectionStore((state) => state.selectedCode);
   const query = useTableQuery({ sorting: [{ id: "lastName", desc: false }] });
   const { filters, range } = query;
-  const server = queryOf(filters.status ?? "");
-  const list = useAsync(() => driversService.list({ ...server, q: query.q, from: range.from, to: range.to, sort: query.sort, page: query.page, size: query.size }), [filters.status, query.q, range.from, range.to, query.sort, query.page, query.size]);
+  const scope = (filters.scope || "CURRENT") as Scope;
+  const server = scope === "FORMER" ? { status: "ALL" as const } : queryOf(filters.status ?? "");
+  const list = useAsync(() => driversService.list({ ...server, scope, q: query.q, from: range.from, to: range.to, sort: query.sort, page: query.page, size: query.size }), [filters.status, scope, query.q, range.from, range.to, query.sort, query.page, query.size]);
   const stats = useAsync(driversService.stats, []);
   const [action, setAction] = useState<DriverAction | null>(null);
   const [leavesOf, setLeavesOf] = useState<Driver | null>(null);
@@ -110,7 +114,6 @@ function DriversContent() {
     { value: "ACTIVE", label: DRIVER_STATUS_LABELS.ACTIVE, count: s?.active },
     { value: "ON_LEAVE", label: "En arrêt", count: s?.onLeave },
     { value: "LATE", label: "En retard", count: s?.late },
-    { value: "INACTIVE", label: DRIVER_STATUS_LABELS.INACTIVE, count: s?.inactive },
     { value: "SUSPENDED", label: DRIVER_STATUS_LABELS.SUSPENDED, count: s?.suspended },
     { value: "BLOCKED", label: DRIVER_STATUS_LABELS.BLOCKED, count: s?.blocked },
   ];
@@ -146,11 +149,13 @@ function DriversContent() {
         { label: "Suspendus", value: s?.suspended ?? "-" },
         { label: "Assignés / sans véhicule", value: s ? `${s.assigned} / ${s.withoutVehicle}` : "-" },
       ]} />
+      <Tabs tabs={SCOPE_TABS.map((tab) => ({ ...tab, label: tab.value === "FORMER" && s ? `${tab.label} (${s.inactive})` : tab.label }))} value={scope} label="Chauffeurs"
+        onChange={(value) => { query.setFilter("status", ""); query.setFilter("scope", value); }} />
       <Panel>
         <Toolbar start={(
           <>
             <SearchField label="Rechercher un chauffeur" placeholder="Nom, email ou téléphone" value={query.search} onChange={query.setSearch} />
-            <FilterPill label="Statut" value={filters.status ?? ""} options={options} onChange={(value) => query.setFilter("status", value)} />
+            {scope === "CURRENT" && <FilterPill label="Statut" value={filters.status ?? ""} options={options} onChange={(value) => query.setFilter("status", value)} />}
             <DateRangePicker value={range} onChange={query.setRange} label="Inscrit le" />
           </>
         )} />

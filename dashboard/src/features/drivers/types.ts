@@ -114,6 +114,8 @@ export interface LeaveInput {
 
 export interface DriverQuery {
   status: DriverStatus | "ALL";
+  // CURRENT: riders who are not archived, FORMER: the archived ones
+  scope?: "CURRENT" | "FORMER";
   // true
   onLeave?: boolean;
   // true

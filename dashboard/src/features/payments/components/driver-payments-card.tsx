@@ -49,6 +49,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
             <div><p className="text-xs text-slate-500">À temps / en retard / impayés</p><p className="text-lg font-semibold text-slate-900">{a.paidOnTime} / {a.paidLate} / {a.unpaid}</p></div>
           </div>
           {a.overdueSince && <p className="text-xs text-slate-500">En retard depuis le {formatDateTime(a.overdueSince)}.</p>}
+          <p className={cn("text-xs", a.weekSettled ? "text-emerald-700" : "text-amber-700")}>{a.weekSettled ? "Semaine réglée" : "Semaine non réglée"} · clôture le {formatDateTime(a.weekClosesAt)}</p>
 
           <div>
             <h3 className="mb-2 text-sm font-semibold text-slate-900">Derniers jours</h3>
@@ -56,7 +57,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
               <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {a.days.slice(0, 14).map((d) => (
                   <li key={d.day} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-1.5 text-sm">
-                    <span>{day(d.day)}</span>
+                    <span>{day(d.day)}{d.settledAt && <span className="ml-2 text-xs text-slate-500">payé le {formatDateTime(d.settledAt)}</span>}</span>
                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", DAY_STATUS_CLASS[d.status])}>{DAY_STATUS_LABELS[d.status]}</span>
                   </li>
                 ))}
