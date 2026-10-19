@@ -8,6 +8,7 @@ import type { UserAction } from "@/features/users/components/user-actions-menu";
 import { UsersTable } from "@/features/users/components/users-table";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ExportMenu } from "@/components/export-menu";
 import { KpiBand, Page, PageHead, Panel } from "@/components/layout/page";
 import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -110,10 +111,15 @@ function UsersContent() {
       <PageHead
         title="Utilisateurs"
         description="Qui a accès à NDZela Admin, avec quel rôle, et dans quel état est son compte."
-        actions={can(PERMISSIONS.USERS_CREATE) && (
-          <Button onClick={() => setEditing("new")} disabled={!roles.data}>
-            <Plus className="mr-2 h-4 w-4" /> Inviter un utilisateur
-          </Button>
+        actions={(
+          <>
+            {can(PERMISSIONS.USERS_EXPORT) && <ExportMenu path={(format) => usersService.exportPath(format)} filename="utilisateurs" failure="Impossible d'exporter les utilisateurs." />}
+            {can(PERMISSIONS.USERS_CREATE) && (
+              <Button onClick={() => setEditing("new")} disabled={!roles.data}>
+                <Plus className="mr-2 h-4 w-4" /> Inviter un utilisateur
+              </Button>
+            )}
+          </>
         )}
       />
       <KpiBand items={[

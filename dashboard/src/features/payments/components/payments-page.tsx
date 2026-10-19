@@ -8,6 +8,7 @@ import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { FilterPill } from "@/components/data-table/filter-pill";
 import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
+import { ExportMenu } from "@/components/export-menu";
 import { KpiBand, Page, PageHead, Panel, Toolbar, type Kpi } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
 import { usePolling } from "@/hooks/use-polling";
@@ -56,7 +57,10 @@ function PaymentsContent() {
 
   return (
     <Page>
-      <PageHead title="Suivi paiements" description="Qui a payé son loyer, qui est en retard et depuis quand. L'échéance de chaque jour est le lendemain à 12 h." />
+      <PageHead title="Suivi paiements" description="Qui a payé son loyer, qui est en retard et depuis quand. L'échéance de chaque jour est le lendemain à 12 h."
+        actions={can(PERMISSIONS.PAYMENTS_EXPORT) && (
+          <ExportMenu path={(format) => paymentsService.accountsExportPath(filter, query.q, { paidFrom: range.from, paidTo: range.to }, format)} filename="comptes-chauffeurs" failure="Impossible d'exporter les comptes." />
+        )} />
       <KpiBand items={kpis} />
       <Panel>
         <Toolbar start={(

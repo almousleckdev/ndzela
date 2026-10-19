@@ -7,15 +7,15 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 
 | Resource | Actions | Backing feature today |
 | --- | --- | --- |
-| `users` | read, create, update, deactivate, lock, delete | Implemented |
+| `users` | read, create, update, deactivate, lock, delete, export | Implemented (`export` : SUPER_ADMIN, ADMIN) |
 | `roles` | read, create, update, delete | Implemented |
 | `transactions` | read, create, approve, cancel | **Seeded only** (no module yet) |
 | `accounts` | read, create, update | **Seeded only** |
 | `cash` | operate | **Seeded only** |
 | `reports` | read, export | **Seeded only** |
-| `audit` | read | Implemented (SUPER_ADMIN, ADMIN) |
+| `audit` | read, export | Implemented (SUPER_ADMIN, ADMIN) |
 | `vehicles` | read, create, update, delete | Implemented (GESTIONNAIRE all four; ADMIN, COMPTABLE, VIEWER read) |
-| `payments`, `arrears` | payments: read, create, reverse, export; arrears: manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse and export: ADMIN, export also COMPTABLE; arrears:manage: ADMIN) |
+| `payments`, `arrears` | payments: read, create, reverse, export; arrears: manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse and export: ADMIN, export also COMPTABLE; arrears:manage: ADMIN). `payments:export` also gates `GET /payments/accounts/export` (the Progression/Arrears accounts view), separate from the transaction-history export. |
 | `charging` | read, create, reverse, export, manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse: ADMIN; export: ADMIN, COMPTABLE; manage stations: GESTIONNAIRE, ADMIN) |
 | `contracts` | read, print, update | Implemented (GESTIONNAIRE, ADMIN, COMPTABLE: read and print; VIEWER: read; GESTIONNAIRE and ADMIN also update) |
 | `drivers` | read, create, update, suspend, block, export, delete, unlock | Implemented (GESTIONNAIRE: read, create, update, delete; ADMIN: read, suspend, block, unlock; COMPTABLE, VIEWER read). `unlock` clears a login-attempt lockout only, never the `DriverStatus` set by suspend/block. |
@@ -29,7 +29,7 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 | Role | Intent | Permissions |
 | --- | --- | --- |
 | `SUPER_ADMIN` | Global, all permissions, protected (cannot be edited or deleted) | all |
-| `ADMIN` | Manages people, not money | users: read, create, update, deactivate, lock, delete; roles: read; drivers: suspend, block, unlock |
+| `ADMIN` | Manages people, not money | users: read, create, update, deactivate, lock, delete, export; roles: read; drivers: suspend, block, unlock; audit: read, export; payments: read, reverse, export |
 | `GESTIONNAIRE` | Manager of money movement | transactions: read, create, approve, cancel; accounts: read, create, update; reports: read, export; users: read |
 | `COMPTABLE` | Accountant, cannot move money | transactions: read; accounts: read, update; reports: read, export |
 | `CAISSIER` | Cashier | transactions: read, create; cash: operate |

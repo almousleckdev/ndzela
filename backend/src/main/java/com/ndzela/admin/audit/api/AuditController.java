@@ -1,11 +1,14 @@
 package com.ndzela.admin.audit.api;
 
 import com.ndzela.admin.audit.api.dto.AuditLogResponse;
+import com.ndzela.admin.audit.application.AuditExportService;
 import com.ndzela.admin.audit.application.AuditQueryService;
+import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.web.dto.PageResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +22,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class AuditController {
     private final AuditQueryService audit;
+    private final AuditExportService exports;
 
     @GetMapping
     @PreAuthorize("hasAuthority('audit:read')")
@@ -32,5 +36,17 @@ public class AuditController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return audit.search(action, actor, targetType, from, to, sort, page, size);
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority('audit:export')")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String actor,
+            @RequestParam(required = false) String targetType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "XLSX") ExportFormat format) {
+        return exports.export(action, actor, targetType, from, to, format).response();
     }
 }

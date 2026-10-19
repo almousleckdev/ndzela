@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
+import type { ExportFormat } from "@/components/export-menu";
 import type { UserSummary } from "@/features/users/types";
 
 export interface UserInput {
@@ -32,4 +33,5 @@ export const usersService = {
   unlock: (id: string) => apiClient<UserSummary>(`/users/${id}/unlock`, { method: "POST" }),
   resetMfa: (id: string) => apiClient<UserSummary>(`/users/${id}/reset-mfa`, { method: "POST" }),
   resendInvitation: (id: string) => apiClient(`/users/${id}/resend-invitation`, { method: "POST" }),
+  exportPath: (format: ExportFormat) => `/users/export?format=${format}`,
 };

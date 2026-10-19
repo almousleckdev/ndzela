@@ -28,6 +28,9 @@ export const paymentsService = {
   accounts: (filter: AccountFilter, q: string, page: number, size: number, sort?: string, dates: AccountDates = {}) =>
     apiClient<Page<AccountRow>>(`/payments/accounts?${queryString({ filter, q: q.trim(), sort, page, size, ...dates })}`),
 
+  accountsExportPath: (filter: AccountFilter, q: string, dates: AccountDates, format: ExportFormat) =>
+    `/payments/accounts/export?${queryString({ filter, q: q.trim(), format, ...dates })}`,
+
   account: (driverId: string) => apiClient<AccountDetail>(`/payments/accounts/${driverId}`),
 
   history: (query: HistoryQuery, page: number, size: number, sort?: string) => apiClient<Page<LedgerEntry>>(`/payments/history?${queryString({ ...historyParams(query), sort, page, size })}`),

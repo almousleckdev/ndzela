@@ -105,6 +105,26 @@ public class PaymentQueryService {
         });
     }
 
+    private static final Map<ArrearsLevel, String> LEVEL_LABEL = Map.of(ArrearsLevel.NONE, "À jour", ArrearsLevel.LATE, "En retard",
+            ArrearsLevel.YELLOW, "Rappel", ArrearsLevel.DARK_YELLOW, "Urgent", ArrearsLevel.RED, "Suspendu");
+
+    @Transactional
+    public ExportFile exportAccounts(String filter, String q, LocalDate lateFrom, LocalDate lateTo, LocalDate paidFrom, LocalDate paidTo, ExportFormat format) {
+        List<AccountRow> rows = accounts(filter, q, lateFrom, lateTo, paidFrom, paidTo, null, 0, EXPORT_LIMIT).items();
+        List<List<Object>> lines = rows.stream().map(r -> java.util.Arrays.<Object>asList(r.driverName(), r.phone(), r.vehicle() == null ? "" : r.vehicle(),
+                r.dailyRent() == null ? null : r.dailyRent().setScale(0, java.math.RoundingMode.HALF_UP), r.paidDays(), r.unpaidDays(), r.daysLeft(),
+                r.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP), r.awaitingAmount().setScale(0, java.math.RoundingMode.HALF_UP),
+                r.overdueSince() == null ? "" : branding.dateTime(r.overdueSince()), r.lastPaymentAt() == null ? "" : branding.dateTime(r.lastPaymentAt()), LEVEL_LABEL.get(r.level())))
+                .toList();
+        audit.record("ACCOUNTS_EXPORTED", "PAYMENT", null, "Export des comptes chauffeurs", TenantHolder.current().countryId(), lines.size() + " lignes");
+        ExportTable table = new ExportTable("Comptes des chauffeurs", branding.header(paidFrom != null ? paidFrom : lateFrom, paidTo != null ? paidTo : lateTo),
+                List.of(Column.text("Chauffeur", 22), Column.text("Téléphone", 16), Column.text("Véhicule", 14), Column.of("Loyer (FCFA)", ExportTable.Kind.MONEY, 12),
+                        Column.of("Jours payés", ExportTable.Kind.INTEGER, 10), Column.of("Jours impayés", ExportTable.Kind.INTEGER, 10), Column.of("Jours restants", ExportTable.Kind.INTEGER, 10),
+                        Column.of("Montant dû (FCFA)", ExportTable.Kind.MONEY, 14), Column.of("À régler avant midi (FCFA)", ExportTable.Kind.MONEY, 16),
+                        Column.text("En retard depuis", 18), Column.text("Dernier paiement", 18), Column.text("Niveau", 10)), lines, null);
+        return ExportFile.of(table, format, "comptes-chauffeurs");
+    }
+
     @Transactional(readOnly = true)
     public AccountDetail account(UUID driverId) {
         DriverRef driver = driverArrears.get(driverId);

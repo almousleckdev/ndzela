@@ -68,6 +68,17 @@ public class PaymentController {
         return queries.account(driverId);
     }
 
+    @GetMapping("/api/v1/payments/accounts/export")
+    @PreAuthorize("hasAuthority('payments:export')")
+    public ResponseEntity<byte[]> exportAccounts(
+            @RequestParam(defaultValue = "ALL") String filter, @RequestParam(required = false) String q,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lateTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidTo, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
+        return queries.exportAccounts(filter, q, lateFrom, lateTo, paidFrom, paidTo, format).response();
+    }
+
     @GetMapping("/api/v1/payments/summary")
     @PreAuthorize("hasAuthority('payments:read')")
     public PaymentSummary summary(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

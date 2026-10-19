@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -24,12 +25,27 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuditQueryService {
     private static final int MAX_PAGE_SIZE = 100;
+    // Same cap as every other export (drivers, vehicles, payments, charging).
+    static final int MAX_EXPORT_ROWS = 10_000;
     private static final Map<String, String> SORTS = Map.of("createdAt", "createdAt", "actor", "actor", "action", "action", "result", "result", "target", "target");
 
     private final AuditLogRepository logs;
 
     @Transactional(readOnly = true)
     public PageResponse<AuditLogResponse> search(String action, String actor, String targetType, LocalDate from, LocalDate to, String sort, int page, int size) {
+        Specification<AuditLog> spec = spec(action, actor, targetType, from, to);
+        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), SortParam.parse(sort, SORTS, Sort.by(Sort.Direction.DESC, "createdAt", "id")));
+        return PageResponse.from(logs.findAll(spec, pageable), AuditLogResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    List<AuditLog> forExport(String action, String actor, String targetType, LocalDate from, LocalDate to) {
+        Specification<AuditLog> spec = spec(action, actor, targetType, from, to);
+        var pageable = PageRequest.of(0, MAX_EXPORT_ROWS, Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+        return logs.findAll(spec, pageable).getContent();
+    }
+
+    private static Specification<AuditLog> spec(String action, String actor, String targetType, LocalDate from, LocalDate to) {
         Specification<AuditLog> spec = scope(TenantHolder.current());
         if (hasText(action)) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("action"), action.trim()));
@@ -49,8 +65,7 @@ public class AuditQueryService {
             var end = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
             spec = spec.and((root, query, cb) -> cb.lessThan(root.get("createdAt"), end));
         }
-        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), SortParam.parse(sort, SORTS, Sort.by(Sort.Direction.DESC, "createdAt", "id")));
-        return PageResponse.from(logs.findAll(spec, pageable), AuditLogResponse::from);
+        return spec;
     }
 
     private static Specification<AuditLog> scope(TenantContext context) {

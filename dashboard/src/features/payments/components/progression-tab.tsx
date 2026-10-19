@@ -1,5 +1,6 @@
 "use client";
 
+import { ExportMenu } from "@/components/export-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { DataTable } from "@/components/data-table/data-table";
@@ -8,6 +9,8 @@ import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
 import { Toolbar } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
+import { usePermissions } from "@/features/access/hooks/use-permissions";
+import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { progressionColumns } from "@/features/payments/components/progression-columns";
 import { paymentsService } from "@/features/payments/services/payments.service";
 import type { AccountFilter } from "@/features/payments/types";
@@ -16,6 +19,7 @@ const STATES = [{ value: "UP_TO_DATE", label: "À jour" }, { value: "LATE", labe
 
 // Each driver's progress through the contract, with the days paid and unpaid; filter by all
 export function ProgressionTab() {
+  const { can } = usePermissions();
   const query = useTableQuery({ sorting: [{ id: "driverName", desc: false }] });
   const filter = (query.filters.state || "ALL") as AccountFilter;
   const list = useAsync(() => paymentsService.accounts(filter, query.q, query.page, query.size, query.sort, {}), [filter, query.q, query.page, query.size, query.sort]);
@@ -30,6 +34,8 @@ export function ProgressionTab() {
           <SearchField label="Rechercher un chauffeur" placeholder="Nom, email ou téléphone" value={query.search} onChange={query.setSearch} />
           <FilterPill label="Situation" value={query.filters.state ?? ""} options={STATES} onChange={(value) => query.setFilter("state", value)} />
         </>
+      )} end={can(PERMISSIONS.PAYMENTS_EXPORT) && (
+        <ExportMenu path={(format) => paymentsService.accountsExportPath(filter, query.q, {}, format)} filename="progression-chauffeurs" failure="Impossible d'exporter la progression." />
       )} />
       <ActiveFilters filters={active} onClear={query.reset} />
       <DataTable columns={progressionColumns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.driverId} numeric={["overdueAmount"]}

@@ -9,6 +9,7 @@ import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { FilterPill } from "@/components/data-table/filter-pill";
 import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
+import { ExportMenu } from "@/components/export-menu";
 import { KpiBand, Page, PageHead, Panel, Toolbar } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
 import { usePolling } from "@/hooks/use-polling";
@@ -54,7 +55,10 @@ function ArrearsContent() {
 
   return (
     <Page>
-      <PageHead title="Gérer impayés" description="Les chauffeurs dont le loyer n'est pas réglé, du plus ancien au plus récent. À 3 jours d'impayés le chauffeur est suspendu automatiquement." />
+      <PageHead title="Gérer impayés" description="Les chauffeurs dont le loyer n'est pas réglé, du plus ancien au plus récent. À 3 jours d'impayés le chauffeur est suspendu automatiquement."
+        actions={can(PERMISSIONS.PAYMENTS_EXPORT) && (
+          <ExportMenu path={(format) => paymentsService.accountsExportPath(filter, query.q, { lateFrom: range.from, lateTo: range.to }, format)} filename="comptes-impayes" failure="Impossible d'exporter les comptes." />
+        )} />
       <KpiBand items={[
         { label: "Total impayé", value: s ? formatFcfa(s.totalOverdue) : "-", tone: s && s.totalOverdue > 0 ? "bad" : undefined },
         { label: "À régler avant midi", value: s ? formatFcfa(s.totalAwaiting) : "-" },
