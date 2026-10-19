@@ -6,6 +6,7 @@ import com.ndzela.admin.auth.application.PasswordResetService;
 import com.ndzela.admin.auth.application.RefreshTokenService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.CountryRequiredException;
+import com.ndzela.admin.common.exception.InsufficientPrivilegesException;
 import com.ndzela.admin.common.exception.InvalidCountryException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.country.domain.Country;
@@ -30,6 +31,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -68,7 +71,7 @@ public class UserManagementService {
         }
         Set<Role> roles = resolveRoles(request.roleIds());
         accessPolicy.assertCanAssignRoles(actor, roles);
-        Country country = countryForNewUser(request.countryId(), roles, actor);
+        CountryAssignment assignment = resolveCountryAssignment(request.global(), request.countryIds(), actor);
 
         User user = userRepository.save(User.builder()
                 .email(email)
@@ -76,12 +79,15 @@ public class UserManagementService {
                 .firstName(Strings.blankToNull(request.firstName()))
                 .lastName(Strings.blankToNull(request.lastName()))
                 .phoneNumber(Strings.blankToNull(request.phoneNumber()))
+                .additionalPhoneNumbers(cleanPhones(request.additionalPhoneNumbers()))
                 .status(UserStatus.MFA_SETUP)
                 .roles(roles)
-                .country(country)
+                .global(assignment.global())
+                .countries(assignment.countries())
+                .country(assignment.defaultCountry())
                 .build());
 
-        passwordResetService.sendInvitation(email, country);
+        passwordResetService.sendInvitation(email, user.getCountry());
         notifications.notifyHolders("users:read", user.countryIdOrNull(), actor.email(), "USER_CREATED", "Nouvel utilisateur",
                 "Le compte " + email + " a été créé par " + actor.email() + ".");
         record("USER_CREATED", user, "roles: " + roleNames(roles));
@@ -94,19 +100,21 @@ public class UserManagementService {
         accessPolicy.assertCanManage(actor, user);
         Set<Role> newRoles = resolveRoles(request.roleIds());
         accessPolicy.assertCanAssignRoles(actor, newRoles);
-
-        if (user.isGlobal() && !holdsSuperAdmin(newRoles)) {
-            throw new CountryRequiredException("A user without a country must keep the SUPER_ADMIN role.");
-        }
+        CountryAssignment assignment = resolveCountryAssignment(request.global(), request.countryIds(), actor);
 
         boolean rolesChanged = !newRoles.equals(user.getRoles());
-        if (rolesChanged && actor.isSelf(user.getEmail())) {
-            throw new BusinessRuleViolationException("CANNOT_MODIFY_SELF", "You cannot change your own roles.");
+        boolean countriesChanged = assignment.global() != user.isGlobal() || !assignment.countries().equals(user.getCountries());
+        if ((rolesChanged || countriesChanged) && actor.isSelf(user.getEmail())) {
+            throw new BusinessRuleViolationException("CANNOT_MODIFY_SELF", "You cannot change your own roles or country access.");
         }
         user.setFirstName(Strings.blankToNull(request.firstName()));
         user.setLastName(Strings.blankToNull(request.lastName()));
         user.setPhoneNumber(Strings.blankToNull(request.phoneNumber()));
+        user.setAdditionalPhoneNumbers(cleanPhones(request.additionalPhoneNumbers()));
         user.setRoles(newRoles);
+        user.setGlobal(assignment.global());
+        user.setCountries(assignment.countries());
+        user.setCountry(assignment.defaultCountry());
         userRepository.save(user);
         record("USER_UPDATED", user, "roles: " + roleNames(newRoles));
 
@@ -148,36 +156,69 @@ public class UserManagementService {
         TenantContext context = TenantHolder.current();
         return switch (context.mode()) {
             case ALL -> userRepository.findAll();
-            case COUNTRY -> userRepository.findAllByCountryId(context.countryId());
+            case COUNTRY -> userRepository.findByCountriesId(context.countryId());
             case NONE -> List.of();
         };
     }
 
-    private Country countryForNewUser(UUID requestedCountryId, Set<Role> roles, CurrentActor actor) {
-        if (actor.global() && requestedCountryId != null) {
-            return countries.findById(requestedCountryId).filter(Country::isActive).orElseThrow(InvalidCountryException::new);
+    // What countries a user may be assigned to, or global: an actor can never grant reach beyond their own.
+    private CountryAssignment resolveCountryAssignment(boolean requestedGlobal, Set<UUID> requestedCountryIds, CurrentActor actor) {
+        if (actor.global()) {
+            if (requestedGlobal) {
+                return CountryAssignment.globalAssignment();
+            }
+            Set<UUID> ids = requestedCountryIds == null ? Set.of() : requestedCountryIds;
+            if (ids.isEmpty()) {
+                // No country named: default to whichever one the actor is currently working in, if any.
+                TenantContext context = TenantHolder.current();
+                if (context.isCountry()) {
+                    ids = Set.of(context.countryId());
+                } else {
+                    throw new CountryRequiredException();
+                }
+            }
+            return CountryAssignment.of(loadActiveCountries(ids));
+        }
+        if (requestedGlobal) {
+            throw new InsufficientPrivilegesException("You cannot grant global access.");
         }
         TenantContext context = TenantHolder.current();
-        return switch (context.mode()) {
-            case COUNTRY -> {
-                if (requestedCountryId != null && !requestedCountryId.equals(context.countryId())) {
-                    throw new BusinessRuleViolationException("COUNTRY_NOT_ALLOWED",
-                            "The country of a new user is the country you are working in.");
-                }
-                yield countries.findById(context.countryId()).orElseThrow(InvalidCountryException::new);
-            }
-            case ALL -> {
-                if (holdsSuperAdmin(roles)) {
-                    yield null;
-                }
-                throw new CountryRequiredException();
-            }
-            case NONE -> throw new CountryRequiredException();
+        UUID onlyAllowed = switch (context.mode()) {
+            case COUNTRY -> context.countryId();
+            case ALL, NONE -> throw new CountryRequiredException();
         };
+        if (requestedCountryIds != null && !requestedCountryIds.isEmpty() && !requestedCountryIds.equals(Set.of(onlyAllowed))) {
+            throw new BusinessRuleViolationException("COUNTRY_NOT_ALLOWED",
+                    "The country of a user is the country you are working in.");
+        }
+        return CountryAssignment.of(loadActiveCountries(Set.of(onlyAllowed)));
     }
 
-    private static boolean holdsSuperAdmin(Set<Role> roles) {
-        return roles.stream().anyMatch(role -> RoleManagementService.SUPER_ADMIN.equals(role.getName()));
+    private List<Country> loadActiveCountries(Set<UUID> ids) {
+        List<Country> found = countries.findAllById(ids);
+        if (found.size() != ids.size() || found.stream().anyMatch(country -> !country.isActive())) {
+            throw new InvalidCountryException();
+        }
+        return found;
+    }
+
+    private record CountryAssignment(boolean global, Set<Country> countries, Country defaultCountry) {
+        static CountryAssignment globalAssignment() {
+            return new CountryAssignment(true, new HashSet<>(), null);
+        }
+
+        static CountryAssignment of(List<Country> countries) {
+            Set<Country> set = new HashSet<>(countries);
+            return new CountryAssignment(false, set, set.stream().min(Comparator.comparing(Country::getCode)).orElse(null));
+        }
+    }
+
+    // A mutable list: Hibernate replaces the contents of the @ElementCollection in place and cannot clear an immutable one.
+    private static List<String> cleanPhones(List<String> phones) {
+        if (phones == null) {
+            return new ArrayList<>();
+        }
+        return phones.stream().map(Strings::blankToNull).filter(java.util.Objects::nonNull).distinct().collect(java.util.stream.Collectors.toCollection(ArrayList::new));
     }
 
     private Set<Role> resolveRoles(Set<UUID> roleIds) {

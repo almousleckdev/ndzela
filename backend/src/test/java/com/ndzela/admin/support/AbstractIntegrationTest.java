@@ -104,12 +104,15 @@ public abstract class AbstractIntegrationTest {
         for (String roleName : roleNames) {
             assigned.add(roles.findByName(roleName).orElseThrow());
         }
+        Country country = countryCode == null ? null : country(countryCode);
         return users.save(User.builder()
                 .email(email)
                 .password(encoder.encode(PASSWORD))
                 .status(UserStatus.ACTIVE)
                 .mfaEnabled(true)
-                .country(countryCode == null ? null : country(countryCode))
+                .country(country)
+                .global(country == null)
+                .countries(country == null ? Set.of() : Set.of(country))
                 .roles(assigned)
                 .build());
     }

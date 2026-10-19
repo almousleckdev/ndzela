@@ -133,7 +133,7 @@ public class RoleManagementService {
         TenantContext context = TenantHolder.current();
         return switch (context.mode()) {
             case ALL -> userRepository.countByRolesId(roleId);
-            case COUNTRY -> userRepository.countByRolesIdAndCountryId(roleId, context.countryId());
+            case COUNTRY -> userRepository.countByRolesIdAndCountriesId(roleId, context.countryId());
             case NONE -> 0;
         };
     }

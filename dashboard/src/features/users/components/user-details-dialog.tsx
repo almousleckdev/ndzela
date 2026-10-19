@@ -39,8 +39,21 @@ export function UserDetailsDialog({ user, onClose }: UserDetailsDialogProps) {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Téléphone">{user.phoneNumber ?? "—"}</Field>
-          <Field label="Pays">{user.country ? <span className="inline-flex items-center gap-2"><CountryFlag code={user.country.code} />{user.country.name}</span> : "Global"}</Field>
+          <Field label="Téléphone">
+            <div className="space-y-0.5">
+              <div>{user.phoneNumber ?? "—"}</div>
+              {user.additionalPhoneNumbers.map((phone) => <div key={phone} className="text-slate-500">{phone}</div>)}
+            </div>
+          </Field>
+          <Field label="Pays">
+            {user.isGlobal ? "Global" : (
+              <div className="flex flex-wrap gap-2">
+                {user.countries.map((country) => (
+                  <span key={country.id} className="inline-flex items-center gap-1.5"><CountryFlag code={country.code} />{country.name}</span>
+                ))}
+              </div>
+            )}
+          </Field>
           <Field label="Statut">
             <Status tone={TONE[user.status]}>{STATUS_META[user.status].label}</Status>
             {user.statusReason && <p className="mt-1 text-xs text-slate-500">{user.statusReason}</p>}

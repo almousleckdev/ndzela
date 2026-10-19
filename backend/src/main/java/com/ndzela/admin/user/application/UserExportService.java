@@ -35,7 +35,8 @@ public class UserExportService {
         List<UserSummary> rows = users.list();
         List<List<Object>> lines = rows.stream().map(u -> Arrays.<Object>asList(u.email(), u.firstName() == null ? "" : u.firstName(), u.lastName() == null ? "" : u.lastName(),
                 u.phoneNumber() == null ? "" : u.phoneNumber(), STATUS.get(u.status()), u.statusReason() == null ? "" : u.statusReason(),
-                u.roles().stream().map(RoleRef::name).reduce((a, b) -> a + ", " + b).orElse(""), u.country() == null ? "Global" : u.country().name(),
+                u.roles().stream().map(RoleRef::name).reduce((a, b) -> a + ", " + b).orElse(""),
+                u.isGlobal() ? "Global" : u.countries().stream().map(c -> c.name()).reduce((a, b) -> a + ", " + b).orElse(""),
                 branding.day(u.createdAt()))).toList();
         audit.record("USERS_EXPORTED", "USER", null, "Export utilisateurs", TenantHolder.current().countryId(), lines.size() + " lignes");
         ExportTable table = new ExportTable("Liste des utilisateurs", branding.header(null, null), List.of(Column.text("E-mail", 28), Column.text("Prénom", 16), Column.text("Nom", 16),

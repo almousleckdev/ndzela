@@ -13,11 +13,14 @@ export interface UserSummary {
   firstName: string | null;
   lastName: string | null;
   phoneNumber: string | null;
+  additionalPhoneNumbers: string[];
   profilePictureUrl: string | null;
   status: UserStatus;
   statusReason: string | null;
   mfaEnabled: boolean;
   roles: RoleRef[];
-  country: Country | null;
+  // Sees every country, not only the ones in `countries` (which is then empty).
+  isGlobal: boolean;
+  countries: Country[];
   createdAt: string;
 }

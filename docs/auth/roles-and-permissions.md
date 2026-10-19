@@ -28,7 +28,7 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 
 | Role | Intent | Permissions |
 | --- | --- | --- |
-| `SUPER_ADMIN` | Global, all permissions, protected (cannot be edited or deleted) | all |
+| `SUPER_ADMIN` | Seeded as global, all permissions, protected (cannot be edited or deleted) | all |
 | `ADMIN` | Manages people, not money | users: read, create, update, deactivate, lock, delete, export; roles: read; drivers: suspend, block, unlock; audit: read, export; payments: read, reverse, export |
 | `GESTIONNAIRE` | Manager of money movement | transactions: read, create, approve, cancel; accounts: read, create, update; reports: read, export; users: read |
 | `COMPTABLE` | Accountant, cannot move money | transactions: read; accounts: read, update; reports: read, export |
@@ -36,6 +36,8 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 | `VIEWER` | Read-only | users, roles, transactions, accounts, reports: read |
 
 Role names are `UPPER_SNAKE_CASE` (`^[A-Z][A-Z0-9_]{2,49}$`, same rule on backend and frontend). Custom roles can be created by holders of `roles:create`.
+
+Being global, or scoped to several countries, is independent of role ([ADR-0023](../adr/0023-multi-country-staff.md)): any role may be assigned that way, not only `SUPER_ADMIN` — only `SUPER_ADMIN` is seeded global by default.
 
 ## Procedure to add or change a permission
 

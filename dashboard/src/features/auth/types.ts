@@ -41,6 +41,10 @@ export interface UserProfile {
   roles: string[];
   // `resource:action` strings, e.g.
   permissions: string[];
-  // Null for a global user (the super admin).
+  // Sees every country, not only the ones in `countries` (which is then empty).
+  isGlobal: boolean;
+  // The countries this user may work in. Empty when global.
+  countries: Country[];
+  // Default/home country: where the switcher starts. Null for a global user.
   country: Country | null;
 }

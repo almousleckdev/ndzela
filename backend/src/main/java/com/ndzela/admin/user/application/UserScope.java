@@ -14,7 +14,7 @@ public class UserScope {
         TenantContext context = TenantHolder.current();
         return switch (context.mode()) {
             case ALL -> true;
-            case COUNTRY -> target.getCountry() != null && target.getCountry().getId().equals(context.countryId());
+            case COUNTRY -> target.getCountries().stream().anyMatch(country -> country.getId().equals(context.countryId()));
             case NONE -> false;
         };
     }

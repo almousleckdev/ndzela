@@ -57,6 +57,7 @@ class SingleDeviceSessionTest extends AbstractIntegrationTest {
                 .mfaEnabled(false)
                 .failedAttempts(3)
                 .country(ga)
+                .countries(Set.of(ga))
                 .roles(Set.of(roles.findByName("ADMIN").orElseThrow()))
                 .build());
 

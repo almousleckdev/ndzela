@@ -7,7 +7,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | --- | --- | --- |
 | [0001](0001-modular-monolith-package-by-feature.md) | Modular monolith, package by feature with api/application/domain layers | Accepted |
 | [0002](0002-shared-database-country-tenancy.md) | Shared database, country as tenant, application-level filter | Accepted |
-| [0003](0003-staff-single-country-global-super-admin.md) | Staff belong to one country; super admin is global with a header filter | Accepted |
+| [0003](0003-staff-single-country-global-super-admin.md) | Staff belong to one country; super admin is global with a header filter | Superseded by 0023 |
 | [0004](0004-permission-based-authorization.md) | Authorization on permissions, shared global roles | Accepted (roles global: Decided) |
 | [0005](0005-token-strategy.md) | JWT in memory + rotating opaque refresh cookie, MFA mandatory for staff | Accepted |
 | [0006](0006-flyway-owns-the-schema.md) | Flyway owns the schema, Hibernate validates | Accepted |
@@ -27,5 +27,6 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0020](0020-table-exports-as-excel-or-pdf.md) | Table exports are an Excel file or a PDF, never a CSV | Accepted |
 | [0021](0021-day-based-rent-payments-and-receipts.md) | Rent is paid by day, and each payment records the days it settled | Accepted |
 | [0022](0022-single-device-sessions.md) | Single-device sessions: one session id per account, checked per request | Accepted |
+| [0023](0023-multi-country-staff.md) | Staff may belong to one or more countries, or be global, independent of role | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

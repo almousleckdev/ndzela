@@ -17,12 +17,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     long countByRolesId(UUID roleId);
 
-    long countByRolesIdAndCountryId(UUID roleId, UUID countryId);
+    long countByRolesIdAndCountriesId(UUID roleId, UUID countryId);
 
-    List<User> findAllByCountryId(UUID countryId);
+    List<User> findByCountriesId(UUID countryId);
 
-    @Query("select distinct u from User u join u.roles r join r.permissions p "
-            + "where p.name = :permission and u.status <> :excluded and (u.country is null or u.country.id = :countryId)")
+    @Query("select distinct u from User u join u.roles r join r.permissions p left join u.countries c "
+            + "where p.name = :permission and u.status <> :excluded and (u.global = true or c.id = :countryId)")
     List<User> findByPermissionExcludingStatus(@Param("permission") String permission, @Param("excluded") UserStatus excluded,
                                                @Param("countryId") UUID countryId);
 

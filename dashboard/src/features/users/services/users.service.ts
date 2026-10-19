@@ -6,22 +6,24 @@ export interface UserInput {
   firstName: string;
   lastName: string;
   phoneNumber: string;
+  additionalPhoneNumbers: string[];
   roleIds: string[];
-  // Sent only by a global user working in "all countries".
-  countryId?: string;
+  // Both sent only by a global actor; a non-global actor's users stay in their own current country.
+  isGlobal?: boolean;
+  countryIds?: string[];
 }
 
 const blankToNull = (value: string) => value.trim() || null;
 
-function toBody({ firstName, lastName, phoneNumber, roleIds }: UserInput) {
-  return { firstName: blankToNull(firstName), lastName: blankToNull(lastName), phoneNumber: blankToNull(phoneNumber), roleIds };
+function toBody({ firstName, lastName, phoneNumber, additionalPhoneNumbers, roleIds, isGlobal, countryIds }: UserInput) {
+  return { firstName: blankToNull(firstName), lastName: blankToNull(lastName), phoneNumber: blankToNull(phoneNumber), additionalPhoneNumbers, roleIds, isGlobal, countryIds };
 }
 
 export const usersService = {
   list: () => apiClient<UserSummary[]>("/users"),
 
   create: (email: string, input: UserInput) =>
-    apiClient<UserSummary>("/users", { method: "POST", body: { email: email.trim(), ...toBody(input), countryId: input.countryId ?? null } }),
+    apiClient<UserSummary>("/users", { method: "POST", body: { email: email.trim(), ...toBody(input) } }),
 
   update: (id: string, input: UserInput) =>
     apiClient<UserSummary>(`/users/${id}`, { method: "PUT", body: toBody(input) }),
