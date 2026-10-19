@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { RequirePermission } from "@/features/access/components/require-permission";
+import { UserDetailsDialog } from "@/features/users/components/user-details-dialog";
 import { UserFormDialog } from "@/features/users/components/user-form-dialog";
 import type { UserAction } from "@/features/users/components/user-actions-menu";
 import { UsersTable } from "@/features/users/components/users-table";
@@ -62,6 +63,7 @@ function UsersContent() {
   const users = useFetch(usersService.list);
   const roles = useFetch(rolesService.list);
   const [editing, setEditing] = useState<UserSummary | "new" | null>(null);
+  const [viewing, setViewing] = useState<UserSummary | null>(null);
   const [confirming, setConfirming] = useState<Confirmation | null>(null);
 
   // Runs an admin action, reports the result and refreshes the list.
@@ -77,6 +79,7 @@ function UsersContent() {
 
   const handleAction = (action: UserAction, user: UserSummary) => {
     switch (action) {
+      case "view": return setViewing(user);
       case "edit": return setEditing(user);
       case "suspend":
       case "block":
@@ -134,6 +137,8 @@ function UsersContent() {
           ? <Skeleton className="h-64 w-full rounded-none" />
           : <UsersTable users={users.data ?? []} onAction={handleAction} onInvite={can(PERMISSIONS.USERS_CREATE) ? () => setEditing("new") : undefined} />}
       </Panel>
+
+      {viewing && <UserDetailsDialog user={viewing} onClose={() => setViewing(null)} />}
 
       {editing && roles.data && (
         <UserFormDialog
