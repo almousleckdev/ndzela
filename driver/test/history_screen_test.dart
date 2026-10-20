@@ -38,4 +38,34 @@ void main() {
       expect(find.byType(PaymentHistoryTile), findsOneWidget);
     },
   );
+
+  testWidgets('the history lists the payments with their status', (
+    tester,
+  ) async {
+    usePhone(tester);
+    final history = [
+      FakeBackend().finishedAttempt,
+      FakeBackend(finalStatus: PaymentStatus.failed).finishedAttempt,
+    ];
+    final backend = FakeBackend(signedIn: true, history: history);
+    await tester.pumpWidget(appWith(backend));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(NavItem).at(2));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PaymentHistoryTile), findsNWidgets(2));
+    expect(find.text('Confirmé'), findsOneWidget);
+    expect(find.text('Échoué'), findsOneWidget);
+    expect(find.textContaining('Moov Money'), findsWidgets);
+  });
+
+  testWidgets('with no payments the history says so', (tester) async {
+    usePhone(tester);
+    await tester.pumpWidget(appWith(FakeBackend(signedIn: true)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(NavItem).at(2));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Aucun paiement pour le moment'), findsOneWidget);
+  });
 }
