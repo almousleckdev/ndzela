@@ -59,6 +59,7 @@ springdoc:
     enabled: ${SWAGGER_ENABLED:false}
 
 app:
+  environment: ${APP_ENVIRONMENT:}   # development | staging | production; unset: COOKIE_SECURE=true means production (strict startup checks)
   mail:
     provider: ${MAIL_PROVIDER:smtp} # smtp | resend (HTTPS API) | log (prints to console, local dev only)
     resend:
