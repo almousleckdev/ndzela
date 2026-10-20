@@ -1,13 +1,11 @@
 package com.ndzela.admin.driverapp;
 
 import com.ndzela.admin.driver.DriverJson;
-import com.ndzela.admin.user.domain.User;
 import com.jayway.jsonpath.JsonPath;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
