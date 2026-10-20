@@ -1,6 +1,9 @@
 package com.ndzela.admin.driverapp.api.dto;
 
+import com.ndzela.admin.payment.api.dto.ContractProgress;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record DriverContractResponse(String contractNumber, LocalDate startDate, LocalDate endDate, int durationMonths, BigDecimal dailyRent, String currency) {}
+public record DriverContractResponse(String contractNumber, LocalDate startDate, LocalDate endDate, int durationMonths, BigDecimal dailyRent, String currency,
+                                     ContractProgress progress) {}

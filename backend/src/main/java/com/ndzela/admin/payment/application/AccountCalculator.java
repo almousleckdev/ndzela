@@ -117,7 +117,12 @@ public final class AccountCalculator {
                 awaitingAmount = awaitingAmount.add(charge.amount());
             }
         }
-        return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(unpaid), penaltyDays, onTime, late, unpaid, awaitingDays, awaitingAmount, List.copyOf(unpaidCharges));
+        return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(unpaid), penaltyDays, onTime, late, unpaid,
+                awaitingDays, awaitingAmount, List.copyOf(unpaidCharges), creditsOf(credits, LedgerEntryType.PAYMENT), creditsOf(credits, LedgerEntryType.WAIVER));
+    }
+
+    private static BigDecimal creditsOf(List<AccountEntry> credits, LedgerEntryType type) {
+        return credits.stream().filter(e -> e.type() == type).map(AccountEntry::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     // Like the previous platform's screen: one unpaid day is a reminder, two are urgent, three or more are critical (suspension).

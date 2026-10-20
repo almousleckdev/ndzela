@@ -5,6 +5,7 @@ import com.ndzela.admin.driver.application.DriverArrearsService;
 import com.ndzela.admin.driver.application.model.DriverRef;
 import com.ndzela.admin.payment.api.dto.PaidDayView;
 import com.ndzela.admin.payment.api.dto.TransactionRow;
+import com.ndzela.admin.payment.application.model.TransactionLine;
 import com.ndzela.admin.payment.domain.LedgerEntry;
 import com.ndzela.admin.payment.domain.LedgerEntryDay;
 import com.ndzela.admin.payment.domain.LedgerEntryDayRepository;
@@ -19,7 +20,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -106,10 +106,10 @@ public class PaymentTransactionService {
         Long total = jdbc.queryForObject("select count(*) from (" + filtered + ") c", params, Long.class);
         params.addValue("limit", size);
         params.addValue("offset", (long) page * size);
-        List<Row> rows = jdbc.query(filtered + " order by created_at desc, id desc limit :limit offset :offset", params, (rs, n) -> new Row(rs.getObject("id", UUID.class),
+        List<TransactionLine> rows = jdbc.query(filtered + " order by created_at desc, id desc limit :limit offset :offset", params, (rs, n) -> new TransactionLine(rs.getObject("id", UUID.class),
                 rs.getObject("created_at", OffsetDateTime.class), rs.getObject("driver_id", UUID.class), rs.getBigDecimal("amount"), rs.getString("method"), rs.getString("status"),
                 rs.getString("reference"), rs.getString("provider_reference"), rs.getString("source")));
-        Map<UUID, DriverRef> drivers = driverArrears.refs(rows.stream().map(Row::driverId).collect(Collectors.toSet()));
+        Map<UUID, DriverRef> drivers = driverArrears.refs(rows.stream().map(TransactionLine::driverId).collect(Collectors.toSet()));
         Map<UUID, LedgerEntry> payments = paymentsOf(rows);
         Map<UUID, List<PaidDayView>> days = daysOf(payments.values());
         List<TransactionRow> items = rows.stream().map(r -> {
@@ -123,8 +123,8 @@ public class PaymentTransactionService {
     }
 
     // The recorded payment behind each row: the row itself for a manual one, the entry made from the attempt for an app one
-    private Map<UUID, LedgerEntry> paymentsOf(List<Row> rows) {
-        List<UUID> ids = rows.stream().filter(r -> "SUCCESS".equals(r.status()) || "REVERSED".equals(r.status())).map(Row::id).toList();
+    private Map<UUID, LedgerEntry> paymentsOf(List<TransactionLine> rows) {
+        List<UUID> ids = rows.stream().filter(r -> "SUCCESS".equals(r.status()) || "REVERSED".equals(r.status())).map(TransactionLine::id).toList();
         Map<UUID, LedgerEntry> byRow = new HashMap<>();
         if (ids.isEmpty()) {
             return byRow;
@@ -148,5 +148,4 @@ public class PaymentTransactionService {
         return value != null && !value.isBlank() && !"ALL".equals(value);
     }
 
-    private record Row(UUID id, OffsetDateTime createdAt, UUID driverId, BigDecimal amount, String method, String status, String reference, String providerReference, String source) {}
 }

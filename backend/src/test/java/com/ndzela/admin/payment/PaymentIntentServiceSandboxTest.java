@@ -15,7 +15,7 @@ import com.ndzela.admin.payment.api.dto.OperatorResponse;
 import com.ndzela.admin.payment.application.PaymentIntentService;
 import com.ndzela.admin.payment.application.PaymentIntentStore;
 import com.ndzela.admin.payment.application.PaymentOperatorService;
-import com.ndzela.admin.payment.application.PaymentQueryService;
+import com.ndzela.admin.payment.application.AccountQueryService;
 import com.ndzela.admin.payment.domain.PaymentIntent;
 import com.ndzela.admin.payment.domain.PaymentIntentStatus;
 import com.ndzela.admin.tenant.TenantHolder;
@@ -50,7 +50,7 @@ class PaymentIntentServiceSandboxTest {
 
         PaymentIntentStore store = mock(PaymentIntentStore.class);
         PaymentOperatorService operators = mock(PaymentOperatorService.class);
-        PaymentQueryService queries = mock(PaymentQueryService.class);
+        AccountQueryService queries = mock(AccountQueryService.class);
         CountryRepository countries = mock(CountryRepository.class);
         PvitClient client = mock(PvitClient.class);
 

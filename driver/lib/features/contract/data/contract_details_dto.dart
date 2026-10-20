@@ -1,5 +1,6 @@
 import '../../../core/money/money.dart';
 import '../domain/contract_details.dart';
+import 'contract_progress_dto.dart';
 
 class ContractDetailsDto {
   const ContractDetailsDto({
@@ -9,6 +10,7 @@ class ContractDetailsDto {
     required this.durationMonths,
     required this.dailyRent,
     required this.currency,
+    required this.progress,
   });
 
   factory ContractDetailsDto.fromJson(Map<String, dynamic> json) =>
@@ -19,6 +21,9 @@ class ContractDetailsDto {
         durationMonths: json['durationMonths'] as int,
         dailyRent: (json['dailyRent'] as num).toInt(),
         currency: json['currency'] as String,
+        progress: ContractProgressDto.fromJson(
+          json['progress'] as Map<String, dynamic>,
+        ),
       );
 
   final String contractNumber;
@@ -27,6 +32,7 @@ class ContractDetailsDto {
   final int durationMonths;
   final int dailyRent;
   final String currency;
+  final ContractProgressDto progress;
 
   ContractDetails toDomain() => ContractDetails(
     number: contractNumber,
@@ -34,5 +40,6 @@ class ContractDetailsDto {
     endDate: DateTime.parse(endDate),
     durationMonths: durationMonths,
     dailyRent: Money(dailyRent, currency),
+    progress: progress.toDomain(currency),
   );
 }

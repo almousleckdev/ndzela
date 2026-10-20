@@ -6,7 +6,7 @@ import com.ndzela.admin.contract.application.ContractService;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.driver.application.DriverFileService;
-import com.ndzela.admin.driver.application.model.DriverFileContent;
+import com.ndzela.admin.infrastructure.storage.FileContent;
 import com.ndzela.admin.driver.domain.DriverFileKind;
 import com.ndzela.admin.driver.domain.DriverRepository;
 import com.ndzela.admin.driverapp.api.dto.DriverAccountResponse;
@@ -15,7 +15,7 @@ import com.ndzela.admin.driverapp.api.dto.DriverDocumentResponse;
 import com.ndzela.admin.driverapp.api.dto.DriverMeResponse;
 import com.ndzela.admin.driverapp.api.dto.DriverVehicleResponse;
 import com.ndzela.admin.payment.api.dto.AccountDetail;
-import com.ndzela.admin.payment.application.PaymentQueryService;
+import com.ndzela.admin.payment.application.AccountQueryService;
 import com.ndzela.admin.vehicle.application.VehicleService;
 
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class DriverAppService {
     private final DriverRepository drivers;
     private final ContractService contracts;
     private final VehicleService vehicles;
-    private final PaymentQueryService payments;
+    private final AccountQueryService accounts;
     private final DriverFileService files;
     private final AppProperties props;
 
@@ -45,7 +45,7 @@ public class DriverAppService {
 
     // The driver's own profile picture; not found when none was uploaded.
     @Transactional(readOnly = true)
-    public DriverFileContent photo(UUID driverId) {
+    public FileContent photo(UUID driverId) {
         return files.read(driverId, DriverFileKind.PHOTO);
     }
 
@@ -60,7 +60,8 @@ public class DriverAppService {
         ContractResponse contract = activeContract(driverId);
         Driver driver = drivers.findById(driverId).orElseThrow();
         int months = (int) Period.between(contract.startDate(), contract.endDate().plusDays(1)).toTotalMonths();
-        return new DriverContractResponse(contract.contractNumber(), contract.startDate(), contract.endDate(), months, contract.dailyRent(), driver.getCountry().getCurrencyCode());
+        return new DriverContractResponse(contract.contractNumber(), contract.startDate(), contract.endDate(), months, contract.dailyRent(), driver.getCountry().getCurrencyCode(),
+                accounts.progress(driverId));
     }
 
     @Transactional(readOnly = true)
@@ -76,9 +77,9 @@ public class DriverAppService {
     @Transactional(readOnly = true)
     public DriverAccountResponse account(UUID driverId) {
         Driver driver = drivers.findById(driverId).orElseThrow();
-        AccountDetail account = payments.account(driverId);
+        AccountDetail account = accounts.account(driverId);
         return new DriverAccountResponse(account.unpaid(), account.overdueAmount().setScale(0, RoundingMode.HALF_UP), driver.getCountry().getCurrencyCode(), props.driverApp().locks(account.unpaid()),
-                driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED, account.weekClosesAt(), account.weekSettled(), payments.payable(driverId).options());
+                driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED, account.weekClosesAt(), account.weekSettled(), accounts.payable(driverId).options());
     }
 
     private ContractResponse activeContract(UUID driverId) {

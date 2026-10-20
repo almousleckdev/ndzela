@@ -51,7 +51,9 @@ class DriverProfileApiTest extends AbstractDriverAppTest {
                 .andExpect(jsonPath("$.contractNumber").value(org.hamcrest.Matchers.startsWith("NDZ-")))
                 .andExpect(jsonPath("$.startDate").isNotEmpty()).andExpect(jsonPath("$.endDate").isNotEmpty())
                 .andExpect(jsonPath("$.durationMonths").value(org.hamcrest.Matchers.greaterThan(0)))
-                .andExpect(jsonPath("$.dailyRent").value(org.hamcrest.Matchers.greaterThan(0))).andExpect(jsonPath("$.currency").value("XAF"));
+                .andExpect(jsonPath("$.dailyRent").value(org.hamcrest.Matchers.greaterThan(0))).andExpect(jsonPath("$.currency").value("XAF"))
+                .andExpect(jsonPath("$.progress.totalDays").value(1248)).andExpect(jsonPath("$.progress.paidAmount").value(0))
+                .andExpect(jsonPath("$.progress.remainingAmount").value(org.hamcrest.Matchers.greaterThan(0)));
     }
 
     @Test

@@ -29,7 +29,7 @@ class WeekSettlementTest {
     }
 
     private static AccountState state(int unpaid, int awaiting) {
-        return new AccountState(List.of(), BigDecimal.ZERO, BigDecimal.ZERO, null, ArrearsLevel.NONE, List.of(), 0, 0, unpaid, awaiting, BigDecimal.ZERO, List.of());
+        return new AccountState(List.of(), BigDecimal.ZERO, BigDecimal.ZERO, null, ArrearsLevel.NONE, List.of(), 0, 0, unpaid, awaiting, BigDecimal.ZERO, List.of(), BigDecimal.ZERO, BigDecimal.ZERO);
     }
 
     @Test

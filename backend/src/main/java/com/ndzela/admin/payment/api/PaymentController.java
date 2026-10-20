@@ -11,6 +11,8 @@ import com.ndzela.admin.payment.api.dto.RecordPaymentRequest;
 import com.ndzela.admin.payment.api.dto.PaymentSummary;
 import com.ndzela.admin.payment.api.dto.WaiverRequest;
 import com.ndzela.admin.payment.api.dto.OperatorResponse;
+import com.ndzela.admin.payment.application.AccountExportService;
+import com.ndzela.admin.payment.application.AccountQueryService;
 import com.ndzela.admin.payment.application.PaymentOperatorService;
 import com.ndzela.admin.payment.application.PaymentQueryService;
 import com.ndzela.admin.payment.application.PaymentReceiptService;
@@ -40,6 +42,8 @@ import java.util.UUID;
 public class PaymentController {
     private final PaymentService payments;
     private final PaymentQueryService queries;
+    private final AccountQueryService accountQueries;
+    private final AccountExportService accountExports;
     private final PaymentOperatorService operators;
     private final PaymentReceiptService receipts;
 
@@ -59,13 +63,13 @@ public class PaymentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidTo, @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        return queries.accounts(filter, q, lateFrom, lateTo, paidFrom, paidTo, sort, page, size);
+        return accountQueries.accounts(filter, q, lateFrom, lateTo, paidFrom, paidTo, sort, page, size);
     }
 
     @GetMapping("/api/v1/payments/accounts/{driverId}")
     @PreAuthorize("hasAuthority('payments:read')")
     public AccountDetail account(@PathVariable UUID driverId) {
-        return queries.account(driverId);
+        return accountQueries.account(driverId);
     }
 
     @GetMapping("/api/v1/payments/accounts/export")
@@ -76,14 +80,14 @@ public class PaymentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lateTo,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paidTo, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
-        return queries.exportAccounts(filter, q, lateFrom, lateTo, paidFrom, paidTo, format).response();
+        return accountExports.export(filter, q, lateFrom, lateTo, paidFrom, paidTo, format).response();
     }
 
     @GetMapping("/api/v1/payments/summary")
     @PreAuthorize("hasAuthority('payments:read')")
     public PaymentSummary summary(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return queries.summary(from, to);
+        return accountQueries.summary(from, to);
     }
 
     @GetMapping("/api/v1/payments/history")

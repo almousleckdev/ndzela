@@ -9,4 +9,4 @@ import java.util.UUID;
 
 public record AccountDetail(UUID driverId, String driverName, String driverStatus, UUID contractId, String contractNumber, BigDecimal dailyRent, ArrearsLevel level,
                             BigDecimal overdueAmount, BigDecimal credit, OffsetDateTime overdueSince, int paidOnTime, int paidLate, int unpaid, List<AccountDayView> days, List<EntryResponse> entries,
-                            OffsetDateTime weekClosesAt, boolean weekSettled) {}
+                            OffsetDateTime weekClosesAt, boolean weekSettled, ContractProgress progress) {}

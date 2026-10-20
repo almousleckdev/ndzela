@@ -13,6 +13,7 @@ import com.ndzela.admin.infrastructure.pvit.PvitPaymentRequest;
 import com.ndzela.admin.infrastructure.pvit.PvitPaymentStarted;
 import com.ndzela.admin.payment.api.dto.PaymentQuote;
 import com.ndzela.admin.payment.application.model.PayableDays;
+import com.ndzela.admin.payment.application.model.PaymentDue;
 import com.ndzela.admin.payment.application.model.PaymentOption;
 import com.ndzela.admin.payment.domain.PaymentIntent;
 import com.ndzela.admin.tenant.TenantHolder;
@@ -34,7 +35,7 @@ import java.util.UUID;
 public class PaymentIntentService {
     private final PaymentIntentStore store;
     private final PaymentOperatorService operators;
-    private final PaymentQueryService queries;
+    private final AccountQueryService accountQueries;
     private final CountryRepository countries;
     private final PvitClient pvit;
     private final AppProperties props;
@@ -44,7 +45,7 @@ public class PaymentIntentService {
         operators.requireActive(operatorCode);
         Country country = country();
         String phone = ProviderPhone.forProvider(country.getPhoneCode(), rawPhone);
-        Due due = dueOf(driverId, days);
+        PaymentDue due = dueOf(driverId, days);
         PaymentIntent intent = store.createPending(driverId, due.contractId(), operatorCode, phone, due.toCollect(), country.getCurrencyCode(), due.days());
         try {
             PvitPaymentStarted started = pvit.startPayment(new PvitPaymentRequest(intent.getReference(), intent.getAmount(), operatorCode, phone, "Loyer " + CountryBrand.ofCountry(country.getCode()).name()));
@@ -61,7 +62,7 @@ public class PaymentIntentService {
     public PaymentQuote quote(UUID driverId, String operatorCode, String rawPhone, Integer days) {
         operators.requireActive(operatorCode);
         Country country = country();
-        Due due = dueOf(driverId, days);
+        PaymentDue due = dueOf(driverId, days);
         try {
             PvitFees fees = pvit.fees(operatorCode, due.toCollect());
             String holder = rawPhone == null || rawPhone.isBlank() ? null : pvit.accountHolder(operatorCode, ProviderPhone.forProvider(country.getPhoneCode(), rawPhone));
@@ -71,14 +72,14 @@ public class PaymentIntentService {
         }
     }
 
-    private Due dueOf(UUID driverId, Integer days) {
-        PayableDays payable = queries.payable(driverId);
+    private PaymentDue dueOf(UUID driverId, Integer days) {
+        PayableDays payable = accountQueries.payable(driverId);
         if (payable.contractId() == null) {
             throw new BusinessRuleViolationException("NO_ACTIVE_CONTRACT", "This driver has no active contract.");
         }
         PaymentOption chosen = PaymentSelection.choose(payable.options(), days);
         BigDecimal amount = chosen.amount().setScale(0, RoundingMode.HALF_UP);
-        return new Due(payable.contractId(), props.pvit().sandbox() ? props.pvit().sandboxAmount() : amount, chosen.days(), payable.options());
+        return new PaymentDue(payable.contractId(), props.pvit().sandbox() ? props.pvit().sandboxAmount() : amount, chosen.days(), payable.options());
     }
 
     // Who receives the money
@@ -90,8 +91,6 @@ public class PaymentIntentService {
     private Country country() {
         return countries.findById(TenantHolder.requireCountry()).orElseThrow();
     }
-
-    private record Due(UUID contractId, BigDecimal toCollect, int days, List<PaymentOption> options) {}
 
     public Optional<PaymentIntent> attemptOf(UUID driverId, UUID id) {
         return store.findOf(driverId, id);

@@ -44,6 +44,25 @@ class ContractSection extends ConsumerWidget {
               label: 'Loyer journalier',
               value: contract.dailyRent.toString(),
             ),
+            const RowDivider(),
+            InfoRow(
+              icon: AppIcons.calendar,
+              label: 'Jours payés',
+              value:
+                  '${contract.progress.paidDays} sur ${contract.progress.elapsedDays}',
+            ),
+            const RowDivider(),
+            InfoRow(
+              icon: AppIcons.money,
+              label: 'Total payé',
+              value: contract.progress.paidAmount.toString(),
+            ),
+            const RowDivider(),
+            InfoRow(
+              icon: AppIcons.money,
+              label: 'Reste à régler',
+              value: contract.progress.remainingAmount.toString(),
+            ),
           ],
         ),
       ),

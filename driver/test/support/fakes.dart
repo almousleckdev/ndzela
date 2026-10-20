@@ -1,47 +1,25 @@
 import 'dart:typed_data';
-
+import 'memory_storage.dart';
+import 'mocks.dart';
 import 'package:dio/dio.dart';
 import 'package:driver/app/app.dart';
 import 'package:driver/core/money/money.dart';
 import 'package:driver/core/platform/share_file.dart';
 import 'package:driver/core/storage/token_storage.dart';
-import 'package:driver/features/auth/data/auth_repository.dart';
 import 'package:driver/features/auth/presentation/auth_providers.dart';
-import 'package:driver/features/contract/data/contract_repository.dart';
-import 'package:driver/features/contract/domain/vehicle_info.dart';
 import 'package:driver/features/contract/presentation/contract_providers.dart';
-import 'package:driver/features/payments/data/payments_repository.dart';
 import 'package:driver/features/payments/domain/arrears_summary.dart';
 import 'package:driver/features/payments/domain/payment_attempt.dart';
 import 'package:driver/features/payments/domain/payment_operator.dart';
-import 'package:driver/features/payments/domain/payment_quote.dart';
-import 'package:driver/features/payments/domain/payment_status.dart';
 import 'package:driver/features/payments/domain/payment_request.dart';
+import 'package:driver/features/payments/domain/payment_status.dart';
 import 'package:driver/features/payments/presentation/payments_providers.dart';
-import 'package:driver/features/profile/data/profile_repository.dart';
-import 'package:driver/features/profile/domain/document_kind.dart';
-import 'package:driver/features/profile/domain/driver_document.dart';
-import 'package:driver/features/support/data/support_repository.dart';
-import 'package:driver/features/support/domain/support_contacts.dart';
-import 'package:driver/features/support/presentation/support_providers.dart';
-import 'package:driver/features/contract/domain/contract_details.dart';
-import 'package:driver/features/profile/domain/driver_profile.dart';
 import 'package:driver/features/profile/presentation/profile_providers.dart';
+import 'package:driver/features/support/presentation/support_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
-
-import 'memory_storage.dart';
-
-class MockAuthRepository extends Mock implements AuthRepository {}
-
-class MockProfileRepository extends Mock implements ProfileRepository {}
-
-class MockContractRepository extends Mock implements ContractRepository {}
-
-class MockPaymentsRepository extends Mock implements PaymentsRepository {}
-
-class MockSupportRepository extends Mock implements SupportRepository {}
+import 'sample_data.dart';
 
 class FakeBackend {
   FakeBackend({
@@ -68,54 +46,20 @@ class FakeBackend {
         'must_change_password': '$mustChangePassword',
       });
     }
-    when(() => profile.fetchMe()).thenAnswer(
-      (_) async => DriverProfile(
-        firstName: 'Awa',
-        lastName: 'Nze',
-        phone: '+24174111111',
-        localPhone: '074111111',
-        email: 'awa@ndzela.test',
-        birthDate: DateTime(1990, 5, 12),
-        address: 'Rue 12, Akanda, Libreville',
-      ),
-    );
+    when(() => profile.fetchMe()).thenAnswer((_) async => sampleProfile);
     when(() => profile.fetchPhoto()).thenAnswer((_) async => photo);
-    when(() => profile.fetchDocuments()).thenAnswer(
-      (_) async => const [
-        DriverDocument(kind: DocumentKind.contract, available: true),
-        DriverDocument(kind: DocumentKind.licence, available: true),
-        DriverDocument(kind: DocumentKind.idCard, available: true),
-        DriverDocument(kind: DocumentKind.addressProof, available: false),
-      ],
-    );
-    when(() => contract.fetchDetails()).thenAnswer(
-      (_) async => ContractDetails(
-        number: 'NDZ-77836447',
-        startDate: DateTime(2026, 10, 1),
-        endDate: DateTime(2029, 9, 30),
-        durationMonths: 36,
-        dailyRent: const Money(23000, 'XAF'),
-      ),
-    );
-    when(() => support.fetchContacts()).thenAnswer(
-      (_) async => const SupportContacts(
-        phone: '+24162821855',
-        whatsapp: '+24162821855',
-        email: 'ndzelagabon@gmail.com',
-      ),
-    );
+    when(
+      () => profile.fetchDocuments(),
+    ).thenAnswer((_) async => sampleDocuments);
+    when(() => contract.fetchDetails()).thenAnswer((_) async => sampleContract);
+    when(() => support.fetchContacts()).thenAnswer((_) async => sampleSupport);
     when(() => support.sendMessage(any())).thenAnswer((_) async {});
     when(() => support.requestAccountDeletion()).thenAnswer((_) async {});
-    when(() => contract.fetchVehicle()).thenAnswer(
-      (_) async => const VehicleInfo(name: 'Toyota Yaris', plate: 'AB-123-CD'),
-    );
+    when(() => contract.fetchVehicle()).thenAnswer((_) async => sampleVehicle);
     when(() => payments.fetchArrears()).thenAnswer((_) async => arrears);
-    when(() => payments.fetchOperators()).thenAnswer(
-      (_) async => const [
-        PaymentOperator(code: 'AIRTEL_MONEY', label: 'Airtel Money'),
-        PaymentOperator(code: 'MOOV_MONEY', label: 'Moov Money'),
-      ],
-    );
+    when(
+      () => payments.fetchOperators(),
+    ).thenAnswer((_) async => sampleOperators);
     when(() => payments.start(any())).thenAnswer((_) async => pendingAttempt);
     when(
       () => payments.fetchAttempt(any()),
@@ -123,20 +67,14 @@ class FakeBackend {
     when(() => payments.fetchHistory()).thenAnswer((_) async => history);
     when(
       () => payments.fetchReceipt(any()),
-    ).thenAnswer((_) async => Uint8List.fromList([0x25, 0x50, 0x44, 0x46]));
+    ).thenAnswer((_) async => sampleReceipt);
     when(
       () => payments.quote(
         operatorCode: any(named: 'operatorCode'),
         phone: any(named: 'phone'),
         days: any(named: 'days'),
       ),
-    ).thenAnswer(
-      (_) async => const PaymentQuote(
-        amount: Money(69000, 'XAF'),
-        fee: Money(2415, 'XAF'),
-        accountHolder: 'Awa Nze',
-      ),
-    );
+    ).thenAnswer((_) async => sampleQuote);
     when(
       () => auth.signIn(
         identifier: any(named: 'identifier'),

@@ -62,6 +62,19 @@ export interface DayView {
   settledAt: string | null;
 }
 
+// Where a contract stands since day one: rent days (Monday to Saturday) and the money against the total price.
+export interface ContractProgress {
+  totalDays: number;
+  elapsedDays: number;
+  daysLeft: number;
+  paidDays: number;
+  unpaidDays: number;
+  totalPrice: number;
+  paidAmount: number;
+  remainingAmount: number;
+  deposit: number;
+}
+
 export interface AccountDetail {
   driverId: string;
   driverName: string;
@@ -81,6 +94,8 @@ export interface AccountDetail {
   // Sunday at noon: the week's rents must be settled by then.
   weekClosesAt: string;
   weekSettled: boolean;
+  // Null without an active contract.
+  progress: ContractProgress | null;
 }
 
 export interface PaymentResult {

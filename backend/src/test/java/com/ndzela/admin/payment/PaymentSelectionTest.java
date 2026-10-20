@@ -37,7 +37,7 @@ class PaymentSelectionTest {
             }
         }
         list.add(new AccountDay(MONDAY.minusDays(2), Instant.EPOCH, RENT, DayStatus.PAID_ON_TIME, Instant.EPOCH));
-        return new AccountState(list, RENT.multiply(BigDecimal.valueOf(days)), credit, null, ArrearsLevel.NONE, List.of(), 1, 0, days, 0, BigDecimal.ZERO, charges);
+        return new AccountState(list, RENT.multiply(BigDecimal.valueOf(days)), credit, null, ArrearsLevel.NONE, List.of(), 1, 0, days, 0, BigDecimal.ZERO, charges, BigDecimal.ZERO, BigDecimal.ZERO);
     }
 
     private static List<PaymentOption> options(int days) {

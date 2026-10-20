@@ -32,6 +32,19 @@ void main() {
     expect(find.text('23 000 FCFA'), findsOneWidget);
   });
 
+  testWidgets('home shows the contract days and money since day one', (
+    tester,
+  ) async {
+    await openHome(tester);
+
+    expect(find.text('10 sur 12'), findsOneWidget);
+    expect(find.text('1236 jours'), findsOneWidget);
+    expect(
+      find.text('Jour 12 sur 1248 · reste à régler 28 474 000 FCFA'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a driver who is up to date sees no regularise button', (
     tester,
   ) async {
