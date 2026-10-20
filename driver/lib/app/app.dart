@@ -14,7 +14,7 @@ class NdzelaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(driverDataResetProvider);
     return MaterialApp.router(
-      title: 'Ndzela',
+      title: 'NdZela',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(ref.watch(brandProvider)),
       routerConfig: ref.watch(routerProvider),

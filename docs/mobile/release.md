@@ -1,0 +1,31 @@
+# Releasing the driver app (TestFlight and Google Play testing)
+
+App name **NdZela**, Android `applicationId` and iOS bundle id **`com.ndzela.driver`**. Both stores use the same version: `version: x.y.z+n` in `driver/pubspec.yaml` (`x.y.z` is shown to users, `n` is the build number; **every upload needs a higher `n`**; pass `--build-number` to override).
+
+## 1. Which backend a build talks to
+A release build refuses to start without an HTTPS `API_BASE_URL` (see `AppConfig`). The values live in `driver/env/*.json` (public values only, never a secret):
+
+| Build | File | Backend |
+| --- | --- | --- |
+| Test (TestFlight, Play internal testing) | `env/staging.json` (copy `staging.example.json`, put your test API host) | A deployment with `APP_ENVIRONMENT=staging`, the **PVit sandbox** and `PVIT_SANDBOX_AMOUNT=150` (no real money moves) |
+| Production | `env/production.json` | `https://api.ndzela.com` with the real PVit account ([railway-deployment](../infrastructure/railway-deployment.md)) |
+
+## 2. Android: Google Play internal testing
+1. **Upload key** (once, keep the file and passwords in the team's secret store, never in Git): `keytool -genkey -v -keystore ~/ndzela-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`. Copy `driver/android/key.properties.example` to `key.properties` and fill it. Without it `flutter build appbundle` refuses to run (a debug-signed bundle would be rejected anyway).
+2. Build: `cd driver && flutter build appbundle --release --dart-define-from-file=env/staging.json` (output `build/app/outputs/bundle/release/app-release.aab`).
+3. Play Console: create the app (name NdZela, package `com.ndzela.driver`), accept **Play App Signing** (Google keeps the app key; ours is only the upload key), Testing, **Internal testing**, create a release, upload the `.aab`, add testers by e-mail list, share the opt-in link.
+4. Store listing needs: privacy policy `https://ndzela.com/confidentialite`, account deletion page `https://ndzela.com/suppression-compte` (the app also deletes from Profil, "Supprimer mon compte"), the Data safety form (name, e-mail, phone, payment history, all linked to the account and not shared; encrypted in transit; deletion on request), and a **reviewer test account** (a driver created for that purpose).
+
+## 3. iOS: TestFlight
+1. Apple Developer account, then App Store Connect, My Apps, **New App**: name NdZela, bundle id `com.ndzela.driver` (register it under Certificates, Identifiers & Profiles first), primary language French.
+2. In Xcode open `driver/ios/Runner.xcworkspace`, target Runner, Signing & Capabilities: tick **Automatically manage signing** and pick the team (the project currently names team `W9XVSW8Z3S`; change it to the company's team).
+3. Build: `cd driver && flutter build ipa --release --dart-define-from-file=env/staging.json` (output `build/ios/ipa/*.ipa`). Upload it with the **Transporter** app (or Xcode, Window, Organizer, Distribute App).
+4. TestFlight: wait for processing, then add **internal testers** (App Store Connect users, no review) or an **external group** (first build goes through a short Beta App Review; give it a driver test account and the contact details). Export-compliance questions are already answered in `Info.plist` (`ITSAppUsesNonExemptEncryption=false`: the app only uses the system's HTTPS).
+
+## 4. Before the first test
+- Run `flutter analyze && flutter test` in `driver/`.
+- Sign in on a real phone with a test driver and pay once with the sandbox (150 FCFA), then check the receipt, the Historique tab and the staff dashboard's Transactions table.
+- The launcher icon comes from `driver/assets/icon/app_icon.png` (a 1024 px file made from the 500 px logo: **replace it with the designer's 1024 px master when available** and run `dart run flutter_launcher_icons`; see the driver README).
+
+## 5. Going to production (payments for real)
+Follow the payment go-live checklist in [infrastructure](../infrastructure/infrastructure-and-deployment.md#payment-go-live-pvit): the production backend refuses to start with a sandbox amount or missing PVit credentials. Then build with `env/production.json`, promote the tested build in TestFlight to App Store review, and move the Play internal release to a production track (or closed testing first).

@@ -1,17 +1,10 @@
-# driver
+# NdZela driver app
 
-A new Flutter project.
+Flutter + Riverpod app for drivers (iOS and Android). Architecture: [docs/mobile/architecture.md](../docs/mobile/architecture.md). Test builds and store release: [docs/mobile/release.md](../docs/mobile/release.md).
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+| Task | Command |
+| --- | --- |
+| Run against the local backend | `flutter run` (the Android emulator reaches it at `10.0.2.2:8080`, the iOS simulator at `localhost:8080`) |
+| Run against a real backend | `flutter run --dart-define-from-file=env/staging.json` |
+| Check | `flutter analyze && flutter test` |
+| Regenerate the launcher icons (after changing `assets/icon/app_icon.png`) | `dart run flutter_launcher_icons`, then keep `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES` in `ios/Runner.xcodeproj/project.pbxproj` (the tool rewrites it wrongly) |
