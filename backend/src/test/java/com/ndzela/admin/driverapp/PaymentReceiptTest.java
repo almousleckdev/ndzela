@@ -51,13 +51,18 @@ class PaymentReceiptTest extends AbstractDriverPayingTest {
 
     @Test
     void theReceiptNeverShowsTheCompanyRegistryNumber() throws Exception {
+        String original = jdbc.queryForObject("select registry_number from countries where code = 'GA'", String.class);
         jdbc.update("update countries set registry_number = 'RC/LBV/2020/B/0042' where code = 'GA'");
-        payOneOfTwoDays();
+        try {
+            payOneOfTwoDays();
 
-        String text = text(receipt());
+            String text = text(receipt());
 
-        assertFalse(text.contains("RCCM"));
-        assertFalse(text.contains("RC/LBV/2020/B/0042"));
+            assertFalse(text.contains("RCCM"));
+            assertFalse(text.contains("RC/LBV/2020/B/0042"));
+        } finally {
+            jdbc.update("update countries set registry_number = ? where code = 'GA'", original);
+        }
     }
 
     @Test
