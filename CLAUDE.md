@@ -70,7 +70,7 @@ Spring Boot 4) and the **web admin frontend** (`dashboard/`, Next.js / TypeScrip
 - Read a file before editing it. Make the smallest change that solves the task; do not refactor unrelated code.
 - Do not implement features before the relevant spec/plan is approved by the user. Do not start coding when told not to.
 - Run the checks before saying a task is done: backend `cd backend && mvn clean test`; frontend
-  `cd dashboard && npm run lint && npm run typecheck`. Report failures honestly.
+  `cd dashboard && npm run lint && npm run typecheck && npm test` (and `npm run test:e2e` when a flow changed). Report failures honestly.
 - Follow [docs/workflow/git-workflow.md](docs/workflow/git-workflow.md). Never commit, push or rewrite history unless asked.
 - The frontend runs a Next.js version with breaking changes: also follow `dashboard/AGENTS.md` (read the guides in
   `dashboard/node_modules/next/dist/docs/` before writing Next.js code).
@@ -81,4 +81,5 @@ Spring Boot 4) and the **web admin frontend** (`dashboard/`, Next.js / TypeScrip
 | --- | --- |
 | Start Postgres and Redis | `docker compose up -d` |
 | Backend run / test | `cd backend && mvn spring-boot:run` / `mvn clean test` (Docker must be running: integration tests use Testcontainers; use `clean` after refactors: stale classes cause `ClassFormatError`) |
-| Frontend run / check | `cd dashboard && npm run dev` / `npm run lint && npm run typecheck` |
+| Frontend run / check | `cd dashboard && npm run dev` / `npm run lint && npm run typecheck && npm test` |
+| Frontend end-to-end | `cd dashboard && npm run test:e2e` (builds the app, serves it on port 3100, mocks the API; first time: `npx playwright install chromium`) |

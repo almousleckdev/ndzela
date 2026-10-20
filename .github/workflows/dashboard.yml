@@ -17,9 +17,9 @@ concurrency:
 
 jobs:
   check:
-    name: lint, typecheck, build
+    name: lint, typecheck, unit tests, build, e2e
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: dashboard
@@ -35,6 +35,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
       # Fails only on a critical advisory; high ones are fixed in dedicated changes.
       - run: npm audit --omit=dev --audit-level=critical
