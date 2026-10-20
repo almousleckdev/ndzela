@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import { PhoneField } from "@/components/ui/phone-field";
+import { AdditionalPhonesField } from "@/features/users/components/additional-phones-field";
+import { CountryAccessField } from "@/features/users/components/country-access-field";
 import { useFetch } from "@/hooks/use-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
@@ -132,51 +133,11 @@ export function UserFormDialog({ user, roles, onClose, onSaved }: UserFormDialog
           {...register("phoneNumber")}
         />
 
-        <div>
-          <Label>Autres numéros</Label>
-          <div className="space-y-2">
-            {extraPhones.map((phone, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="tel"
-                  className="h-10 flex-1 rounded-lg border border-slate-300 px-3 text-sm"
-                  value={phone}
-                  onChange={(event) => setExtraPhones((current) => current.map((p, i) => (i === index ? event.target.value : p)))}
-                  placeholder="Numéro supplémentaire"
-                />
-                <Button type="button" variant="outline" size="icon" aria-label="Retirer ce numéro" onClick={() => setExtraPhones((current) => current.filter((_, i) => i !== index))}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            {extraPhones.length < 5 && (
-              <Button type="button" variant="outline" onClick={() => setExtraPhones((current) => [...current, ""])}>
-                <Plus className="mr-2 h-4 w-4" /> Ajouter un numéro
-              </Button>
-            )}
-          </div>
-        </div>
+        <AdditionalPhonesField phones={extraPhones} onChange={setExtraPhones} />
 
         {meIsGlobal && (
-          <div>
-            <Checkbox
-              label="Utilisateur global"
-              description="Voit et gère tous les pays, pas seulement ceux cochés ci-dessous."
-              checked={isGlobalChoice}
-              onChange={() => { setIsGlobalChoice((current) => !current); setCountryError(undefined); }}
-            />
-            {!isGlobalChoice && (
-              <fieldset className="mt-2">
-                <Label asLegend>Pays</Label>
-                <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 p-1">
-                  {countries.data?.map((country) => (
-                    <Checkbox key={country.id} label={country.name} checked={countryIds.includes(country.id)} onChange={() => toggleCountry(country.id)} />
-                  ))}
-                </div>
-                {countryError && <p role="alert" className="mt-1 text-xs font-medium text-red-600">{countryError}</p>}
-              </fieldset>
-            )}
-          </div>
+          <CountryAccessField countries={countries.data} isGlobal={isGlobalChoice} countryIds={countryIds} onToggleCountry={toggleCountry} error={countryError}
+            onGlobalChange={() => { setIsGlobalChoice((current) => !current); setCountryError(undefined); }} />
         )}
 
         <fieldset>
