@@ -1,7 +1,7 @@
 package com.ndzela.admin.driver.api;
 
 import com.ndzela.admin.driver.api.dto.DriverResponse;
-import com.ndzela.admin.driver.application.DriverService;
+import com.ndzela.admin.driver.application.DriverQueryService;
 import com.ndzela.admin.driver.application.VehicleRemovalService;
 
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/vehicles")
 @RequiredArgsConstructor
 public class VehicleDriverController {
-    private final DriverService drivers;
+    private final DriverQueryService drivers;
     private final VehicleRemovalService removal;
 
     @GetMapping("/{vehicleId}/driver")

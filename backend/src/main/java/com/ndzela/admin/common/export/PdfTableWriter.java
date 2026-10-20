@@ -10,12 +10,10 @@ import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.BaseFont;
-import com.lowagie.text.pdf.PdfContentByte;
+
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfPageEventHelper;
-import com.lowagie.text.pdf.PdfTemplate;
+
 import com.lowagie.text.pdf.PdfWriter;
 
 import java.awt.Color;
@@ -35,7 +33,7 @@ final class PdfTableWriter {
     private static final Color INK = Color.decode("#0F172A");
     private static final Color LINE = Color.decode("#94A3B8");
     private static final Color BAND = Color.decode("#F1F5F9");
-    private static final Color MUTED = Color.decode("#64748B");
+    static final Color MUTED = Color.decode("#64748B");
     private static final Font TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, INK);
     private static final Font BRAND = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, INK);
     private static final float LOGO_SIZE = 52;
@@ -54,7 +52,7 @@ final class PdfTableWriter {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             PdfWriter writer = PdfWriter.getInstance(document, out);
-            writer.setPageEvent(new Footer());
+            writer.setPageEvent(new PdfPageFooter());
             document.addTitle(table.title());
             document.open();
             document.add(masthead(table.header()));
@@ -75,7 +73,7 @@ final class PdfTableWriter {
     }
 
     // The logo and the brand's name, top left
-    private static PdfPTable masthead(ExportTable.Header header) throws DocumentException, java.io.IOException {
+    private static PdfPTable masthead(ExportHeader header) throws DocumentException, java.io.IOException {
         PdfPTable bar = new PdfPTable(2);
         bar.setWidthPercentage(100);
         bar.setWidths(new float[]{1, 11});
@@ -108,12 +106,12 @@ final class PdfTableWriter {
     }
 
     private static PdfPTable body(ExportTable table) throws DocumentException {
-        List<ExportTable.Column> columns = table.columns();
+        List<ExportColumn> columns = table.columns();
         PdfPTable grid = new PdfPTable(columns.size());
         grid.setWidthPercentage(100);
         grid.setWidths(weights(columns));
         grid.setHeaderRows(1);
-        for (ExportTable.Column column : columns) {
+        for (ExportColumn column : columns) {
             grid.addCell(cell(column.header(), HEAD, Element.ALIGN_CENTER, INK));
         }
         for (int i = 0; i < table.rows().size(); i++) {
@@ -125,18 +123,18 @@ final class PdfTableWriter {
         return grid;
     }
 
-    private static void totals(PdfPTable grid, ExportTable table, List<ExportTable.Column> columns) {
+    private static void totals(PdfPTable grid, ExportTable table, List<ExportColumn> columns) {
         int span = table.totalsLabelSpan();
-        PdfPCell label = cell(format(table.totals().get(0), ExportTable.Kind.TEXT), BOLD, Element.ALIGN_LEFT, AMBER);
+        PdfPCell label = cell(format(table.totals().get(0), ExportKind.TEXT), BOLD, Element.ALIGN_LEFT, AMBER);
         label.setColspan(span);
         grid.addCell(label);
         for (int c = span; c < columns.size(); c++) {
-            ExportTable.Kind kind = columns.get(c).kind();
-            grid.addCell(cell(format(table.totals().get(c), kind), BOLD, kind == ExportTable.Kind.TEXT ? Element.ALIGN_LEFT : Element.ALIGN_RIGHT, AMBER));
+            ExportKind kind = columns.get(c).kind();
+            grid.addCell(cell(format(table.totals().get(c), kind), BOLD, kind == ExportKind.TEXT ? Element.ALIGN_LEFT : Element.ALIGN_RIGHT, AMBER));
         }
     }
 
-    private static float[] weights(List<ExportTable.Column> columns) {
+    private static float[] weights(List<ExportColumn> columns) {
         float[] weights = new float[columns.size()];
         for (int i = 0; i < weights.length; i++) {
             weights[i] = Math.max(columns.get(i).weight(), 6);
@@ -144,10 +142,10 @@ final class PdfTableWriter {
         return weights;
     }
 
-    private static void row(PdfPTable grid, List<ExportTable.Column> columns, List<Object> values, Font font, Color fill) {
+    private static void row(PdfPTable grid, List<ExportColumn> columns, List<Object> values, Font font, Color fill) {
         for (int c = 0; c < columns.size(); c++) {
-            ExportTable.Kind kind = columns.get(c).kind();
-            int align = kind == ExportTable.Kind.TEXT ? Element.ALIGN_LEFT : kind == ExportTable.Kind.DATE ? Element.ALIGN_CENTER : Element.ALIGN_RIGHT;
+            ExportKind kind = columns.get(c).kind();
+            int align = kind == ExportKind.TEXT ? Element.ALIGN_LEFT : kind == ExportKind.DATE ? Element.ALIGN_CENTER : Element.ALIGN_RIGHT;
             grid.addCell(cell(format(c < values.size() ? values.get(c) : null, kind), font, align, fill));
         }
     }
@@ -166,7 +164,7 @@ final class PdfTableWriter {
     }
 
     // A space groups the thousands and a comma marks the decimals, as in French
-    private static String format(Object value, ExportTable.Kind kind) {
+    private static String format(Object value, ExportKind kind) {
         if (value == null) {
             return "";
         }
@@ -185,47 +183,5 @@ final class PdfTableWriter {
             };
         }
         return value.toString();
-    }
-
-    private static final class Footer extends PdfPageEventHelper {
-        private PdfTemplate total;
-        private BaseFont font;
-
-        @Override
-        public void onOpenDocument(PdfWriter writer, Document document) {
-            try {
-                font = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, false);
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-            total = writer.getDirectContent().createTemplate(30, 12);
-        }
-
-        @Override
-        public void onEndPage(PdfWriter writer, Document document) {
-            PdfContentByte canvas = writer.getDirectContent();
-            Rectangle page = document.getPageSize();
-            String text = "Page " + writer.getPageNumber() + " / ";
-            float x = page.getRight(document.rightMargin());
-            float y = page.getBottom(20);
-            float width = font.getWidthPoint(text, 8);
-            canvas.beginText();
-            canvas.setFontAndSize(font, 8);
-            canvas.setColorFill(MUTED);
-            canvas.setTextMatrix(x - width - 12, y);
-            canvas.showText(text);
-            canvas.endText();
-            canvas.addTemplate(total, x - 12, y);
-        }
-
-        @Override
-        public void onCloseDocument(PdfWriter writer, Document document) {
-            total.beginText();
-            total.setFontAndSize(font, 8);
-            total.setColorFill(MUTED);
-            total.setTextMatrix(0, 0);
-            total.showText(String.valueOf(writer.getPageNumber() - 1));
-            total.endText();
-        }
     }
 }

@@ -6,6 +6,7 @@ import com.ndzela.admin.vehicle.api.dto.VehicleRequest;
 import com.ndzela.admin.vehicle.api.dto.VehicleResponse;
 import com.ndzela.admin.vehicle.api.dto.VehicleStatusRequest;
 import com.ndzela.admin.vehicle.application.VehicleExportService;
+import com.ndzela.admin.vehicle.application.VehicleQueryService;
 import com.ndzela.admin.vehicle.application.VehicleService;
 import com.ndzela.admin.vehicle.domain.VehicleStatus;
 
@@ -26,6 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class VehicleController {
     private final VehicleService vehicles;
+    private final VehicleQueryService vehicleQueries;
     private final VehicleExportService exports;
 
     @GetMapping
@@ -34,7 +36,7 @@ public class VehicleController {
                                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(required = false) String sort,
                                               @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        return vehicles.list(status, q, from, to, sort, page, size);
+        return vehicleQueries.list(status, q, from, to, sort, page, size);
     }
 
     @GetMapping("/export")
@@ -48,7 +50,7 @@ public class VehicleController {
     @GetMapping("/counts")
     @PreAuthorize("hasAuthority('vehicles:read')")
     public Map<VehicleStatus, Long> counts() {
-        return vehicles.counts();
+        return vehicleQueries.counts();
     }
 
     @GetMapping("/{id}")

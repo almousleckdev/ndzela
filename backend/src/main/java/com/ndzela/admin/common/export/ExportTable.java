@@ -3,23 +3,7 @@ package com.ndzela.admin.common.export;
 import java.util.List;
 
 // A table ready to be written as a spreadsheet or a PDF. Cells are String, Number (numbers stay numbers in Excel), LocalDate or null.
-public record ExportTable(String title, Header header, List<Column> columns, List<List<Object>> rows, List<Object> totals) {
-
-    // What sits on top of every export: the brand's name and logo (null: none), the dates the table covers, and when it was exported
-    public record Header(String brand, byte[] logo, String period, String exportedAt) {}
-
-    public enum Kind { TEXT, DATE, INTEGER, DECIMAL, MONEY, PERCENT }
-
-    // The weight is the column's share of the width: about the number of characters it needs
-    public record Column(String header, Kind kind, int weight) {
-        public static Column text(String header, int weight) {
-            return new Column(header, Kind.TEXT, weight);
-        }
-
-        public static Column of(String header, Kind kind, int weight) {
-            return new Column(header, kind, weight);
-        }
-    }
+public record ExportTable(String title, ExportHeader header, List<ExportColumn> columns, List<List<Object>> rows, List<Object> totals) {
 
     /** "Période : ... · Exporté le ... · 12 lignes" */
     public String info() {

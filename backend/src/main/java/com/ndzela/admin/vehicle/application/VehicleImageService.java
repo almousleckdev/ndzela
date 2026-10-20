@@ -1,5 +1,6 @@
 package com.ndzela.admin.vehicle.application;
 
+import com.ndzela.admin.infrastructure.storage.FileContent;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
@@ -25,8 +26,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class VehicleImageService {
     private static final int MAX_IMAGES_PER_VEHICLE = 8;
-
-    public record FileContent(Resource resource, String contentType) {}
 
     private final VehicleRepository vehicles;
     private final VehicleImageRepository images;

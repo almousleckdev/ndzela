@@ -8,10 +8,7 @@ import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.contract.api.dto.ContractResponse;
 import com.ndzela.admin.contract.api.dto.ContractTerms;
 import com.ndzela.admin.contract.application.model.ContractSeed;
-import com.ndzela.admin.contract.domain.BillingCalendar;
 import com.ndzela.admin.contract.domain.Contract;
-import com.ndzela.admin.contract.domain.ContractCounter;
-import com.ndzela.admin.contract.domain.ContractCounterRepository;
 import com.ndzela.admin.contract.domain.ContractRepository;
 import com.ndzela.admin.contract.domain.snapshot.ContractSnapshot;
 import com.ndzela.admin.contract.domain.ContractStatus;
@@ -42,7 +39,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ContractService {
     private final ContractRepository contracts;
-    private final ContractCounterRepository counters;
+    private final ContractNumbering numbering;
     private final CountryRepository countries;
     private final VehicleService vehicleService;
     private final ObjectMapper mapper;
@@ -52,16 +49,16 @@ public class ContractService {
     public ContractTerms preview(UUID vehicleId, BigDecimal deposit) {
         UUID countryId = TenantHolder.requireCountry();
         requireTemplate(country(countryId));
-        return terms(today(countryId), vehicleService.get(vehicleId).dailyRent(), deposit);
+        return ContractTerms.of(today(countryId), vehicleService.get(vehicleId).dailyRent(), deposit);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public ContractResponse open(ContractSeed seed) {
         Country country = country(seed.countryId());
         requireTemplate(country);
-        ContractTerms terms = terms(today(seed.countryId()), seed.dailyRent(), seed.deposit());
+        ContractTerms terms = ContractTerms.of(today(seed.countryId()), seed.dailyRent(), seed.deposit());
         Contract contract = Contract.builder()
-                .contractNumber(nextNumber(country))
+                .contractNumber(numbering.next(country))
                 .driverId(seed.driverId())
                 .vehicleId(seed.vehicleId())
                 .status(ContractStatus.ACTIVE)
@@ -87,7 +84,7 @@ public class ContractService {
         if (contract.getStatus() != ContractStatus.ACTIVE) {
             throw new BusinessRuleViolationException("CONTRACT_NOT_ACTIVE", "Only an active contract can be updated.");
         }
-        BigDecimal deposit = terms(contract.getStartDate(), contract.getDailyRent(), newDeposit).deposit();
+        BigDecimal deposit = ContractTerms.of(contract.getStartDate(), contract.getDailyRent(), newDeposit).deposit();
         BigDecimal previous = contract.getDeposit();
         ContractSnapshot signedParties = readSnapshot(contract);
         contract.setSnapshot(write(current.withBailleur(signedParties.bailleur())));
@@ -173,23 +170,6 @@ public class ContractService {
         } catch (JacksonException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    private ContractTerms terms(LocalDate start, BigDecimal dailyRent, BigDecimal deposit) {
-        if (deposit == null || deposit.signum() <= 0 || deposit.stripTrailingZeros().scale() > 0) {
-            throw new BusinessRuleViolationException("DEPOSIT_INVALID", "The deposit must be a positive whole amount.");
-        }
-        BigDecimal rent = dailyRent.setScale(0, java.math.RoundingMode.HALF_UP);
-        int days = BillingCalendar.CONTRACT_DAYS;
-        return new ContractTerms(start, BillingCalendar.endDate(start, days), days, rent, deposit.setScale(0), rent.multiply(BigDecimal.valueOf(days)));
-    }
-
-    private String nextNumber(Country country) {
-        counters.ensure(country.getId());
-        ContractCounter counter = counters.findByCountryId(country.getId()).orElseThrow();
-        counter.setLastValue(counter.getLastValue() + 1);
-        counters.save(counter);
-        return country.getContractPrefix() + String.format("%08d", counter.getLastValue());
     }
 
     private static SnapshotBailleur bailleur(Country c) {

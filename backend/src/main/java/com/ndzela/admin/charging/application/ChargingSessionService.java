@@ -1,11 +1,12 @@
 package com.ndzela.admin.charging.application;
 
+import com.ndzela.admin.common.export.ExportKind;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.charging.domain.ChargingEntryRepository;
 import com.ndzela.admin.common.export.ExportFile;
 import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.export.ExportTable;
-import com.ndzela.admin.common.export.ExportTable.Column;
+import com.ndzela.admin.common.export.ExportColumn;
 import com.ndzela.admin.country.application.ExportBranding;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.ocpp.api.SessionRow;
@@ -62,10 +63,10 @@ public class ChargingSessionService {
         }
         List<Object> totals = Arrays.<Object>asList("TOTAL (" + rows.size() + (rows.size() > 1 ? " sessions)" : " session)"), null, null, null, null, energy, null, amount, null, null, null, null, null, null);
         audit.record("CHARGING_EXPORTED", "CHARGING", null, "Export des sessions du réseau", TenantHolder.current().countryId(), "sessions, " + rows.size() + " lignes");
-        ExportTable table = new ExportTable("Sessions du réseau", branding.header(from, to), List.of(Column.text("Début", 16), Column.text("Fin", 16), Column.text("Borne", 16), Column.text("Connecteur", 11),
-                Column.text("Identifiant", 14), Column.of("Énergie (kWh)", ExportTable.Kind.DECIMAL, 11), Column.text("Durée", 9), Column.of("Montant calculé (FCFA)", ExportTable.Kind.MONEY, 14),
-                Column.of("Batterie avant", ExportTable.Kind.PERCENT, 11), Column.of("Batterie après", ExportTable.Kind.PERCENT, 11), Column.text("Statut", 13), Column.text("Motif d'arrêt", 18),
-                Column.text("Paiement", 14), Column.text("Référence", 12)), lines, totals);
+        ExportTable table = new ExportTable("Sessions du réseau", branding.header(from, to), List.of(ExportColumn.text("Début", 16), ExportColumn.text("Fin", 16), ExportColumn.text("Borne", 16), ExportColumn.text("Connecteur", 11),
+                ExportColumn.text("Identifiant", 14), ExportColumn.of("Énergie (kWh)", ExportKind.DECIMAL, 11), ExportColumn.text("Durée", 9), ExportColumn.of("Montant calculé (FCFA)", ExportKind.MONEY, 14),
+                ExportColumn.of("Batterie avant", ExportKind.PERCENT, 11), ExportColumn.of("Batterie après", ExportKind.PERCENT, 11), ExportColumn.text("Statut", 13), ExportColumn.text("Motif d'arrêt", 18),
+                ExportColumn.text("Paiement", 14), ExportColumn.text("Référence", 12)), lines, totals);
         return ExportFile.of(table, format, "sessions-reseau" + (from == null ? "" : "-" + from) + (to == null || to.equals(from) ? "" : "_" + to));
     }
 

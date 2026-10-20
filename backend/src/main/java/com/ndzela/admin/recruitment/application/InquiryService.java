@@ -1,5 +1,6 @@
 package com.ndzela.admin.recruitment.application;
 
+import com.ndzela.admin.infrastructure.storage.FileContent;
 import com.ndzela.admin.common.text.Strings;
 import com.ndzela.admin.common.security.Actor;
 import com.ndzela.admin.audit.application.AuditService;
@@ -39,8 +40,6 @@ public class InquiryService {
     private final AuditService audit;
     private final ApplicationNotifier notifier;
     private final ContactMessageNotifier messageNotifier;
-
-    public record FileContent(Resource resource, String contentType) {}
 
     @Transactional(readOnly = true)
     public PageResponse<ApplicationResponse> listApplications(ApplicationStatus status, String q, int page, int size) {

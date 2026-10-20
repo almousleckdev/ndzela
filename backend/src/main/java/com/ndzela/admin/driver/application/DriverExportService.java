@@ -1,10 +1,11 @@
 package com.ndzela.admin.driver.application;
 
+import com.ndzela.admin.common.export.ExportKind;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.export.ExportFile;
 import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.export.ExportTable;
-import com.ndzela.admin.common.export.ExportTable.Column;
+import com.ndzela.admin.common.export.ExportColumn;
 import com.ndzela.admin.country.application.ExportBranding;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
@@ -58,9 +59,9 @@ public class DriverExportService {
                     v == null ? "" : v.fleetNumber(), v == null ? "" : v.plate(), d.getTrainingCenter().getName(), branding.day(d.getCreatedAt()));
         }).toList();
         audit.record("DRIVERS_EXPORTED", "DRIVER", null, "Export chauffeurs", TenantHolder.current().countryId(), lines.size() + " lignes");
-        ExportTable table = new ExportTable("Liste des chauffeurs", branding.header(from, to), List.of(Column.text("Nom", 22), Column.text("Prénom", 20), Column.text("Téléphone", 16),
-                Column.text("Email", 28), Column.text("Statut", 11), Column.text("Motif", 24), Column.text("Véhicule", 12), Column.text("Immatriculation", 15),
-                Column.text("Centre de formation", 24), Column.of("Créé le", ExportTable.Kind.DATE, 14)), lines, null);
+        ExportTable table = new ExportTable("Liste des chauffeurs", branding.header(from, to), List.of(ExportColumn.text("Nom", 22), ExportColumn.text("Prénom", 20), ExportColumn.text("Téléphone", 16),
+                ExportColumn.text("Email", 28), ExportColumn.text("Statut", 11), ExportColumn.text("Motif", 24), ExportColumn.text("Véhicule", 12), ExportColumn.text("Immatriculation", 15),
+                ExportColumn.text("Centre de formation", 24), ExportColumn.of("Créé le", ExportKind.DATE, 14)), lines, null);
         return ExportFile.of(table, format, "chauffeurs");
     }
 }

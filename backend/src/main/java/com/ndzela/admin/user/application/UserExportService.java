@@ -1,10 +1,11 @@
 package com.ndzela.admin.user.application;
 
+import com.ndzela.admin.common.export.ExportKind;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.export.ExportFile;
 import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.export.ExportTable;
-import com.ndzela.admin.common.export.ExportTable.Column;
+import com.ndzela.admin.common.export.ExportColumn;
 import com.ndzela.admin.country.application.ExportBranding;
 import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.user.api.dto.RoleRef;
@@ -39,9 +40,9 @@ public class UserExportService {
                 u.isGlobal() ? "Global" : u.countries().stream().map(c -> c.name()).reduce((a, b) -> a + ", " + b).orElse(""),
                 branding.day(u.createdAt()))).toList();
         audit.record("USERS_EXPORTED", "USER", null, "Export utilisateurs", TenantHolder.current().countryId(), lines.size() + " lignes");
-        ExportTable table = new ExportTable("Liste des utilisateurs", branding.header(null, null), List.of(Column.text("E-mail", 28), Column.text("Prénom", 16), Column.text("Nom", 16),
-                Column.text("Téléphone", 16), Column.text("Statut", 18), Column.text("Motif", 20), Column.text("Rôles", 22), Column.text("Pays", 12),
-                Column.of("Créé le", ExportTable.Kind.DATE, 14)), lines, null);
+        ExportTable table = new ExportTable("Liste des utilisateurs", branding.header(null, null), List.of(ExportColumn.text("E-mail", 28), ExportColumn.text("Prénom", 16), ExportColumn.text("Nom", 16),
+                ExportColumn.text("Téléphone", 16), ExportColumn.text("Statut", 18), ExportColumn.text("Motif", 20), ExportColumn.text("Rôles", 22), ExportColumn.text("Pays", 12),
+                ExportColumn.of("Créé le", ExportKind.DATE, 14)), lines, null);
         return ExportFile.of(table, format, "utilisateurs");
     }
 }

@@ -1,26 +1,23 @@
 package com.ndzela.admin.charging.application;
 
-import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.charging.api.dto.RechargeResponse;
 import com.ndzela.admin.charging.api.dto.ChargingSummary;
+import com.ndzela.admin.charging.api.dto.ChargingVehicleOption;
 import com.ndzela.admin.charging.domain.ChargingEntry;
 import com.ndzela.admin.charging.domain.ChargingEntryRepository;
 import com.ndzela.admin.charging.domain.ChargingEntryType;
 import com.ndzela.admin.charging.domain.ChargingPeriod;
-import com.ndzela.admin.common.export.ExportFile;
-import com.ndzela.admin.common.export.ExportFormat;
-import com.ndzela.admin.common.export.ExportTable;
-import com.ndzela.admin.common.export.ExportTable.Column;
-import com.ndzela.admin.country.application.ExportBranding;
+import com.ndzela.admin.country.application.DayRanges;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.SortParam;
 import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
 import com.ndzela.admin.driver.application.DriverArrearsService;
 import com.ndzela.admin.driver.application.model.DriverRef;
-import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.vehicle.api.dto.VehicleResponse;
+import com.ndzela.admin.vehicle.application.VehicleQueryService;
 import com.ndzela.admin.vehicle.application.VehicleService;
+import com.ndzela.admin.vehicle.domain.VehicleStatus;
 
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -36,14 +33,15 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,10 +55,9 @@ public class ChargingQueryService {
     private final CountryRepository countries;
     private final StationService stations;
     private final VehicleService vehicleService;
+    private final VehicleQueryService vehicleQueries;
     private final DriverArrearsService driverArrears;
-    private final AuditService audit;
-    private final ExportBranding branding;
-    private final com.ndzela.admin.country.application.DayRanges dayRanges;
+    private final DayRanges dayRanges;
 
     @Transactional(readOnly = true)
     public PageResponse<RechargeResponse> recharges(String q, LocalDate from, LocalDate to, String sort, int page, int size) {
@@ -84,40 +81,11 @@ public class ChargingQueryService {
         return new ChargingSummary(live.size(), income(ChargingPeriod.DAY, null), income(ChargingPeriod.WEEK, null), income(ChargingPeriod.MONTH, null), critical, regularisations, managers);
     }
 
-    @Transactional
-    public ExportFile export(String q, LocalDate from, LocalDate to, ExportFormat format) {
-        List<ChargingEntry> rows = entries.findAll(dayRanges.<ChargingEntry>within("createdAt", from, to).and(search(q)), PageRequest.of(0, EXPORT_LIMIT, Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id")))).getContent();
-        Set<UUID> reversed = reversedAmong(rows);
-        Map<UUID, RechargeResponse> detail = responses(rows).stream().collect(Collectors.toMap(RechargeResponse::id, r -> r));
-        BigDecimal total = BigDecimal.ZERO;
-        long count = 0;
-        List<List<Object>> lines = new ArrayList<>();
-        for (ChargingEntry e : rows) {
-            RechargeResponse r = detail.get(e.getId());
-            boolean live = e.getType() == ChargingEntryType.RECHARGE && !reversed.contains(e.getId());
-            if (live) {
-                total = total.add(e.getAmount());
-                count++;
-            }
-            lines.add(Arrays.<Object>asList(branding.day(e.getCreatedAt()), branding.time(e.getCreatedAt()), e.getType() == ChargingEntryType.RECHARGE ? "Recharge" : "Annulation",
-                    r.vehicle() == null ? "" : r.vehicle(), r.driverName() == null ? "" : r.driverName(), r.station() == null ? "" : r.station(), whole(e.getAmount()),
-                    e.getMethod() == null ? "" : e.getMethod().label(), e.getReference() == null ? "" : e.getReference(), e.getBatteryBefore(), e.getBatteryAfter(), e.getKwh(),
-                    e.getReason() == null ? "" : e.getReason(), live ? "" : e.getType() == ChargingEntryType.RECHARGE ? "Annulée" : "", e.getRecordedBy()));
-        }
-        List<Object> totals = Arrays.<Object>asList("TOTAL (" + count + (count > 1 ? " recharges non annulées)" : " recharge non annulée)"), null, null, null, null, null, whole(total), null, null, null, null, null, null, null, null);
-        audit.record("CHARGING_EXPORTED", "CHARGING", null, "Export des recharges", TenantHolder.current().countryId(), "recharges, " + rows.size() + " lignes");
-        ExportTable table = new ExportTable("Recharges", branding.header(from, to), List.of(Column.of("Date", ExportTable.Kind.DATE, 14), Column.text("Heure", 10),
-                Column.text("Type", 12), Column.text("Véhicule", 12), Column.text("Chauffeur", 24), Column.text("Station", 18), Column.of("Montant (FCFA)", ExportTable.Kind.MONEY, 14), Column.text("Moyen", 14),
-                Column.text("Référence", 18), Column.of("Batterie avant", ExportTable.Kind.PERCENT, 12), Column.of("Batterie après", ExportTable.Kind.PERCENT, 12), Column.of("kWh", ExportTable.Kind.DECIMAL, 8),
-                Column.text("Motif", 22), Column.text("Statut", 10), Column.text("Saisi par", 18)), lines, totals);
-        return ExportFile.of(table, format, "recharges" + suffix(from, to));
-    }
-
     @Transactional(readOnly = true)
-    public List<com.ndzela.admin.charging.api.dto.ChargingVehicleOption> vehicleOptions(String q) {
-        List<VehicleResponse> assigned = vehicleService.list(com.ndzela.admin.vehicle.domain.VehicleStatus.ASSIGNED, q, null, null, null, 0, MAX_PAGE_SIZE).items();
+    public List<ChargingVehicleOption> vehicleOptions(String q) {
+        List<VehicleResponse> assigned = vehicleQueries.list(VehicleStatus.ASSIGNED, q, null, null, null, 0, MAX_PAGE_SIZE).items();
         Map<UUID, DriverRef> holders = driverArrears.holdersOfVehicles(assigned.stream().map(VehicleResponse::id).toList());
-        return assigned.stream().filter(v -> holders.containsKey(v.id())).map(v -> new com.ndzela.admin.charging.api.dto.ChargingVehicleOption(v.id(),
+        return assigned.stream().filter(v -> holders.containsKey(v.id())).map(v -> new ChargingVehicleOption(v.id(),
                 v.fleetNumber() + " · " + v.brand() + " " + v.model() + " · " + v.plate(), holders.get(v.id()).id(), holders.get(v.id()).fullName())).toList();
     }
 
@@ -125,7 +93,7 @@ public class ChargingQueryService {
         return responses(List.of(entry)).get(0);
     }
 
-    private List<RechargeResponse> responses(List<ChargingEntry> content) {
+    List<RechargeResponse> responses(List<ChargingEntry> content) {
         Map<UUID, Country> byId = countryMap();
         Map<UUID, VehicleResponse> vehicles = vehicleService.responsesByIds(ids(content, ChargingEntry::getVehicleId));
         Map<UUID, DriverRef> drivers = driverArrears.refs(ids(content, ChargingEntry::getDriverId));
@@ -141,22 +109,15 @@ public class ChargingQueryService {
         }).toList();
     }
 
-    private static List<UUID> ids(List<ChargingEntry> content, java.util.function.Function<ChargingEntry, UUID> field) {
+    private static List<UUID> ids(List<ChargingEntry> content, Function<ChargingEntry, UUID> field) {
         return content.stream().map(field).filter(Objects::nonNull).distinct().toList();
     }
 
-    private static String suffix(LocalDate from, LocalDate to) {
-        if (from == null && to == null) {
-            return "";
-        }
-        return from != null && from.equals(to) ? "-" + from : "-" + (from == null ? "" : from) + "_" + (to == null ? "" : to);
-    }
-
-    private BigDecimal whole(BigDecimal amount) {
+    BigDecimal whole(BigDecimal amount) {
         return amount.setScale(0, RoundingMode.HALF_UP);
     }
 
-    private Set<UUID> reversedAmong(Collection<ChargingEntry> rows) {
+    Set<UUID> reversedAmong(Collection<ChargingEntry> rows) {
         if (rows.isEmpty()) {
             return Set.of();
         }
@@ -175,13 +136,13 @@ public class ChargingQueryService {
         return countries.findAll().stream().collect(Collectors.toMap(Country::getId, c -> c));
     }
 
-    private Specification<ChargingEntry> search(String q) {
+    Specification<ChargingEntry> search(String q) {
         if (q == null || q.isBlank()) {
             return (root, query, cb) -> cb.conjunction();
         }
         List<UUID> drivers = driverArrears.idsMatching(q);
-        List<UUID> cars = vehicleService.list(null, q, null, null, null, 0, MAX_PAGE_SIZE).items().stream().map(VehicleResponse::id).toList();
-        String pattern = "%" + q.trim().toLowerCase(java.util.Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        List<UUID> cars = vehicleQueries.list(null, q, null, null, null, 0, MAX_PAGE_SIZE).items().stream().map(VehicleResponse::id).toList();
+        String pattern = "%" + q.trim().toLowerCase(Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
         return (root, query, cb) -> {
             List<Predicate> any = new ArrayList<>();
             any.add(cb.like(cb.lower(cb.coalesce(root.<String>get("publicLabel"), "")), pattern, '\\'));

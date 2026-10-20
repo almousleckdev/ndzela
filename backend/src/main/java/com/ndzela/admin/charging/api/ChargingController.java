@@ -6,6 +6,7 @@ import com.ndzela.admin.charging.api.dto.RecordRechargeRequest;
 import com.ndzela.admin.charging.api.dto.StationRequest;
 import com.ndzela.admin.charging.api.dto.StationResponse;
 import com.ndzela.admin.charging.api.dto.ChargingSummary;
+import com.ndzela.admin.charging.application.ChargingExportService;
 import com.ndzela.admin.charging.application.ChargingQueryService;
 import com.ndzela.admin.charging.application.ChargingService;
 import com.ndzela.admin.charging.application.StationService;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class ChargingController {
     private final ChargingService charging;
     private final ChargingQueryService queries;
+    private final ChargingExportService exports;
     private final StationService stations;
 
     @GetMapping("/recharges")
@@ -69,7 +71,7 @@ public class ChargingController {
     @PreAuthorize("hasAuthority('charging:export')")
     public ResponseEntity<byte[]> export(@RequestParam(required = false) String q, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
-        return queries.export(q, from, to, format).response();
+        return exports.export(q, from, to, format).response();
     }
 
     @GetMapping("/vehicles")

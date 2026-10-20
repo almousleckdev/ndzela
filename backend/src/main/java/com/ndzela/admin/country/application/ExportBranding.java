@@ -1,5 +1,6 @@
 package com.ndzela.admin.country.application;
 
+import com.ndzela.admin.common.export.ExportHeader;
 import com.ndzela.admin.common.export.ExportTable;
 import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
@@ -25,9 +26,9 @@ public class ExportBranding {
 
     private final CountryRepository countries;
 
-    public ExportTable.Header header(LocalDate from, LocalDate to) {
+    public ExportHeader header(LocalDate from, LocalDate to) {
         CountryBrand brand = CountryBrand.ofCountry(country() == null ? null : country().getCode());
-        return new ExportTable.Header(brand.name(), brand.logo(), period(from, to), STAMP.format(LocalDateTime.now(zone())));
+        return new ExportHeader(brand.name(), brand.logo(), period(from, to), STAMP.format(LocalDateTime.now(zone())));
     }
 
     // The day a moment falls on in the country's time zone (a recharge at 00:30 in Libreville is not yesterday's)
