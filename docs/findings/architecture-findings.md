@@ -40,14 +40,14 @@ these docs, or a risk. Severity: **High** (fix before building on it), **Medium*
 | C5 | The dashboard shows **fake metrics** ("Metric 1", "12,345"). | Low (must not ship) | Replace with real KPIs (reporting module) or hide until then. |
 | C6 | `<html lang="en">` while the UI is French. | Low | Set the language from the country/user preference once i18n is decided. |
 | C7 | `packageManager` says pnpm but the lockfile is npm's `package-lock.json`. | Low | Choose one; align the field, lockfile and docs. **Decision.** |
-| C8 | No frontend tests, no e2e tests. | High (before finance) | See [testing](../testing/strategy.md); pick the tools. |
+| C8 | **Resolved (2026-10-20):** dashboard unit tests (Vitest + Testing Library) and end-to-end flows (Playwright), run in CI ([ADR-0025](../adr/0025-dashboard-tests-vitest-and-playwright.md)). Coverage is a start: logic, schemas and four flows; screens beyond them are untested. | Done | Add a test with every new screen or rule. |
 | C9 | The frontend types mirror backend DTOs by hand. | Low | Acceptable now; consider OpenAPI-generated types later. |
 
 ## D. Cross-cutting and operational
 
 | # | Finding | Severity | Recommendation |
 | --- | --- | --- | --- |
-| D1 | **Tests:** backend unit and Testcontainers integration tests, driver app tests and now CI exist; there are still no dashboard or website tests and no end-to-end tests. | Medium | Add dashboard tests before finance screens grow; extend the integration harness to every new module. |
+| D1 | **Tests:** backend unit and Testcontainers integration tests, driver app tests and now CI exist; the dashboard now has unit and end-to-end tests (2026-10-20); the website has none. | Medium | Add dashboard tests before finance screens grow; extend the integration harness to every new module. |
 | D2 | **Flyway history:** V1 seed is duplicated by V3 (idempotent workaround for databases created by Hibernate), `baseline-on-migrate: true` is enabled, V4/V6 delete a permission and a role. | Medium | Never edit these. Consider disabling `baseline-on-migrate` outside dev once all environments are baselined. |
 | D3 | **Language:** UI French, API errors English, backend notifications French, no i18n. Mali and Gabon are French-speaking, but more countries are planned. | Medium | **Decision:** i18n scope (UI only? notifications? emails?). |
 | D4 | **Resolved (2026-10-13, [ADR-0016](../adr/0016-cloudinary-file-storage.md)):** files are in Cloudinary, private assets per country read only through the backend. Still open: contract/receipt archiving, orphan clean-up, migration of old local files. | Done | Decide whether contracts are archived (frozen copy or signed scan). |
@@ -55,6 +55,19 @@ these docs, or a risk. Severity: **High** (fix before building on it), **Medium*
 | D6 | `/actuator/health` is public and includes the mail health check, so an SMTP outage marks the whole service DOWN. | Low | Exclude mail from readiness or split liveness/readiness. |
 | D7 | Notifications are in-app only. Drivers and daily payments will need SMS/push/WhatsApp. | Medium | **Decision** with the mobile and payments modules. |
 | D8 | Local tool `mvn spring-boot:run` on top of previously compiled classes produced `ClassFormatError` after the package move. | Low | Use `mvn clean` after structural refactors (noted in CLAUDE.md). |
+
+## Hygiene audit of 2026-10-20
+
+Result of a repository-wide review (secrets, duplication, file size, one type per file, environments).
+
+| # | Finding | Status |
+| --- | --- | --- |
+| H1 | **Secrets:** none in tracked files (searched every tracked file for keys, tokens, passwords and connection strings); `.env`, keystores, `key.properties`, `google-services.json` and provisioning profiles are git-ignored. `backend/.env.example` now lists every variable (`APP_ENVIRONMENT`, `DB_*`, `REDIS_*`, `DRIVER_LOCK_AFTER_UNPAID_DAYS`, `RATE_LIMIT_*`). | Done |
+| H2 | **File size:** `DriverPaymentTest` had 639 lines; split into `AbstractPvitFlowTest` and seven focused classes. Other files over about 220 lines were split too (`PaymentQueryService` into `AccountQueryService`, `AccountExportService`, `PaymentQueryService`; `VehicleService`, `DriverService`, `ChargingQueryService`, `ContractService`, `UserManagementService`, the Excel and PDF writers, the driver wizard, the user form, the forgot-password screen, and the larger tests). Still between 200 and 235 lines: a few tests and screens, listed by `wc -l`. | Done, a few marginal |
+| H3 | **One type per file:** nested types extracted (`ExportColumn`, `ExportKind`, `ExportHeader`, `PdfPageFooter`, `XlsxStyles`, `PaymentDue`, `TransactionLine`, `CountryAssignment`); three identical file records (`DriverFileContent`, two `FileContent`) became one `infrastructure.storage.FileContent`. | Done |
+| H4 | **Long lines:** about 480 Java and 450 TSX lines are over 160 characters (mostly chained Spring assertions, builders and JSX class lists). Files rewritten in this audit are wrapped; the rest are not. A formatter (google-java-format, Prettier) would fix them in one mechanical change but rewrites hundreds of files: decide before doing it. | **Decision** |
+| H5 | **Environments (D5):** `APP_ENVIRONMENT` now separates development, staging and production ([ADR-0024](../adr/0024-explicit-deployment-environment.md)); production refuses a PVit sandbox amount or a missing PVit credential. Staging itself still has to be created in Railway. | Code done, deployment open |
+| H6 | `docker-compose.yml` keeps the `postgres` password for local development only; the production guard refuses it. | Accepted |
 
 ## E. Decisions required from the product owner before implementation
 

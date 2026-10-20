@@ -28,5 +28,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0021](0021-day-based-rent-payments-and-receipts.md) | Rent is paid by day, and each payment records the days it settled | Accepted |
 | [0022](0022-single-device-sessions.md) | Single-device sessions: one session id per account, checked per request | Accepted |
 | [0023](0023-multi-country-staff.md) | Staff may belong to one or more countries, or be global, independent of role | Accepted |
+| [0024](0024-explicit-deployment-environment.md) | The deployment environment is explicit (`APP_ENVIRONMENT`): staging may use the PVit sandbox, production may not | Accepted |
+| [0025](0025-dashboard-tests-vitest-and-playwright.md) | Dashboard tests: Vitest and Testing Library for logic, Playwright with a mocked API for flows | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.
