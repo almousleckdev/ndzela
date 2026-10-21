@@ -1,6 +1,7 @@
 package com.ndzela.admin.ocpp;
 
 import com.ndzela.admin.infrastructure.ocpp.FleetException;
+import com.ndzela.admin.infrastructure.ocpp.FleetCursorExpiredException;
 import com.ndzela.admin.infrastructure.ocpp.FleetPage;
 import com.ndzela.admin.infrastructure.ocpp.FleetRateLimitedException;
 
@@ -39,6 +40,31 @@ class OcppSyncRunTest extends AbstractOcppSyncTest {
 
         sync.sync();
         assertEquals(List.of("", "start-cursor"), fleet.asked(), "resumes from the saved cursor, not from the beginning");
+    }
+
+    @Test
+    void aCursorThePlatformRefusesIsDroppedAndTheSyncStartsOverOnce() {
+        fleet.serve("", new FleetPage(List.of(session("1", "CHARGING", "1", 350L, "2026-10-04T09:00:00Z")), "c1", false));
+        sync.sync();
+        fleet.expireCursor("c1");
+        fleet.serve("", new FleetPage(List.of(session("1", "CHARGING", "1", 350L, "2026-10-04T09:00:00Z")), "c2", false));
+
+        sync.sync();
+
+        assertEquals(List.of("", "c1", ""), fleet.asked(), "the refused cursor is tried once, then the sync restarts from the beginning");
+        assertEquals("c2", cursor());
+        assertEquals(1, sessionCount(), "replaying the sessions duplicates nothing");
+        assertNull(jdbc.queryForObject("select last_error from ocpp_sync_state", String.class));
+    }
+
+    @Test
+    void aRefusalWithoutASavedCursorIsRecordedAndNotRetried() {
+        fleet.failWith(new FleetCursorExpiredException(null));
+
+        assertEquals(0, sync.sync());
+
+        assertEquals(List.of(""), fleet.asked());
+        assertNotNull(jdbc.queryForObject("select last_error from ocpp_sync_state", String.class));
     }
 
     @Test

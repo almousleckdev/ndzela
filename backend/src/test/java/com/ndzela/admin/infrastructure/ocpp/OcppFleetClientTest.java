@@ -100,6 +100,13 @@ class OcppFleetClientTest {
     }
 
     @Test
+    void aGoneCursorIsToldApartFromOtherErrors() {
+        server.expect(once(), requestTo(BASE + "/api/v1/sessions/sync?limit=10&cursor=old")).andRespond(withStatus(HttpStatus.GONE));
+
+        assertThrows(FleetCursorExpiredException.class, () -> client.sync("old", 10));
+    }
+
+    @Test
     void aRejectedKeyOrAServerErrorIsAFleetErrorThatNeverShowsTheKey() {
         server.expect(once(), requestTo(BASE + "/api/v1/sessions/sync?limit=10")).andRespond(withStatus(HttpStatus.UNAUTHORIZED));
         FleetException e = assertThrows(FleetException.class, () -> client.sync(null, 10));

@@ -59,6 +59,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("app.mfa.encryption-key", () -> "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=");
         registry.add("app.mail.provider", () -> "log");
         registry.add("app.ocpp.webhook-secret", () -> "whsecret");
+        registry.add("app.ocpp.webhook-header", () -> "X-Webhook-Signature");
         registry.add("spring.mail.username", () -> "test@ndzela.test");
         registry.add("spring.mail.password", () -> "unused");
         registry.add("app.storage.cloud-name", () -> "testcloud");

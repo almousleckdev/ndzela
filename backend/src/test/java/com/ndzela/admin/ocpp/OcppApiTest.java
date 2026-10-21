@@ -7,10 +7,16 @@ import com.ndzela.admin.user.domain.User;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 
 import static com.ndzela.admin.support.FakeFleetClient.session;
@@ -36,9 +42,23 @@ class OcppApiTest extends AbstractIntegrationTest {
         viewer = staff("ga.viewer@ndzela.test", "GA", "VIEWER");
     }
 
-    private ResultActions webhook(String body, String secret) throws Exception {
+    private ResultActions webhook(String body, String signature) throws Exception {
         var request = post("/api/v1/webhooks/ocpp").contentType(MediaType.APPLICATION_JSON).content(body);
-        return mvc.perform(secret == null ? request : request.header("X-Webhook-Secret", secret));
+        return mvc.perform(signature == null ? request : request.header("X-Webhook-Signature", signature));
+    }
+
+    private static String signed(String body) {
+        return HexFormat.of().formatHex(mac(body, "whsecret"));
+    }
+
+    private static byte[] mac(String body, String secret) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return mac.doFinal(body.getBytes(StandardCharsets.UTF_8));
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private void oneCompletedSession() {
@@ -48,7 +68,8 @@ class OcppApiTest extends AbstractIntegrationTest {
 
     @Test
     void aWebhookOnlyAsksForASyncAndWritesNothing() throws Exception {
-        webhook("{\"eventId\":\"e1\",\"type\":\"session.started\",\"data\":{\"transactionId\":\"T-100\",\"energyWh\":999999}}", "whsecret")
+        String event = "{\"eventId\":\"e1\",\"type\":\"session.started\",\"data\":{\"transactionId\":\"T-100\",\"energyWh\":999999}}";
+        webhook(event, signed(event))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.received").value(true));
 
         assertTrue(Boolean.TRUE.equals(redis.hasKey("ocpp:sync:wanted")));
@@ -57,10 +78,20 @@ class OcppApiTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void aWebhookWithoutTheSecretIsRefusedAndAsksForNothing() throws Exception {
+    void aWebhookWithoutAValidSignatureIsRefusedAndAsksForNothing() throws Exception {
         webhook("{}", null).andExpect(status().isUnauthorized());
         webhook("{}", "wrong").andExpect(status().isUnauthorized());
+        webhook("{}", "whsecret").andExpect(status().isUnauthorized());
+        webhook("{\"eventId\":\"changed\"}", signed("{}")).andExpect(status().isUnauthorized());
         assertFalse(Boolean.TRUE.equals(redis.hasKey("ocpp:sync:wanted")));
+    }
+
+    @Test
+    void theSignatureMayBeHexInAnyCaseWithThePrefixOrBase64() throws Exception {
+        String body = "{\"eventId\":\"e2\"}";
+        webhook(body, signed(body).toUpperCase()).andExpect(status().isOk());
+        webhook(body, "sha256=" + signed(body)).andExpect(status().isOk());
+        webhook(body, Base64.getEncoder().encodeToString(mac(body, "whsecret"))).andExpect(status().isOk());
     }
 
     @Test

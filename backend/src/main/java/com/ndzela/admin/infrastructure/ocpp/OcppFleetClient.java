@@ -68,6 +68,9 @@ public class OcppFleetClient {
         if (e.getStatusCode().value() == 429) {
             return new FleetRateLimitedException(retryAfter(e));
         }
+        if (e.getStatusCode().value() == 410) {
+            return new FleetCursorExpiredException(e);
+        }
         return new FleetException("The Fleet API answered " + e.getStatusCode().value() + ".", e);
     }
 

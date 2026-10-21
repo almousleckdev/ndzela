@@ -19,6 +19,7 @@ public class FakeFleetClient extends OcppFleetClient {
     private final List<String> asked = new ArrayList<>();
     private final Map<String, FleetMetering> readings = new HashMap<>();
     private final List<String> meteringAsked = new ArrayList<>();
+    private final java.util.Set<String> expiredCursors = new java.util.HashSet<>();
     private RuntimeException failure;
     private RuntimeException meteringFailure;
 
@@ -31,6 +32,9 @@ public class FakeFleetClient extends OcppFleetClient {
         asked.add(cursor == null ? "" : cursor);
         if (failure != null) {
             throw failure;
+        }
+        if (cursor != null && expiredCursors.contains(cursor)) {
+            throw new com.ndzela.admin.infrastructure.ocpp.FleetCursorExpiredException(null);
         }
         FleetPage page = pages.get(cursor == null ? "" : cursor);
         return page != null ? page : new FleetPage(List.of(), cursor, false);
@@ -65,6 +69,11 @@ public class FakeFleetClient extends OcppFleetClient {
         pages.put(cursor, page);
     }
 
+    // The platform answers 410 to this cursor.
+    public void expireCursor(String cursor) {
+        expiredCursors.add(cursor);
+    }
+
     public void failWith(RuntimeException exception) {
         this.failure = exception;
     }
@@ -80,6 +89,7 @@ public class FakeFleetClient extends OcppFleetClient {
         meteringAsked.clear();
         failure = null;
         meteringFailure = null;
+        expiredCursors.clear();
     }
 
     /** A session that started `startedMinutesAgo` minutes ago, and ended `endedMinutesAgo` minutes ago (null: still running). */
