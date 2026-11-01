@@ -72,6 +72,8 @@ export interface Driver {
   contract: Contract | null;
   arrears: { level: "NONE" | "LATE" | "YELLOW" | "DARK_YELLOW" | "RED"; overdueAmount: number; overdueSince: string | null; unpaidDays: number; paidDays: number; daysLeft: number };
   country: Country | null;
+  // Locked out of logging in by repeated failed attempts; cleared by drivers:unlock, separate from `status`.
+  loginLocked: boolean;
   createdAt: string;
 }
 
@@ -114,6 +116,8 @@ export interface LeaveInput {
 
 export interface DriverQuery {
   status: DriverStatus | "ALL";
+  // CURRENT: riders who are not archived, FORMER: the archived ones
+  scope?: "CURRENT" | "FORMER";
   // true
   onLeave?: boolean;
   // true

@@ -65,13 +65,15 @@ public class DriverArrearsService {
     }
 
     @Transactional
-    public void apply(UUID id, ArrearsLevel level, BigDecimal overdueAmount, OffsetDateTime since, int unpaidDays, int paidDays) {
+    public void apply(UUID id, ArrearsLevel level, BigDecimal overdueAmount, OffsetDateTime since, int unpaidDays, int paidDays, int awaitingDays, BigDecimal awaitingAmount) {
         Driver driver = drivers.findById(id).orElseThrow(() -> new ResourceNotFoundException("Driver not found."));
         driver.setArrearsLevel(level);
         driver.setOverdueAmount(overdueAmount);
         driver.setOverdueSince(since);
         driver.setUnpaidDays(unpaidDays);
         driver.setPaidDays(paidDays);
+        driver.setAwaitingDays(awaitingDays);
+        driver.setAwaitingAmount(awaitingAmount);
         drivers.save(driver);
     }
 
@@ -87,14 +89,21 @@ public class DriverArrearsService {
 
     @Transactional(readOnly = true)
     public Page<DriverRef> page(ArrearsLevel level, boolean lateOnly, String q, java.time.LocalDate lateFrom, java.time.LocalDate lateTo, String sort, int page, int size) {
-        Specification<Driver> spec = filters.spec(null, null, null, q).and(dayRanges.within("overdueSince", lateFrom, lateTo));
+        Specification<Driver> spec = filters.spec(null, null, null, q).and(dayRanges.within("overdueSince", lateFrom, lateTo))
+                .and((root, query, cb) -> cb.notEqual(root.get("status"), DriverStatus.INACTIVE));
         if (level != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("arrearsLevel"), level));
         } else if (lateOnly) {
             spec = spec.and((root, query, cb) -> cb.notEqual(root.get("arrearsLevel"), ArrearsLevel.NONE));
         }
-        Sort order = SortParam.parse(sort, SORTS, Sort.by(Sort.Order.asc("overdueSince").nullsLast(), Sort.Order.asc("lastName"), Sort.Order.asc("firstName"), Sort.Order.asc("id")));
+        Sort order = SortParam.parse(sort, SORTS, Sort.by(Sort.Order.desc("unpaidDays"), Sort.Order.asc("overdueSince").nullsLast(), Sort.Order.asc("lastName"), Sort.Order.asc("firstName"), Sort.Order.asc("id")));
         return drivers.findAll(spec, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), order)).map(DriverRef::from);
+    }
+
+    // The archived (INACTIVE) riders, whose payments are the former riders' history
+    @Transactional(readOnly = true)
+    public List<UUID> formerIds() {
+        return drivers.findAll((root, query, cb) -> cb.equal(root.get("status"), DriverStatus.INACTIVE)).stream().map(Driver::getId).toList();
     }
 
     @Transactional(readOnly = true)
@@ -105,6 +114,16 @@ public class DriverArrearsService {
     @Transactional(readOnly = true)
     public BigDecimal totalOverdue() {
         return drivers.totalOverdue();
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal totalAwaiting() {
+        return drivers.totalAwaiting();
+    }
+
+    @Transactional(readOnly = true)
+    public long countAtRisk() {
+        return drivers.countAtRisk();
     }
 
     @Transactional(readOnly = true)

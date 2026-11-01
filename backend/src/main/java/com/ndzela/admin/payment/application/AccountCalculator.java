@@ -30,9 +30,7 @@ import java.util.UUID;
 // The state of one contract's account, computed from its terms.
 public final class AccountCalculator {
     static final LocalTime DEADLINE = LocalTime.NOON;
-    static final Duration WARNING = Duration.ofHours(24);
     static final Duration URGENT = Duration.ofHours(48);
-    static final Duration CRITICAL = Duration.ofHours(72);
 
     private AccountCalculator() {}
 
@@ -43,6 +41,7 @@ public final class AccountCalculator {
                 .sorted(Comparator.comparing(AccountEntry::at)).toList();
 
         List<AccountCharge> charges = new ArrayList<>();
+        List<AccountCharge> awaiting = new ArrayList<>();
         LocalDate today = in.now().atZone(in.zone()).toLocalDate();
         LocalDate last = min(in.contractEnd(), in.endedOn() == null ? today : in.endedOn(), today);
         for (LocalDate day = in.contractStart().plusDays(1); !day.isAfter(last); day = day.plusDays(1)) {
@@ -56,6 +55,8 @@ public final class AccountCalculator {
             Instant due = dueAt(day, in.zone());
             if (!due.isAfter(in.now())) {
                 charges.add(new AccountCharge(day, due, rent, false));
+            } else if (day.isBefore(today)) {
+                awaiting.add(new AccountCharge(day, due, rent, false)); // the day has ended, its deadline has not come
             }
         }
         for (AccountEntry e : in.entries()) {
@@ -63,11 +64,13 @@ public final class AccountCalculator {
                 charges.add(new AccountCharge(e.businessDay(), dueAt(e.businessDay(), in.zone()).plus(URGENT), e.amount(), true));
             }
         }
-        charges.sort(Comparator.comparing(AccountCharge::due).thenComparing(AccountCharge::penalty));
+        // A day's penalty is settled right after its rent, so paying a day pays its penalty too.
+        charges.sort(Comparator.comparing(AccountCharge::day).thenComparing(AccountCharge::penalty));
 
         BigDecimal totalCredit = credits.stream().map(AccountEntry::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
         List<AccountDay> days = new ArrayList<>();
         List<LocalDate> penaltyDays = new ArrayList<>();
+        List<AccountCharge> unpaidCharges = new ArrayList<>();
         Set<LocalDate> penalised = new HashSet<>();
         in.entries().stream().filter(e -> e.type() == LedgerEntryType.PENALTY).forEach(e -> penalised.add(e.businessDay()));
         BigDecimal cumulative = BigDecimal.ZERO;
@@ -84,6 +87,7 @@ public final class AccountCalculator {
                 covered = cumulative;
             } else {
                 overdue = overdue.add(charge.amount());
+                unpaidCharges.add(charge);
                 oldest = oldest == null || charge.due().isBefore(oldest) ? charge.due() : oldest;
             }
             if (charge.penalty()) {
@@ -102,18 +106,31 @@ public final class AccountCalculator {
                 }
             }
         }
-        return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(oldest, in.now()), penaltyDays, onTime, late, unpaid);
+        // Rent that is owed but not late yet comes after everything already due: credits left over cover it first.
+        int awaitingDays = 0;
+        BigDecimal awaitingAmount = BigDecimal.ZERO;
+        BigDecimal ahead = cumulative;
+        for (AccountCharge charge : awaiting) {
+            ahead = ahead.add(charge.amount());
+            if (settlementTime(credits, ahead) == null) {
+                awaitingDays++;
+                awaitingAmount = awaitingAmount.add(charge.amount());
+            }
+        }
+        return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(unpaid), penaltyDays, onTime, late, unpaid,
+                awaitingDays, awaitingAmount, List.copyOf(unpaidCharges), creditsOf(credits, LedgerEntryType.PAYMENT), creditsOf(credits, LedgerEntryType.WAIVER));
     }
 
-    static ArrearsLevel levelOf(Instant oldestDue, Instant now) {
-        if (oldestDue == null) {
-            return ArrearsLevel.NONE;
-        }
-        Duration late = Duration.between(oldestDue, now);
-        if (late.compareTo(CRITICAL) >= 0) return ArrearsLevel.RED;
-        if (late.compareTo(URGENT) >= 0) return ArrearsLevel.DARK_YELLOW;
-        if (late.compareTo(WARNING) >= 0) return ArrearsLevel.YELLOW;
-        return ArrearsLevel.LATE;
+    private static BigDecimal creditsOf(List<AccountEntry> credits, LedgerEntryType type) {
+        return credits.stream().filter(e -> e.type() == type).map(AccountEntry::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // Like the previous platform's screen: one unpaid day is a reminder, two are urgent, three or more are critical (suspension).
+    static ArrearsLevel levelOf(int unpaidDays) {
+        if (unpaidDays <= 0) return ArrearsLevel.NONE;
+        if (unpaidDays == 1) return ArrearsLevel.YELLOW;
+        if (unpaidDays == 2) return ArrearsLevel.DARK_YELLOW;
+        return ArrearsLevel.RED;
     }
 
     // A stop means no rent that day, a half day means half of it; any other day is the full rent.

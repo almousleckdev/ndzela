@@ -10,7 +10,7 @@ import com.ndzela.admin.charging.domain.ChargingEntryType;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.driver.api.dto.DriverResponse;
-import com.ndzela.admin.driver.application.DriverService;
+import com.ndzela.admin.driver.application.DriverQueryService;
 import com.ndzela.admin.ocpp.api.SessionRow;
 import com.ndzela.admin.ocpp.application.OcppSessionQueryService;
 import com.ndzela.admin.payment.application.PaymentOperatorService;
@@ -32,7 +32,7 @@ import java.util.UUID;
 public class ChargingService {
     private final ChargingEntryRepository entries;
     private final StationService stations;
-    private final DriverService driverService;
+    private final DriverQueryService driverQueries;
     private final ChargingQueryService queries;
     private final AuditService audit;
     private final PaymentOperatorService operators;
@@ -66,7 +66,7 @@ public class ChargingService {
         String sessionNote = checkSession(request.sessionId());
         UUID driverId = null;
         if (request.vehicleId() != null) {
-            DriverResponse driver = driverService.driverOfVehicle(request.vehicleId())
+            DriverResponse driver = driverQueries.driverOfVehicle(request.vehicleId())
                     .orElseThrow(() -> new BusinessRuleViolationException("VEHICLE_HAS_NO_DRIVER", "This vehicle has no driver at the moment."));
             driverId = driver.id();
         }

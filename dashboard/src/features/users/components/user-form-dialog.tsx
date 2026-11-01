@@ -9,7 +9,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import { PhoneField } from "@/components/ui/phone-field";
-import { Select } from "@/components/ui/select";
+import { AdditionalPhonesField } from "@/features/users/components/additional-phones-field";
+import { CountryAccessField } from "@/features/users/components/country-access-field";
 import { useFetch } from "@/hooks/use-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
@@ -38,28 +39,33 @@ export function UserFormDialog({ user, roles, onClose, onSaved }: UserFormDialog
   const isSelf = user !== null && user.email === me?.email;
   const [roleIds, setRoleIds] = useState<string[]>(user?.roles.map((r) => r.id) ?? []);
   const [roleError, setRoleError] = useState<string>();
-  const [countryChoice, setCountryChoice] = useState<string | null>(null);
   const [phoneCodeChoice, setPhoneCodeChoice] = useState<string | null>(null);
-  const [countryError, setCountryError] = useState<string>();
+  const [extraPhones, setExtraPhones] = useState<string[]>(user?.additionalPhoneNumbers ?? []);
 
-  // A global user picks the country of a new user; it starts on the country selected in the header.
+  // Only a global actor may assign one or more countries, or make a user global themselves.
+  const meIsGlobal = me?.isGlobal ?? false;
   const selectedCountry = useCountrySelectionStore((state) => state.selectedCode);
-  const isGlobal = me?.country === null;
-  const asksForCountry = user === null && isGlobal;
   const countries = useFetch(countriesService.list);
   const headerCountryId = countries.data?.find((country) => country.code === selectedCountry)?.id ?? "";
-  const chosenCountryId = countryChoice ?? headerCountryId;
+  const [isGlobalChoice, setIsGlobalChoice] = useState(user?.isGlobal ?? false);
+  const [countryIds, setCountryIds] = useState<string[]>(() => {
+    if (user) return user.countries.map((country) => country.id);
+    return headerCountryId ? [headerCountryId] : [];
+  });
+  const [countryError, setCountryError] = useState<string>();
+
+  const toggleCountry = (id: string) => {
+    setCountryError(undefined);
+    setCountryIds((current) => (current.includes(id) ? current.filter((c) => c !== id) : [...current, id]));
+  };
 
   const phoneCodes = phoneCodeOptions(countries.data, me?.country ?? null);
-  const knownCodes = [user?.country?.phoneCode, me?.country?.phoneCode, ...phoneCodes.map((option) => option.value)].filter((code): code is string => Boolean(code));
+  const knownCodes = [me?.country?.phoneCode, ...phoneCodes.map((option) => option.value)].filter((code): code is string => Boolean(code));
   const initialPhone = splitPhone(user?.phoneNumber ?? null, knownCodes);
   const ownCode = me?.country?.phoneCode ?? phoneCodes[0]?.value ?? "";
-  const defaultPhoneCode = user
-    ? initialPhone.code ?? user.country?.phoneCode ?? ownCode
-    : countries.data?.find((country) => country.id === chosenCountryId)?.phoneCode ?? ownCode;
+  const defaultPhoneCode = user ? initialPhone.code ?? ownCode : ownCode;
   const phoneCode = phoneCodeChoice ?? defaultPhoneCode;
   const phoneCodeList = !phoneCode || phoneCodes.some((option) => option.value === phoneCode) ? phoneCodes : [...phoneCodes, { value: phoneCode, label: phoneCode }];
-  const superAdminChosen = roles.some((role) => role.name === "SUPER_ADMIN" && roleIds.includes(role.id));
 
   const { register, handleSubmit, formState } = useForm<UserValues>({
     resolver: zodResolver(userSchema),
@@ -81,16 +87,18 @@ export function UserFormDialog({ user, roles, onClose, onSaved }: UserFormDialog
       setRoleError("Choisissez au moins un rôle.");
       return;
     }
-    if (asksForCountry && !chosenCountryId && !superAdminChosen) {
-      setCountryError("Choisissez un pays.");
+    if (meIsGlobal && !isGlobalChoice && countryIds.length === 0) {
+      setCountryError("Choisissez au moins un pays, ou cochez « Utilisateur global ».");
       return;
     }
     try {
       const input = {
         ...profile,
         phoneNumber: joinPhone(phoneCode, profile.phoneNumber),
+        additionalPhoneNumbers: extraPhones.map((phone) => phone.trim()).filter(Boolean),
         roleIds,
-        countryId: asksForCountry && chosenCountryId ? chosenCountryId : undefined,
+        isGlobal: meIsGlobal ? isGlobalChoice : undefined,
+        countryIds: meIsGlobal && !isGlobalChoice ? countryIds : undefined,
       };
       if (user) await usersService.update(user.id, input);
       else await usersService.create(email, input);
@@ -125,15 +133,11 @@ export function UserFormDialog({ user, roles, onClose, onSaved }: UserFormDialog
           {...register("phoneNumber")}
         />
 
-        {asksForCountry && (
-          <div>
-            <Label htmlFor="user-country">Pays</Label>
-            <Select id="user-country" value={chosenCountryId} onChange={(event) => { setCountryChoice(event.target.value); setCountryError(undefined); }}>
-              <option value="">{superAdminChosen ? "Aucun (administrateur global)" : "Choisir un pays"}</option>
-              {countries.data?.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
-            </Select>
-            {countryError && <p role="alert" className="mt-1 text-xs font-medium text-red-600">{countryError}</p>}
-          </div>
+        <AdditionalPhonesField phones={extraPhones} onChange={setExtraPhones} />
+
+        {meIsGlobal && (
+          <CountryAccessField countries={countries.data} isGlobal={isGlobalChoice} countryIds={countryIds} onToggleCountry={toggleCountry} error={countryError}
+            onGlobalChange={() => { setIsGlobalChoice((current) => !current); setCountryError(undefined); }} />
         )}
 
         <fieldset>

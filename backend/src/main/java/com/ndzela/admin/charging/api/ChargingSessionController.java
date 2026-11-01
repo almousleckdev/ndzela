@@ -1,11 +1,13 @@
 package com.ndzela.admin.charging.api;
 
 import com.ndzela.admin.charging.application.ChargingSessionService;
+import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.ocpp.api.SessionRow;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,5 +27,13 @@ public class ChargingSessionController {
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                          @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         return sessions.list(status, q, from, to, page, size);
+    }
+
+    @GetMapping("/api/v1/charging/sessions/export")
+    @PreAuthorize("hasAuthority('charging:export')")
+    public ResponseEntity<byte[]> export(@RequestParam(required = false) String status, @RequestParam(required = false) String q,
+                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
+        return sessions.export(status, q, from, to, format).response();
     }
 }

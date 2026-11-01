@@ -1,6 +1,7 @@
 package com.ndzela.admin.security.jwt;
 
 import com.ndzela.admin.security.CustomUserDetailsService;
+import com.ndzela.admin.security.SecurityUser;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -52,6 +53,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             UserDetails user = userDetailsService.loadUserByUsername(jwtService.extractUsername(token));
             if (!user.isEnabled() || !user.isAccountNonLocked()) {
+                return;
+            }
+            String currentSessionId = ((SecurityUser) user).getUser().getSessionId();
+            if (!java.util.Objects.equals(currentSessionId, jwtService.extractSessionId(token))) {
                 return;
             }
             var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());

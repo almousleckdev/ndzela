@@ -20,6 +20,10 @@ public class RateLimiter {
         // The key is created with its expiry, so a crash between the two calls cannot leave a counter that never resets.
         redis.opsForValue().setIfAbsent(key, "0", window);
         Long count = redis.opsForValue().increment(key);
+        // A key that expired between the two calls is recreated by the increment, at 1, without an expiry
+        if (count != null && count == 1) {
+            redis.expire(key, window);
+        }
         return count != null && count <= max;
     }
 

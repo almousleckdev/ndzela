@@ -1,5 +1,6 @@
 import '../../../core/money/money.dart';
 import '../domain/arrears_summary.dart';
+import 'payment_option_dto.dart';
 
 class ArrearsDto {
   const ArrearsDto({
@@ -8,6 +9,9 @@ class ArrearsDto {
     required this.currency,
     required this.locked,
     required this.suspended,
+    this.options = const [],
+    this.weekClosesAt,
+    this.weekSettled = true,
   });
 
   factory ArrearsDto.fromJson(Map<String, dynamic> json) => ArrearsDto(
@@ -16,6 +20,12 @@ class ArrearsDto {
     currency: json['currency'] as String,
     locked: json['locked'] as bool? ?? false,
     suspended: json['suspended'] as bool? ?? false,
+    options: [
+      for (final item in json['options'] as List<dynamic>? ?? const [])
+        PaymentOptionDto.fromJson(item as Map<String, dynamic>),
+    ],
+    weekClosesAt: json['weekClosesAt'] as String?,
+    weekSettled: json['weekSettled'] as bool? ?? true,
   );
 
   final int unpaidDays;
@@ -23,11 +33,19 @@ class ArrearsDto {
   final String currency;
   final bool locked;
   final bool suspended;
+  final List<PaymentOptionDto> options;
+  final String? weekClosesAt;
+  final bool weekSettled;
 
   ArrearsSummary toDomain() => ArrearsSummary(
     unpaidDays: unpaidDays,
     total: Money(totalDue, currency),
     locked: locked,
     suspended: suspended,
+    options: [for (final option in options) option.toDomain(currency)],
+    weekClosesAt: weekClosesAt == null
+        ? null
+        : DateTime.parse(weekClosesAt!).toLocal(),
+    weekSettled: weekSettled,
   );
 }

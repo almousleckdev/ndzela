@@ -17,6 +17,10 @@ export const resetPasswordSchema = z
   .object({ newPassword: passwordSchema, confirmPassword: z.string() })
   .refine(passwordsMatch, passwordsMatchIssue);
 
+export const resetPasswordWithCodeSchema = z
+  .object({ code: sixDigitCode, newPassword: passwordSchema, confirmPassword: z.string() })
+  .refine(passwordsMatch, passwordsMatchIssue);
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Le mot de passe actuel est requis"),
@@ -29,4 +33,5 @@ export type CredentialsValues = z.infer<typeof credentialsSchema>;
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 export type CodeValues = z.infer<typeof otpSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+export type ResetPasswordWithCodeValues = z.infer<typeof resetPasswordWithCodeSchema>;
 export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;

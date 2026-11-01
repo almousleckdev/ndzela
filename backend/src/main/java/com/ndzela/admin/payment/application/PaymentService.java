@@ -14,6 +14,8 @@ import com.ndzela.admin.payment.api.dto.RecordPaymentRequest;
 import com.ndzela.admin.payment.api.dto.WaiverRequest;
 import com.ndzela.admin.payment.application.model.AccountState;
 import com.ndzela.admin.payment.domain.LedgerEntry;
+import com.ndzela.admin.payment.domain.LedgerEntryDay;
+import com.ndzela.admin.payment.domain.LedgerEntryDayRepository;
 import com.ndzela.admin.payment.domain.LedgerEntryRepository;
 import com.ndzela.admin.payment.domain.LedgerEntryType;
 import com.ndzela.admin.payment.domain.PaymentMethod;
@@ -36,6 +38,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentService {
     private final LedgerEntryRepository ledger;
+    private final LedgerEntryDayRepository days;
     private final DriverArrearsService driverArrears;
     private final ContractService contractService;
     private final PaymentOperatorService operators;
@@ -68,11 +71,21 @@ public class PaymentService {
         if (ledger.existsActivePayment(request.method(), reference)) {
             throw new BusinessRuleViolationException("PAYMENT_REFERENCE_ALREADY_USED", "This transaction reference has already been recorded.");
         }
-        LedgerEntry entry = save(entry(driver, contract, LedgerEntryType.PAYMENT, request.amount())
-                .method(request.method()).reference(reference).requestId(request.requestId()).recordedBy(recordedBy).build());
+        LedgerEntry draft = entry(driver, contract, LedgerEntryType.PAYMENT, request.amount())
+                .method(request.method()).reference(reference).requestId(request.requestId()).recordedBy(recordedBy).build();
+        Instant paidAt = draft.getCreatedAt().toInstant();
+        AccountState before = accounts.state(driver.countryId(), contract, paidAt);
+        LedgerEntry entry = save(draft);
+        saveSettledDays(entry, before, accounts.state(driver.countryId(), contract, paidAt));
         audit.record("PAYMENT_RECORDED", "DRIVER", driver.id().toString(), driver.fullName(), driver.countryId(),
                 request.amount().toPlainString() + " " + request.method() + (entry.getReference() == null ? "" : ", ref " + entry.getReference()));
         return result(entry, driver, contract);
+    }
+
+    // Freezes which days this payment settled, for the receipt and the history
+    private void saveSettledDays(LedgerEntry entry, AccountState before, AccountState after) {
+        PaymentDayAllocator.allocate(before, after, entry.getCreatedAt().toInstant()).forEach(day -> days.save(LedgerEntryDay.builder().ledgerEntryId(entry.getId())
+                .businessDay(day.day()).kind(day.kind()).amount(day.amount()).paidOnTime(day.onTime()).build()));
     }
 
     // The aggregator's fee the driver paid on top of a payment

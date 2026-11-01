@@ -15,7 +15,9 @@ import { Page, PageHead, Panel, Toolbar } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
 import { describeRange, NO_RANGE } from "@/lib/date-range";
 import { formatDateTime } from "@/lib/time";
+import { ExportMenu } from "@/components/export-menu";
 import { RequirePermission } from "@/features/access/components/require-permission";
+import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { ACTION_LABELS, TARGET_TYPE_LABELS, actionLabel, targetTypeLabel } from "@/features/audit/lib/audit-labels";
@@ -28,6 +30,7 @@ const ACTION_OPTIONS = toOptions(ACTION_LABELS);
 const TARGET_OPTIONS = toOptions(TARGET_TYPE_LABELS);
 
 function AuditContent() {
+  const { can } = usePermissions();
   const isGlobal = useAuthStore((state) => state.user?.country === null);
   const query = useTableQuery({ sorting: [{ id: "createdAt", desc: true }] });
   const { filters, range } = query;
@@ -54,7 +57,11 @@ function AuditContent() {
 
   return (
     <Page>
-      <PageHead title="Journal d'audit" description="Qui a fait quoi, et quand. Les enregistrements ne peuvent ni être modifiés ni supprimés." />
+      <PageHead title="Journal d'audit" description="Qui a fait quoi, et quand. Les enregistrements ne peuvent ni être modifiés ni supprimés."
+        actions={can(PERMISSIONS.AUDIT_EXPORT) && (
+          <ExportMenu path={(format) => auditService.exportPath({ action: filters.action ?? "", actor: query.q, targetType: filters.targetType ?? "", from: range.from, to: range.to }, format)}
+            filename="audit" failure="Impossible d'exporter le journal d'audit." />
+        )} />
       <Panel>
         <Toolbar start={(
           <>

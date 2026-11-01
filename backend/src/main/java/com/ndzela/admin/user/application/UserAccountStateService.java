@@ -107,7 +107,7 @@ public class UserAccountStateService {
         if (user.getStatus() == UserStatus.DISABLED) {
             throw new BusinessRuleViolationException("This account is disabled.");
         }
-        passwordResetService.sendInvitation(user.getEmail());
+        passwordResetService.sendInvitation(user.getEmail(), user.getCountry());
         users.record("USER_INVITATION_RESENT", user, null);
     }
 }

@@ -1,7 +1,8 @@
-import { apiClient } from "@/lib/api/api-client";
+import { apiBlob, apiClient } from "@/lib/api/api-client";
+import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import type { Vehicle, VehicleCounts, VehicleQuery, VehicleStatus } from "@/features/vehicles/types";
+import type { Vehicle, VehicleCounts, VehicleImage, VehicleQuery, VehicleStatus } from "@/features/vehicles/types";
 import type { Driver } from "@/features/drivers/types";
 import type { VehicleValues } from "@/features/vehicles/schemas/vehicle";
 
@@ -24,7 +25,7 @@ export const vehiclesService = {
 
   get: (id: string) => apiClient<Vehicle>(`/vehicles/${id}`),
 
-  exportPath: ({ status, q, from, to }: Pick<VehicleQuery, "status" | "q" | "from" | "to">) => `/vehicles/export?${queryString({ status: status === "ALL" ? undefined : status, q: q.trim(), from, to })}`,
+  exportPath: ({ status, q, from, to }: Pick<VehicleQuery, "status" | "q" | "from" | "to">, format: ExportFormat) => `/vehicles/export?${queryString({ status: status === "ALL" ? undefined : status, q: q.trim(), from, to, format })}`,
 
   currentDriver: (id: string) => apiClient<Driver | undefined>(`/vehicles/${id}/driver`),
 
@@ -37,4 +38,17 @@ export const vehiclesService = {
   changeStatus: (id: string, status: VehicleStatus, reason?: string) => apiClient<Vehicle>(`/vehicles/${id}/status`, { method: "POST", body: { status, reason } }),
 
   remove: (id: string) => apiClient(`/vehicles/${id}`, { method: "DELETE" }),
+
+  images: (id: string) => apiClient<VehicleImage[]>(`/vehicles/${id}/images`),
+
+  uploadImages: (id: string, files: File[]) => {
+    const body = new FormData();
+    files.forEach((file) => body.append("files", file));
+    return apiClient<VehicleImage[]>(`/vehicles/${id}/images`, { method: "POST", body });
+  },
+
+  // The photo as a blob; the caller turns it into an object URL.
+  imageBlob: (id: string, imageId: string) => apiBlob(`/vehicles/${id}/images/${imageId}`),
+
+  deleteImage: (id: string, imageId: string) => apiClient(`/vehicles/${id}/images/${imageId}`, { method: "DELETE" }),
 };

@@ -11,8 +11,13 @@ import com.ndzela.admin.auth.application.model.TokenRotation;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.InvalidCredentialsException;
 import com.ndzela.admin.common.exception.SessionExpiredException;
+import com.ndzela.admin.common.exception.TooManyRequestsException;
+import com.ndzela.admin.common.ratelimit.RateLimiter;
+import com.ndzela.admin.common.web.ClientAddress;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.infrastructure.email.EmailProvider;
 import com.ndzela.admin.security.LoginAttemptService;
+import com.ndzela.admin.security.OpaqueTokens;
 import com.ndzela.admin.security.SecurityUser;
 import com.ndzela.admin.security.jwt.JwtService;
 import com.ndzela.admin.user.domain.User;
@@ -42,12 +47,14 @@ public class AuthService {
     private final LoginAttemptService loginAttempts;
     private final PasswordEncoder passwordEncoder;
     private final AuditService audit;
+    private final RateLimiter limiter;
+    private final AppProperties props;
     private final String decoyPasswordHash;
 
     public AuthService(UserRepository userRepository, LoginChallengeService challenges, OtpService otpService,
                        MfaService mfaService, JwtService jwtService, RefreshTokenService refreshTokens,
                        EmailProvider emailProvider, LoginAttemptService loginAttempts, PasswordEncoder passwordEncoder,
-                       AuditService audit) {
+                       AuditService audit, RateLimiter limiter, AppProperties props) {
         this.userRepository = userRepository;
         this.challenges = challenges;
         this.otpService = otpService;
@@ -58,10 +65,15 @@ public class AuthService {
         this.loginAttempts = loginAttempts;
         this.passwordEncoder = passwordEncoder;
         this.audit = audit;
+        this.limiter = limiter;
+        this.props = props;
         this.decoyPasswordHash = passwordEncoder.encode("decoy-password-for-timing");
     }
 
     public LoginStepResponse startLogin(String rawEmail, String password) {
+        if (!limiter.tryAcquire("login-ip", ClientAddress.current(), props.rateLimit().loginAttemptsPerIpPerMinute(), java.time.Duration.ofMinutes(1))) {
+            throw new TooManyRequestsException("Too many login attempts. Please try again later.");
+        }
         String email = normalize(rawEmail);
         User user = userRepository.findByEmail(email).orElse(null);
 
@@ -74,14 +86,15 @@ public class AuthService {
             throw failed(email, INVALID_LOGIN);
         }
 
-        sendOtp(email);
+        sendOtp(user);
         return new LoginStepResponse(challenges.start(email), LoginStep.EMAIL_OTP, otpService.resendCooldownSeconds());
     }
 
     public LoginStepResponse resendOtp(String challengeToken) {
         LoginChallenge challenge = challenges.require(challengeToken, LoginStage.PASSWORD_VERIFIED);
-        loginAttempts.assertCanAuthenticate(loadForChallenge(challenge));
-        sendOtp(challenge.email());
+        User user = loadForChallenge(challenge);
+        loginAttempts.assertCanAuthenticate(user);
+        sendOtp(user);
         return new LoginStepResponse(challengeToken, LoginStep.EMAIL_OTP, otpService.resendCooldownSeconds());
     }
 
@@ -120,16 +133,29 @@ public class AuthService {
         loginAttempts.loginSucceeded(challenge.email());
         log.info("Login completed for {}", challenge.email());
         audit.recordSignIn(user.getEmail(), true, user.countryIdOrNull(), null);
-        return issueTokens(user, refreshTokens.issue(user.getEmail()));
+        // loginSucceeded() just committed failedAttempts/status in its own transaction; re-fetch so the
+        // session-id save below doesn't write back the stale pre-login values (same bug class as the driver side).
+        user = userRepository.findByEmail(user.getEmail()).orElseThrow();
+        user.setSessionId(OpaqueTokens.generate());
+        userRepository.save(user);
+        refreshTokens.revokeAll(user.getEmail());
+        return issueTokens(user, refreshTokens.issue(user.getEmail(), user.getSessionId()));
     }
 
     public AuthTokens refresh(String refreshToken) {
         TokenRotation rotation = refreshTokens.rotate(refreshToken);
-        User user = userRepository.findByEmail(rotation.email())
+        User user = userRepository.findByEmail(rotation.subject())
                 .filter(u -> u.getStatus() == UserStatus.ACTIVE && u.isCountryActive())
                 .orElse(null);
         if (user == null) {
-            refreshTokens.revokeAll(rotation.email());
+            refreshTokens.revokeAll(rotation.subject());
+            throw new SessionExpiredException("Invalid or expired session.");
+        }
+        // A token for a session that was since replaced (a new login elsewhere) must not revive it,
+        // even though it survived rotation: the account's current session id is the only truth. Revoking
+        // only this one token (not revokeAll) avoids tearing down the new, legitimate session's tokens.
+        if (!java.util.Objects.equals(user.getSessionId(), rotation.sessionId())) {
+            refreshTokens.revoke(rotation.newToken());
             throw new SessionExpiredException("Invalid or expired session.");
         }
         return issueTokens(user, rotation.newToken());
@@ -139,13 +165,15 @@ public class AuthService {
         refreshTokens.revoke(refreshToken);
     }
 
-    private void sendOtp(String email) {
-        String otp = otpService.generateAndStore(email);
-        emailProvider.sendHtmlEmail(email, "NDZela Admin - Login OTP", "otp-email", Map.of("otp", otp));
+    private void sendOtp(User user) {
+        String otp = otpService.generateAndStore(user.getEmail());
+        var brand = com.ndzela.admin.country.application.CountryBrand.ofCountry(user.getCountry() == null ? null : user.getCountry().getCode());
+        emailProvider.sendHtmlEmail(user.getEmail(), brand.name() + " : code de vérification", "otp-email",
+                Map.of("otp", otp, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(), "logo", brand.logoDataUri()));
     }
 
     private AuthTokens issueTokens(User user, String refreshToken) {
-        String accessToken = jwtService.generateAccessToken(new SecurityUser(user));
+        String accessToken = jwtService.generateAccessToken(new SecurityUser(user), user.getSessionId());
         return new AuthTokens(accessToken, jwtService.accessTokenTtlSeconds(), refreshToken);
     }
 

@@ -40,7 +40,7 @@ class LoginHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Ndzela', style: AppTextStyles.display(30)),
+            Text('NdZela', style: AppTextStyles.display(30)),
             const SizedBox(height: 6),
             const Text(
               'Votre loyer, simplement.',

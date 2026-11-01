@@ -3,6 +3,14 @@ export type EntryType = "PAYMENT" | "REVERSAL" | "WAIVER" | "PENALTY" | "FEE";
 export type PaymentMethod = "CASH" | "AIRTEL_MONEY" | "MOOV_MONEY" | "ORANGE_MONEY" | "OTHER";
 export type DayStatus = "PAID_ON_TIME" | "PAID_LATE" | "UNPAID";
 
+// A rent day (or penalty) a payment settled
+export interface PaidDay {
+  day: string;
+  kind: "RENT" | "PENALTY";
+  amount: number;
+  onTime: boolean;
+}
+
 export interface LedgerEntry {
   id: string;
   type: EntryType;
@@ -17,6 +25,7 @@ export interface LedgerEntry {
   businessDay: string | null;
   recordedBy: string;
   createdAt: string;
+  days: PaidDay[];
 }
 
 export interface AccountRow {
@@ -30,6 +39,9 @@ export interface AccountRow {
   vehicle: string | null;
   level: ArrearsLevel;
   overdueAmount: number;
+  // Rent of the day that ended but whose deadline (noon) has not come yet.
+  awaitingDays: number;
+  awaitingAmount: number;
   overdueSince: string | null;
   lastPaymentAt: string | null;
   // Money received in the chosen period; null when no period is chosen.
@@ -50,6 +62,19 @@ export interface DayView {
   settledAt: string | null;
 }
 
+// Where a contract stands since day one: rent days (Monday to Saturday) and the money against the total price.
+export interface ContractProgress {
+  totalDays: number;
+  elapsedDays: number;
+  daysLeft: number;
+  paidDays: number;
+  unpaidDays: number;
+  totalPrice: number;
+  paidAmount: number;
+  remainingAmount: number;
+  deposit: number;
+}
+
 export interface AccountDetail {
   driverId: string;
   driverName: string;
@@ -66,6 +91,11 @@ export interface AccountDetail {
   unpaid: number;
   days: DayView[];
   entries: LedgerEntry[];
+  // Sunday at noon: the week's rents must be settled by then.
+  weekClosesAt: string;
+  weekSettled: boolean;
+  // Null without an active contract.
+  progress: ContractProgress | null;
 }
 
 export interface PaymentResult {
@@ -79,6 +109,9 @@ export interface PaymentSummary {
   collectedToday: number;
   collectedRange: number | null;
   totalOverdue: number;
+  totalAwaiting: number;
+  // Riders who reach 3 unpaid days at noon if yesterday's rent is not paid.
+  atRisk: number;
   upToDate: number;
   late: number;
   yellow: number;
@@ -101,6 +134,9 @@ export interface TransactionRow {
   reference: string;
   providerReference: string | null;
   source: "PVIT" | "MANUAL";
+  // When the payment was recorded, and the days it settled.
+  paidAt: string | null;
+  days: PaidDay[];
 }
 
 export type IncidentKind = "HALF_DAY" | "STOP";
@@ -114,9 +150,12 @@ export interface IncidentInput {
   note?: string;
 }
 
+export type RiderScope = "CURRENT" | "FORMER";
+
 export interface TransactionQuery {
   status: TransactionStatus | "ALL";
   method: PaymentMethod | "ALL";
+  scope?: RiderScope;
   q: string;
   from?: string;
   to?: string;

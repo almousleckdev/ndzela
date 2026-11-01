@@ -1,23 +1,22 @@
 package com.ndzela.admin.charging.api;
 
+import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.charging.api.dto.RechargeResponse;
 import com.ndzela.admin.charging.api.dto.RecordRechargeRequest;
 import com.ndzela.admin.charging.api.dto.StationRequest;
 import com.ndzela.admin.charging.api.dto.StationResponse;
 import com.ndzela.admin.charging.api.dto.ChargingSummary;
+import com.ndzela.admin.charging.application.ChargingExportService;
 import com.ndzela.admin.charging.application.ChargingQueryService;
 import com.ndzela.admin.charging.application.ChargingService;
 import com.ndzela.admin.charging.application.StationService;
-import com.ndzela.admin.charging.domain.ChargingPeriod;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.dto.ReasonRequest;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +31,7 @@ import java.util.UUID;
 public class ChargingController {
     private final ChargingService charging;
     private final ChargingQueryService queries;
+    private final ChargingExportService exports;
     private final StationService stations;
 
     @GetMapping("/recharges")
@@ -69,9 +69,9 @@ public class ChargingController {
 
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('charging:export')")
-    public ResponseEntity<byte[]> export(@RequestParam ChargingPeriod period, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok().contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"recharges.csv\"").body(queries.export(period, date));
+    public ResponseEntity<byte[]> export(@RequestParam(required = false) String q, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
+        return exports.export(q, from, to, format).response();
     }
 
     @GetMapping("/vehicles")

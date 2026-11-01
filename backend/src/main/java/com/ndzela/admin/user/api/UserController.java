@@ -1,16 +1,19 @@
 package com.ndzela.admin.user.api;
 
+import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.web.dto.ReasonRequest;
 import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.user.api.dto.CreateUserRequest;
 import com.ndzela.admin.user.api.dto.UpdateUserRequest;
 import com.ndzela.admin.user.api.dto.UserSummary;
 import com.ndzela.admin.user.application.UserAccountStateService;
+import com.ndzela.admin.user.application.UserExportService;
 import com.ndzela.admin.user.application.UserManagementService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -24,11 +27,18 @@ import java.util.UUID;
 public class UserController {
     private final UserManagementService users;
     private final UserAccountStateService accountState;
+    private final UserExportService exports;
 
     @GetMapping
     @PreAuthorize("hasAuthority('users:read')")
     public List<UserSummary> list() {
         return users.list();
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority('users:export')")
+    public ResponseEntity<byte[]> export(@RequestParam(defaultValue = "XLSX") ExportFormat format) {
+        return exports.export(format).response();
     }
 
     @PostMapping

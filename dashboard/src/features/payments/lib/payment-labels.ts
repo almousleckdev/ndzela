@@ -27,12 +27,13 @@ export const ENTRY_TYPE_LABELS: Record<EntryType, string> = {
   FEE: "Frais opérateur",
 };
 
+// The level follows the number of unpaid days: 1 = Rappel, 2 = Urgent, 3 or more = Suspendu (the same as the previous platform).
 export const LEVEL_LABELS: Record<ArrearsLevel, string> = {
   NONE: "À jour",
   LATE: "En retard",
-  YELLOW: "Retard 24 h",
-  DARK_YELLOW: "Retard 48 h",
-  RED: "Retard 72 h",
+  YELLOW: "Rappel",
+  DARK_YELLOW: "Urgent",
+  RED: "Suspendu",
 };
 
 // Badge classes per level
@@ -40,8 +41,8 @@ export const LEVEL_BADGE: Record<ArrearsLevel, string> = {
   NONE: "bg-emerald-50 text-emerald-700",
   LATE: "bg-slate-100 text-slate-700",
   YELLOW: "bg-yellow-100 text-yellow-800",
-  DARK_YELLOW: "bg-amber-300 text-amber-950",
-  RED: "bg-red-100 text-red-700",
+  DARK_YELLOW: "bg-red-100 text-red-700",
+  RED: "bg-red-900 text-white",
 };
 
 export const DAY_STATUS_LABELS: Record<DayStatus, string> = {

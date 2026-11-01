@@ -9,8 +9,10 @@ import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { FilterPill } from "@/components/data-table/filter-pill";
 import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
+import { ExportMenu } from "@/components/export-menu";
 import { KpiBand, Page, PageHead, Panel, Toolbar } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
+import { usePolling } from "@/hooks/use-polling";
 import { describeRange, NO_RANGE } from "@/lib/date-range";
 import { formatFcfa } from "@/lib/money";
 import { RequirePermission } from "@/features/access/components/require-permission";
@@ -24,14 +26,14 @@ import { paymentsService } from "@/features/payments/services/payments.service";
 import type { AccountFilter, AccountRow, IncidentKind } from "@/features/payments/types";
 
 const LEVELS = [
-  { value: "YELLOW", label: "Retard 24 h" },
-  { value: "DARK_YELLOW", label: "Retard 48 h" },
-  { value: "RED", label: "Retard 72 h" },
+  { value: "YELLOW", label: "Rappel · 1 jour" },
+  { value: "DARK_YELLOW", label: "Urgent · 2 jours" },
+  { value: "RED", label: "Suspendu · 3 jours et +" },
 ];
 
 function ArrearsContent() {
   const { can } = usePermissions();
-  const query = useTableQuery({ sorting: [{ id: "overdueSince", desc: false }] });
+  const query = useTableQuery();
   const { filters, range } = query;
   const filter = (filters.level || "LATE") as AccountFilter;
   const list = useAsync(() => paymentsService.accounts(filter, query.q, query.page, query.size, query.sort, { lateFrom: range.from, lateTo: range.to }), [filter, query.q, range.from, range.to, query.page, query.size, query.sort]);
@@ -42,6 +44,7 @@ function ArrearsContent() {
   const onIncident = useCallback((row: AccountRow, kind: IncidentKind) => setDeclaring({ row, kind }), []);
   const columns = useAccountColumns({ onPay: can(PERMISSIONS.PAYMENTS_CREATE) ? setPaying : undefined, onWaive: can(PERMISSIONS.ARREARS_MANAGE) ? setWaiving : undefined, onIncident: can(PERMISSIONS.ARREARS_MANAGE) ? onIncident : undefined, contact: true, showCollected: false });
   const refresh = () => { list.reload(); summary.reload(); };
+  usePolling(refresh, 15000);
   const s = summary.data;
 
   const active: ActiveFilter[] = [
@@ -52,19 +55,31 @@ function ArrearsContent() {
 
   return (
     <Page>
-      <PageHead title="Gérer impayés" description="Les chauffeurs dont le loyer n'est pas réglé, du plus ancien au plus récent. À 72 h le chauffeur est suspendu automatiquement." />
+      <PageHead title="Gérer impayés" description="Les chauffeurs dont le loyer n'est pas réglé, du plus ancien au plus récent. À 3 jours d'impayés le chauffeur est suspendu automatiquement."
+        actions={can(PERMISSIONS.PAYMENTS_EXPORT) && (
+          <ExportMenu path={(format) => paymentsService.accountsExportPath(filter, query.q, { lateFrom: range.from, lateTo: range.to }, format)} filename="comptes-impayes" failure="Impossible d'exporter les comptes." />
+        )} />
       <KpiBand items={[
         { label: "Total impayé", value: s ? formatFcfa(s.totalOverdue) : "-", tone: s && s.totalOverdue > 0 ? "bad" : undefined },
+        { label: "À régler avant midi", value: s ? formatFcfa(s.totalAwaiting) : "-" },
+        { label: "À recouvrer (hier inclus)", value: s ? formatFcfa(s.totalOverdue + s.totalAwaiting) : "-" },
         { label: "Chauffeurs en retard", value: s?.late ?? "-" },
-        { label: "Retard 24 h", value: s?.yellow ?? "-" },
-        { label: "Retard 48 h", value: s?.darkYellow ?? "-" },
-        { label: "Retard 72 h", value: s?.red ?? "-", tone: s && s.red > 0 ? "bad" : undefined },
+        { label: "Rappel · 1 jour", value: s?.yellow ?? "-" },
+        { label: "Urgent · 2 jours", value: s?.darkYellow ?? "-", tone: s && s.darkYellow > 0 ? "bad" : undefined },
+        { label: "Suspendu · 3 jours et +", value: s?.red ?? "-", tone: s && s.red > 0 ? "bad" : undefined },
       ]} />
 
       {s && s.red > 0 && (
-        <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-          <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
-          <p><strong>{s.red} chauffeur(s) à plus de 72 h d&apos;impayés.</strong> Ils sont suspendus automatiquement. Bloquez leur véhicule dans l&apos;outil GPS : le blocage à distance n&apos;est pas géré par cette plateforme.</p>
+        <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-300 bg-red-100 px-4 py-3 text-sm text-red-950">
+          <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-900" />
+          <p><strong>{s.red} chauffeur(s) ont dépassé le délai de 3 jours d&apos;impayés.</strong> Ils sont suspendus automatiquement. Bloquez leur véhicule dans l&apos;outil GPS : le blocage à distance n&apos;est pas géré par cette plateforme.</p>
+        </div>
+      )}
+
+      {s && s.atRisk > 0 && (
+        <div role="status" className="flex items-start gap-3 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-950">
+          <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-yellow-700" />
+          <p><strong>{s.atRisk} chauffeur(s) passeront à 3 jours d&apos;impayés à midi</strong> si le loyer d&apos;hier n&apos;est pas réglé. Ils seront alors suspendus automatiquement.</p>
         </div>
       )}
 

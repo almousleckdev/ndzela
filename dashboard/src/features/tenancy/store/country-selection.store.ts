@@ -35,9 +35,10 @@ export const useCountrySelectionStore = create<CountrySelectionState>()((set) =>
   },
 }));
 
-// Sent on every authenticated request, and only for a global user: the server ignores it for everyone else.
+// Sent on every authenticated request, and only for a global or multi-country user: the server ignores it for everyone else.
 registerHeaderProvider((): Record<string, string> => {
   const user = useAuthStore.getState().user;
   const { selectedCode } = useCountrySelectionStore.getState();
-  return user && user.country === null && selectedCode ? { "X-Country": selectedCode } : {};
+  const canSwitch = user && (user.isGlobal || user.countries.length > 1);
+  return canSwitch && selectedCode ? { "X-Country": selectedCode } : {};
 });

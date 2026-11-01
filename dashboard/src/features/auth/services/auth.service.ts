@@ -32,6 +32,10 @@ export const authService = {
   forgotPassword: (email: string) =>
     apiClient("/auth/forgot-password", { method: "POST", body: { email }, ...PUBLIC }),
 
+  resetPasswordWithCode: (email: string, code: string, newPassword: string) =>
+    apiClient("/auth/forgot-password/reset", { method: "POST", body: { email, code, newPassword }, ...PUBLIC }),
+
+  // Accepting an invitation link (a brand-new account choosing its first password).
   resetPassword: (token: string, newPassword: string) =>
     apiClient("/auth/reset-password", { method: "POST", body: { token, newPassword }, ...PUBLIC }),
 

@@ -2,6 +2,7 @@ package com.ndzela.admin.ocpp.application;
 
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.country.domain.CountryRepository;
+import com.ndzela.admin.infrastructure.ocpp.FleetCursorExpiredException;
 import com.ndzela.admin.infrastructure.ocpp.FleetException;
 import com.ndzela.admin.infrastructure.ocpp.FleetPage;
 import com.ndzela.admin.infrastructure.ocpp.FleetRateLimitedException;
@@ -84,8 +85,22 @@ public class OcppSyncService {
         return 0;
     }
 
+    // A cursor the platform refuses (410) is dropped and the sync starts over: sessions are applied by version, so replaying them is harmless.
     private int pull(UUID countryId) {
-        String cursor = state.cursor(countryId);
+        String saved = state.cursor(countryId);
+        try {
+            return pullFrom(countryId, saved);
+        } catch (FleetCursorExpiredException e) {
+            if (saved == null) {
+                throw e;
+            }
+            log.warn("OCPP cursor refused by the platform, syncing again from the start");
+            state.saveCursor(countryId, null);
+            return pullFrom(countryId, null);
+        }
+    }
+
+    private int pullFrom(UUID countryId, String cursor) {
         int changed = 0;
         for (int page = 0; page < MAX_PAGES_PER_RUN; page++) {
             FleetPage result = fleet.sync(cursor, props.ocpp().syncPageSize());

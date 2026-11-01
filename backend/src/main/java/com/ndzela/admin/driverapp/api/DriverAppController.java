@@ -1,6 +1,6 @@
 package com.ndzela.admin.driverapp.api;
 
-import com.ndzela.admin.driver.application.model.DriverFileContent;
+import com.ndzela.admin.infrastructure.storage.FileContent;
 import com.ndzela.admin.driverapp.api.dto.DriverAccountResponse;
 import com.ndzela.admin.driverapp.api.dto.DriverContractResponse;
 import com.ndzela.admin.driverapp.api.dto.DriverDocumentResponse;
@@ -49,7 +49,7 @@ public class DriverAppController {
     @GetMapping("/me/photo")
     @PreAuthorize("hasAuthority('driver:self')")
     public ResponseEntity<Resource> photo(@AuthenticationPrincipal DriverPrincipal driver) {
-        DriverFileContent content = app.photo(driver.driverId());
+        FileContent content = app.photo(driver.driverId());
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(content.contentType())).cacheControl(CacheControl.noStore()).body(content.resource());
     }
 

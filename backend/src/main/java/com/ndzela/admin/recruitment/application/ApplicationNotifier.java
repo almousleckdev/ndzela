@@ -26,7 +26,8 @@ public class ApplicationNotifier {
     private final EmailProvider email;
     private final CountryRepository countries;
 
-    public void send(DriverApplication application) {
+    // Returns whether the e-mail actually went out: the caller must not tell staff the candidate was notified otherwise.
+    public boolean send(DriverApplication application) {
         Country country = countries.findById(application.getCountryId()).orElseThrow();
         CountryBrand brand = CountryBrand.ofCountry(country.getCode());
         boolean accepted = application.getStatus() == ApplicationStatus.ACCEPTED;
@@ -34,9 +35,11 @@ public class ApplicationNotifier {
         try {
             email.sendHtmlEmail(application.getEmail(), brand.name() + " : votre candidature", "application-decision-email",
                     Map.of("name", application.getFirstName(), "accepted", accepted, "when", when, "message", application.getCandidateMessage() == null ? "" : application.getCandidateMessage(),
-                            "brand", brand.name(), "company", brand.company(), "color", brand.accentHex()));
+                            "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(), "logo", brand.logoDataUri()));
+            return true;
         } catch (RuntimeException e) {
             log.warn("Could not send the application answer to {}", application.getId(), e);
+            return false;
         }
     }
 }

@@ -33,7 +33,7 @@ See [../multi-tenancy/multi-tenancy.md](../multi-tenancy/multi-tenancy.md).
 | [vehicles.md](vehicles.md) | Adding and managing company cars |
 | [drivers.md](drivers.md) | The 5-step driver creation wizard, fields and validations |
 | [contracts.md](contracts.md) | Contract data, financial recap, contract PDF per country |
-| [payments-and-arrears.md](payments-and-arrears.md) | Daily payments, providers per country, 24/48/72 h escalation, suspension |
+| [payments-and-arrears.md](payments-and-arrears.md) | Daily payments, providers per country, unpaid-day escalation, payments by day and receipts, suspension |
 | [admin-quick-access.md](admin-quick-access.md) | The follow-up shortcuts (Suivi paiements, Gérer impayés, Historique...) |
 | [ocpp-integration.md](ocpp-integration.md) | Charging billing and income (drivers and public) via the OCPP platform, later |
 | [samples/contract-gabon.pdf](samples/contract-gabon.pdf) | Reference Gabon contract (test data) |

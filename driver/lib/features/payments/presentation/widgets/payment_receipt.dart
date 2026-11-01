@@ -6,6 +6,7 @@ import '../../../../core/widgets/display/app_divider.dart';
 import '../../../../core/widgets/display/label_value_row.dart';
 import '../../domain/payment_attempt.dart';
 import '../../domain/payment_status.dart';
+import 'paid_days_card.dart';
 
 // Everything about one payment as three cards
 class PaymentReceipt extends StatelessWidget {
@@ -43,6 +44,10 @@ class PaymentReceipt extends StatelessWidget {
             ],
           ),
         ),
+        if (attempt.days.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          PaidDaysCard(attempt: attempt),
+        ],
         const SizedBox(height: 16),
         AppCard(
           child: Column(

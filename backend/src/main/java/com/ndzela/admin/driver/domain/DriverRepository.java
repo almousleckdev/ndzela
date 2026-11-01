@@ -33,10 +33,18 @@ public interface DriverRepository extends JpaRepository<Driver, UUID>, JpaSpecif
     @Query("select d from Driver d where d.id = :id")
     Optional<Driver> findForUpdate(@Param("id") UUID id);
 
-    @Query("select coalesce(sum(d.overdueAmount), 0) from Driver d")
+    // The follow-up concerns drivers who have a contract: inactive (archived) drivers are left out
+    @Query("select coalesce(sum(d.overdueAmount), 0) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE")
     java.math.BigDecimal totalOverdue();
 
-    @Query("select d.arrearsLevel, count(d) from Driver d group by d.arrearsLevel")
+    @Query("select coalesce(sum(d.awaitingAmount), 0) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE")
+    java.math.BigDecimal totalAwaiting();
+
+    // Drivers who reach three unpaid days when their awaiting rent becomes late
+    @Query("select count(d) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE and d.unpaidDays < 3 and d.unpaidDays + d.awaitingDays >= 3")
+    long countAtRisk();
+
+    @Query("select d.arrearsLevel, count(d) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE group by d.arrearsLevel")
     List<Object[]> countByArrearsLevel();
 
     @Query("select d.status, count(d) from Driver d group by d.status")

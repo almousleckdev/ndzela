@@ -23,7 +23,7 @@ Where the code deviates from the intended rule, the deviation is recorded in
 | Business | [business/README.md](business/README.md) | What the product is, glossary, scope, actors |
 | | [business/functional-requirements.md](business/functional-requirements.md) | Modules, build order, decisions taken, **open questions** |
 | | [business/vehicles.md](business/vehicles.md), [drivers.md](business/drivers.md), [contracts.md](business/contracts.md) | Cars, the 5-step driver wizard, contracts and the financial recap/PDF |
-| | [business/payments-and-arrears.md](business/payments-and-arrears.md), [admin-quick-access.md](business/admin-quick-access.md), [ocpp-integration.md](business/ocpp-integration.md) | Payments per country, 24/48/72 h escalation, follow-up shortcuts, future charging billing |
+| | [business/payments-and-arrears.md](business/payments-and-arrears.md), [admin-quick-access.md](business/admin-quick-access.md), [ocpp-integration.md](business/ocpp-integration.md) | Payments per country, unpaid-day escalation, payments by day and receipts, follow-up shortcuts, future charging billing |
 | | [business/legacy-charging-network-spec.md](business/legacy-charging-network-spec.md) | **Obsolete** spec of a different product (kept for history) |
 | Architecture | [architecture/system-overview.md](architecture/system-overview.md) | Components, runtime, data flow, tech stack |
 | | [architecture/module-boundaries.md](architecture/module-boundaries.md) | Allowed dependencies between modules (backend and frontend) |
@@ -41,6 +41,7 @@ Where the code deviates from the intended rule, the deviation is recorded in
 | API | [api/conventions.md](api/conventions.md) | REST conventions, error format, DTOs |
 | Testing | [testing/strategy.md](testing/strategy.md) | What to test, how, required isolation tests |
 | Infrastructure | [infrastructure/infrastructure-and-deployment.md](infrastructure/infrastructure-and-deployment.md) | Environments, config, Docker, deployment |
+| Migration of the old platform | [migration/legacy-import.md](migration/legacy-import.md) | The old Firebase platform, the dry run on 2 riders, the decisions before the real import |
 | Workflow | [workflow/git-workflow.md](workflow/git-workflow.md) | Branches, commits, reviews, definition of done |
 | Decisions | [adr/README.md](adr/README.md) | Architecture Decision Records |
 | Standards | [standards/forbidden-patterns.md](standards/forbidden-patterns.md) | What must never be done |

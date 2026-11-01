@@ -5,7 +5,6 @@ import com.ndzela.admin.common.exception.InvalidCountryException;
 import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
 import com.ndzela.admin.tenant.model.TenantContext;
-import com.ndzela.admin.user.domain.Role;
 import com.ndzela.admin.user.domain.User;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -40,11 +39,15 @@ class TenantContextResolverTest {
     }
 
     private User countryUser(Country country) {
-        return User.builder().email("staff@ndzela.test").country(country).build();
+        return User.builder().email("staff@ndzela.test").country(country).countries(Set.of(country)).build();
+    }
+
+    private User multiCountryUser(Country... allowed) {
+        return User.builder().email("regional@ndzela.test").countries(Set.of(allowed)).build();
     }
 
     private User globalUser() {
-        return User.builder().email("root@ndzela.test").roles(Set.of(Role.builder().name("SUPER_ADMIN").build())).build();
+        return User.builder().email("root@ndzela.test").global(true).build();
     }
 
     @Test
@@ -71,11 +74,35 @@ class TenantContextResolverTest {
     }
 
     @Test
-    void aUserWithoutACountryWhoIsNotSuperAdminGetsNothing() {
+    void aUserWithNoCountryAndNotGlobalGetsNothing() {
         User orphan = User.builder().email("orphan@ndzela.test").build();
 
         assertEquals(TenantContext.none(), resolver.resolve(orphan, null));
         assertEquals(TenantContext.none(), resolver.resolve(orphan, "GA"));
+    }
+
+    @Test
+    void aMultiCountryUserDefaultsToOneOfTheirCountriesWithoutTheHeader() {
+        TenantContext result = resolver.resolve(multiCountryUser(gabon, mali), null);
+        assertTrue(result.isCountry());
+        assertTrue(Set.of(gabon.getId(), mali.getId()).contains(result.countryId()));
+    }
+
+    @Test
+    void aMultiCountryUserCanSelectAmongTheirOwnCountriesWithTheHeader() {
+        assertEquals(TenantContext.country(mali.getId()), resolver.resolve(multiCountryUser(gabon, mali), "ml"));
+    }
+
+    @Test
+    void aMultiCountryUserCannotSelectACountryTheyAreNotAssignedTo() {
+        Country senegal = Country.builder().id(UUID.randomUUID()).code("SN").name("Senegal").active(true).build();
+        assertThrows(InvalidCountryException.class, () -> resolver.resolve(multiCountryUser(gabon, mali), senegal.getCode()));
+    }
+
+    @Test
+    void aMultiCountryUserIsRefusedWhenTheirSelectedCountryIsInactive() {
+        mali.setActive(false);
+        assertThrows(CountryInactiveException.class, () -> resolver.resolve(multiCountryUser(gabon, mali), "ML"));
     }
 
     @Test

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { ExportMenu } from "@/components/export-menu";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
@@ -66,6 +67,8 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
           <SearchField label="Rechercher une session" placeholder="Borne, identifiant ou référence" value={query.search} onChange={query.setSearch} />
           <DateRangePicker value={range} onChange={query.setRange} />
         </>
+      )} end={can(PERMISSIONS.CHARGING_EXPORT) && (
+        <ExportMenu path={(format) => chargingService.exportSessionsPath({ q: query.q, from: range.from, to: range.to }, format)} filename="sessions-reseau" failure="Impossible d'exporter les sessions." />
       )} />
       <ActiveFilters filters={active} onClear={query.reset} />
       <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} numeric={["energyKwh", "amount"]}

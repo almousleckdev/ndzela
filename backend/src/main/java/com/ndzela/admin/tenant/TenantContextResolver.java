@@ -10,7 +10,9 @@ import com.ndzela.admin.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.Locale;
+import java.util.Set;
 
 // Decides, from the authenticated user, which country a request works in.
 @Service
@@ -19,21 +21,44 @@ public class TenantContextResolver {
     private final CountryRepository countries;
 
     public TenantContext resolve(User user, String countryHeader) {
-        if (user.getCountry() != null) {
-            if (!user.getCountry().isActive()) {
-                throw new CountryInactiveException();
-            }
-            return TenantContext.country(user.getCountry().getId());
+        if (user.isGlobal()) {
+            return resolveFrom(countryHeader, null);
         }
-        if (!user.isSuperAdmin()) {
+
+        Set<Country> allowed = user.getCountries();
+        if (allowed.isEmpty()) {
             return TenantContext.none();
         }
-        if (countryHeader == null || countryHeader.isBlank()) {
-            return TenantContext.allCountries();
+        if (allowed.size() == 1) {
+            // A single-country user never looks at the header: their one country is not a choice.
+            Country only = allowed.iterator().next();
+            if (!only.isActive()) {
+                throw new CountryInactiveException();
+            }
+            return TenantContext.country(only.getId());
         }
-        Country selected = countries.findByCode(countryHeader.trim().toUpperCase(Locale.ROOT))
-                .filter(Country::isActive)
-                .orElseThrow(InvalidCountryException::new);
+        return resolveFrom(countryHeader, allowed);
+    }
+
+    // allowed == null means every country is open (a global user); otherwise the header must name one of allowed.
+    private TenantContext resolveFrom(String countryHeader, Set<Country> allowed) {
+        if (countryHeader == null || countryHeader.isBlank()) {
+            if (allowed == null) {
+                return TenantContext.allCountries();
+            }
+            return TenantContext.country(defaultOf(allowed).getId());
+        }
+        String code = countryHeader.trim().toUpperCase(Locale.ROOT);
+        Country selected = allowed == null
+                ? countries.findByCode(code).filter(Country::isActive).orElseThrow(InvalidCountryException::new)
+                : allowed.stream().filter(country -> country.getCode().equals(code)).findFirst().orElseThrow(InvalidCountryException::new);
+        if (!selected.isActive()) {
+            throw new CountryInactiveException();
+        }
         return TenantContext.country(selected.getId());
+    }
+
+    private Country defaultOf(Set<Country> allowed) {
+        return allowed.stream().min(Comparator.comparing(Country::getCode)).orElseThrow();
     }
 }

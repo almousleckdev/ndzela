@@ -42,10 +42,12 @@ export function FileField({ label, hint, accepted, file, error, onChange }: File
       <Label htmlFor={id}>{label}</Label>
       <div className="flex items-center gap-3 rounded-lg border border-dashed border-slate-300 p-3">
         {preview ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="" className="h-12 w-12 rounded-md object-cover" />
+          <a href={preview} target="_blank" rel="noopener noreferrer" title="Voir en grand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={preview} alt="" className="h-20 w-20 rounded-md border border-slate-200 object-cover" />
+          </a>
         ) : (
-          <span className="flex h-12 w-12 items-center justify-center rounded-md bg-slate-100 text-slate-500">{file ? <FileText className="h-5 w-5" /> : <Upload className="h-5 w-5" />}</span>
+          <span className="flex h-20 w-20 items-center justify-center rounded-md bg-slate-100 text-slate-500">{file ? <FileText className="h-6 w-6" /> : <Upload className="h-6 w-6" />}</span>
         )}
         <div className="min-w-0 flex-1 text-sm">
           <p className="truncate font-medium text-slate-900">{file ? file.name : "Aucun fichier"}</p>

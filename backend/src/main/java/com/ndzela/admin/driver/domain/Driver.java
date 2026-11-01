@@ -143,6 +143,14 @@ public class Driver extends TenantOwned {
     @Column(name = "paid_days", nullable = false)
     private int paidDays;
 
+    // Rent of a day that has ended but whose deadline has not passed: not late yet, but owed
+    @Column(name = "awaiting_days", nullable = false)
+    private int awaitingDays;
+
+    @Builder.Default
+    @Column(name = "awaiting_amount", nullable = false)
+    private java.math.BigDecimal awaitingAmount = java.math.BigDecimal.ZERO;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -157,6 +165,9 @@ public class Driver extends TenantOwned {
 
     @Column(name = "last_login_at")
     private OffsetDateTime lastLoginAt;
+
+    @Column(name = "session_id")
+    private String sessionId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

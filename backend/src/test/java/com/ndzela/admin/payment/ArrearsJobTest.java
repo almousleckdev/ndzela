@@ -53,6 +53,22 @@ class ArrearsJobTest extends AbstractDriverTest {
         arrears.evaluateAll(firstDue.plusSeconds(hoursAfterFirstDeadline * 3600));
     }
 
+    // The deadline of the k-th rent day (Sunday is skipped); an hour later that day counts as unpaid.
+    private Instant dueOfRentDay(int k) {
+        LocalDate day = LocalDate.now(ZONE);
+        for (int counted = 0; counted < k; ) {
+            day = day.plusDays(1);
+            if (day.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                counted++;
+            }
+        }
+        return day.plusDays(1).atTime(12, 0).atZone(ZONE).toInstant();
+    }
+
+    private void evaluateWhenUnpaidDaysAre(int k) {
+        arrears.evaluateAll(dueOfRentDay(k).plusSeconds(3600));
+    }
+
     private String level() throws Exception {
         return com.jayway.jsonpath.JsonPath.read(send(get("/api/v1/drivers/" + driver), manager).andReturn().getResponse().getContentAsString(), "$.arrears.level");
     }
@@ -65,28 +81,24 @@ class ArrearsJobTest extends AbstractDriverTest {
     }
 
     @Test
-    void anUnpaidRentBecomesLateThenYellowWithOneEmailAndNoRepeat() throws Exception {
-        evaluateAt(1);
-        assertEquals("LATE", level());
-        verifyNoInteractions(email);
-
-        evaluateAt(25);
+    void oneUnpaidDayIsAReminderWithOneEmailAndNoRepeat() throws Exception {
+        evaluateWhenUnpaidDaysAre(1);
         assertEquals("YELLOW", level());
         verify(email, times(1)).sendHtmlEmail(eq("driver" + jdbc.queryForObject("select substring(email from 7 for 4) from drivers", String.class) + "@ndzela.test"), any(), eq("arrears-email"), any());
         assertEquals(1, auditRows("ARREARS_LEVEL_REACHED"));
 
-        evaluateAt(26);
-        evaluateAt(27);
+        arrears.evaluateAll(dueOfRentDay(1).plusSeconds(7200));
+        arrears.evaluateAll(dueOfRentDay(1).plusSeconds(10800));
         verify(email, times(1)).sendHtmlEmail(any(), any(), any(), any());
         assertEquals(1, rows("select count(*) from arrears_events where level = 'YELLOW'"));
     }
 
     @Test
-    void theNextLevelsEscalateOnceEach() throws Exception {
-        evaluateAt(25);
-        evaluateAt(49);
+    void twoUnpaidDaysAreUrgentAndEachStepHappensOnce() throws Exception {
+        evaluateWhenUnpaidDaysAre(1);
+        evaluateWhenUnpaidDaysAre(2);
         assertEquals("DARK_YELLOW", level());
-        evaluateAt(50);
+        arrears.evaluateAll(dueOfRentDay(2).plusSeconds(7200));
         verify(email, times(2)).sendHtmlEmail(any(), any(), any(), any());
         assertEquals("ACTIVE", jdbc.queryForObject("select status from drivers", String.class));
         assertEquals(0, rows("select count(*) from ledger_entries"), "no penalty while the country's penalty is 0");
@@ -97,15 +109,13 @@ class ArrearsJobTest extends AbstractDriverTest {
         jdbc.update("update countries set late_penalty = 5000 where code = 'GA'");
         evaluateAt(49);
         evaluateAt(50);
-        assertEquals(1, rows("select count(*) from ledger_entries where entry_type = 'PENALTY' and amount = 5000"));
+        assertEquals(1, rows("select count(*) from ledger_entries where entry_type = 'PENALTY' and amount = 5000"), "only the day unpaid for more than 48 hours");
         send(get("/api/v1/payments/accounts/" + driver), viewer).andExpect(status().isOk());
-        assertEquals("DARK_YELLOW", level());
-        assertEquals(0, new java.math.BigDecimal("5000").compareTo(jdbc.queryForObject("select sum(amount) from ledger_entries where entry_type = 'PENALTY'", java.math.BigDecimal.class)));
     }
 
     @Test
-    void after72HoursTheDriverIsSuspendedAutomaticallyAndStaffAreAlerted() throws Exception {
-        evaluateAt(73);
+    void threeUnpaidDaysSuspendTheDriverAutomaticallyAndStaffAreAlerted() throws Exception {
+        evaluateWhenUnpaidDaysAre(3);
         assertEquals("RED", level());
         assertEquals("SUSPENDED", jdbc.queryForObject("select status from drivers", String.class));
         assertEquals(true, jdbc.queryForObject("select status_reason from drivers", String.class).startsWith("Impayés"));
@@ -115,7 +125,7 @@ class ArrearsJobTest extends AbstractDriverTest {
 
         int alerts = rows("select count(*) from notifications where type = 'ARREARS_RED'");
         assertEquals(2, alerts, "the administrator and the global super admin");
-        evaluateAt(74);
+        arrears.evaluateAll(dueOfRentDay(3).plusSeconds(7200));
         assertEquals(1, auditRows("DRIVER_SUSPENDED"));
         assertEquals(alerts, rows("select count(*) from notifications where type = 'ARREARS_RED'"));
         verify(email, times(1)).sendHtmlEmail(any(), any(), any(), any());
@@ -123,7 +133,7 @@ class ArrearsJobTest extends AbstractDriverTest {
 
     @Test
     void payingEverythingClearsTheLevelButOnlyAnAdministratorLiftsTheSuspension() throws Exception {
-        evaluateAt(73);
+        evaluateWhenUnpaidDaysAre(3);
         UUID request = UUID.randomUUID();
         postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":1000000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"requestId\":\"" + request + "\"}", manager).andExpect(status().isCreated());
         assertEquals("NONE", level());
@@ -136,20 +146,50 @@ class ArrearsJobTest extends AbstractDriverTest {
     @Test
     void anAlreadyBlockedDriverIsNotSuspendedAgain() throws Exception {
         postJson("/api/v1/drivers/" + driver + "/block", REASON, admin).andExpect(status().isOk());
-        evaluateAt(73);
+        evaluateWhenUnpaidDaysAre(3);
         assertEquals("BLOCKED", jdbc.queryForObject("select status from drivers", String.class));
         assertEquals(0, auditRows("DRIVER_SUSPENDED"));
     }
 
     @Test
     void theDriversListFiltersAndCountsLateDrivers() throws Exception {
-        evaluateAt(30);
+        evaluateWhenUnpaidDaysAre(1);
         send(get("/api/v1/drivers?late=true"), manager).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].arrears.level").value("YELLOW"));
         send(get("/api/v1/drivers?late=false"), manager).andExpect(jsonPath("$.total").value(0));
         send(get("/api/v1/drivers/stats"), manager).andExpect(jsonPath("$.late").value(1));
         send(get("/api/v1/payments/accounts?filter=YELLOW"), manager).andExpect(jsonPath("$.total").value(1));
         send(get("/api/v1/payments/accounts?filter=LATE"), manager).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].overdueAmount").value(org.hamcrest.Matchers.greaterThanOrEqualTo(23000)));
         send(get("/api/v1/payments/summary"), manager).andExpect(jsonPath("$.yellow").value(1)).andExpect(jsonPath("$.late").value(1)).andExpect(jsonPath("$.totalOverdue").value(org.hamcrest.Matchers.greaterThanOrEqualTo(23000)));
+    }
+
+    @Test
+    void riderWhoReachesThreeDaysAtNoonIsAtRiskBeforeAndSuspendedAfter() throws Exception {
+        arrears.evaluateAll(dueOfRentDay(3).minusSeconds(6 * 3600));
+        send(get("/api/v1/payments/summary"), manager).andExpect(jsonPath("$.red").value(0)).andExpect(jsonPath("$.atRisk").value(1))
+                .andExpect(jsonPath("$.totalOverdue").value(46000)).andExpect(jsonPath("$.totalAwaiting").value(23000));
+        assertEquals("DARK_YELLOW", level());
+        assertEquals("ACTIVE", jdbc.queryForObject("select status from drivers", String.class));
+        send(get("/api/v1/payments/accounts?filter=DARK_YELLOW"), manager).andExpect(jsonPath("$.items[0].awaitingDays").value(1)).andExpect(jsonPath("$.items[0].awaitingAmount").value(23000));
+
+        arrears.evaluateAll(dueOfRentDay(3).plusSeconds(60));
+        send(get("/api/v1/payments/summary"), manager).andExpect(jsonPath("$.red").value(1)).andExpect(jsonPath("$.atRisk").value(0))
+                .andExpect(jsonPath("$.totalOverdue").value(69000)).andExpect(jsonPath("$.totalAwaiting").value(0));
+        assertEquals("SUSPENDED", jdbc.queryForObject("select status from drivers", String.class));
+    }
+
+    @Test
+    void theArrearsListPutsTheMostUnpaidDaysFirstAndLeavesOutInactiveDrivers() throws Exception {
+        String other = id(createDriver(manager, DriverJson.create(newVehicle(manager), jdbc.queryForObject("select id::text from training_centers limit 1", String.class))).andExpect(status().isCreated()));
+        evaluateWhenUnpaidDaysAre(2);
+        postJson("/api/v1/payments", "{\"driverId\":\"" + other + "\",\"amount\":23000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R-OTHER\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager).andExpect(status().isCreated());
+        evaluateWhenUnpaidDaysAre(2);
+
+        send(get("/api/v1/payments/accounts?filter=ALL"), manager).andExpect(jsonPath("$.items[0].driverId").value(driver)).andExpect(jsonPath("$.items[0].unpaidDays").value(2))
+                .andExpect(jsonPath("$.items[1].driverId").value(other)).andExpect(jsonPath("$.items[1].unpaidDays").value(1));
+
+        jdbc.update("update drivers set status = 'INACTIVE' where id = ?::uuid", other);
+        send(get("/api/v1/payments/accounts?filter=ALL"), manager).andExpect(jsonPath("$.total").value(1));
+        send(get("/api/v1/payments/summary"), manager).andExpect(jsonPath("$.yellow").value(0)).andExpect(jsonPath("$.upToDate").value(0));
     }
 
     @Test

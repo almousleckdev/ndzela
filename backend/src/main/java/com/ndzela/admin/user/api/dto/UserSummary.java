@@ -15,12 +15,14 @@ public record UserSummary(
         String firstName,
         String lastName,
         String phoneNumber,
+        List<String> additionalPhoneNumbers,
         String profilePictureUrl,
         UserStatus status,
         String statusReason,
         boolean mfaEnabled,
         List<RoleRef> roles,
-        CountryResponse country,
+        boolean isGlobal,
+        List<CountryResponse> countries,
         OffsetDateTime createdAt
 ) {
     public static UserSummary from(User user) {
@@ -28,8 +30,12 @@ public record UserSummary(
                 .map(role -> new RoleRef(role.getId(), role.getName()))
                 .sorted(Comparator.comparing(RoleRef::name))
                 .toList();
+        List<CountryResponse> countries = user.getCountries().stream()
+                .map(CountryResponse::from)
+                .sorted(Comparator.comparing(CountryResponse::name))
+                .toList();
         return new UserSummary(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
-                user.getPhoneNumber(), user.getProfilePictureUrl(), user.getStatus(), user.getStatusReason(), user.isMfaEnabled(), roles,
-                user.getCountry() == null ? null : CountryResponse.from(user.getCountry()), user.getCreatedAt());
+                user.getPhoneNumber(), List.copyOf(user.getAdditionalPhoneNumbers()), user.getProfilePictureUrl(), user.getStatus(), user.getStatusReason(),
+                user.isMfaEnabled(), roles, user.isGlobal(), countries, user.getCreatedAt());
     }
 }

@@ -4,7 +4,7 @@ import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.country.application.CountryService;
-import com.ndzela.admin.driver.application.model.DriverFileContent;
+import com.ndzela.admin.infrastructure.storage.FileContent;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverFileKind;
 import com.ndzela.admin.driver.domain.DriverRepository;
@@ -92,13 +92,13 @@ public class DriverFileService {
     }
 
     @Transactional(readOnly = true)
-    public DriverFileContent read(UUID driverId, DriverFileKind kind) {
+    public FileContent read(UUID driverId, DriverFileKind kind) {
         String name = kind.fileOf(load(driverId));
         Resource resource = name == null ? null : storage.load(name);
         if (resource == null) {
             throw new ResourceNotFoundException("File not found.");
         }
-        return new DriverFileContent(resource, DocumentStorage.contentType(name));
+        return new FileContent(resource, DocumentStorage.contentType(name));
     }
 
     private void put(Driver driver, DriverFileKind kind, MultipartFile file, String countryCode, List<String> written) {

@@ -62,6 +62,9 @@ public class DriverJwtAuthenticationFilter extends OncePerRequestFilter {
             if (driver == null || !driver.getCountry().isActive() || !canUseTheApp(driver.getStatus())) {
                 return;
             }
+            if (!java.util.Objects.equals(driver.getSessionId(), claims.sessionId())) {
+                return;
+            }
             DriverPrincipal principal = new DriverPrincipal(driver.getId(), claims.countryId(), driver.getStatus(), driver.isMustChangePassword());
             boolean locked = props.driverApp().locks(driver.getUnpaidDays());
             SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, authoritiesOf(principal, locked)));

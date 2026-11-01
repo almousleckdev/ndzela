@@ -24,6 +24,8 @@ public record DriverResponse(
         ContractResponse contract,
         DriverArrearsView arrears,
         CountryResponse country,
+        // Locked out of logging in by repeated failed attempts (drivers:unlock clears it); separate from `status`.
+        boolean loginLocked,
         OffsetDateTime createdAt
 ) {
     public static DriverResponse from(Driver d, VehicleResponse vehicle, boolean onLeave, ContractResponse contract) {
@@ -33,7 +35,8 @@ public record DriverResponse(
                 new DriverFilesView(d.getPhotoFile() != null, d.getLicenceFile() != null, d.getIdFile() != null, d.getAddressProofFile() != null),
                 d.isMustChangePassword(), vehicle, contract,
                 new DriverArrearsView(d.getArrearsLevel(), d.getOverdueAmount().setScale(0, java.math.RoundingMode.HALF_UP), d.getOverdueSince(), d.getUnpaidDays(), d.getPaidDays(), daysLeft(d, contract)),
-                d.getCountry() == null ? null : CountryResponse.from(d.getCountry()), d.getCreatedAt());
+                d.getCountry() == null ? null : CountryResponse.from(d.getCountry()),
+                d.getLoginLockedUntil() != null && d.getLoginLockedUntil().isAfter(OffsetDateTime.now()), d.getCreatedAt());
     }
 
     // The rent days left until the contract ends (Sundays are rest days), counted in the country's own time.

@@ -21,14 +21,14 @@ One workflow per project, each started only by changes in its folder (and its ow
 | Workflow | Runs |
 | --- | --- |
 | `backend.yml` | `mvn -B clean verify` on Java 21 (Docker is available on the runner: the integration tests use Testcontainers). Uploads the test reports when it fails |
-| `dashboard.yml` | `npm ci`, `lint`, `typecheck`, `build`, and `npm audit` (fails on a critical advisory only) on Node 22 |
+| `dashboard.yml` | `npm ci`, `lint`, `typecheck`, unit tests (Vitest), `build`, the Playwright flows against the mocked API, and `npm audit` (fails on a critical advisory only) on Node 22 |
 | `web.yml` | `pnpm install --frozen-lockfile`, `lint`, `typecheck`, `build` on Node 22 |
 | `driver.yml` | `flutter pub get`, `analyze`, `test` on the pinned Flutter version (`3.44.8`, change it together with the local SDK) |
 
 Rules: CI needs **no secrets and no `.env`** (tests carry their own test values; a test that only passes with a developer's `.env` is a defect); each job has a timeout; permissions are read-only; a new push cancels the older run of the same branch. A red check blocks the merge. Run the same commands locally before pushing (see Definition of done).
 
 ## Definition of done
-Code follows the docs; `mvn clean test`, `npm run lint && npm run typecheck` (dashboard and web) and, for the driver app, `flutter analyze && flutter test` pass, and the CI checks are green; tests added (isolation and authorization where relevant); docs/ADR updated; no unrelated changes.
+Code follows the docs; `mvn clean test`, `npm run lint && npm run typecheck && npm test` (dashboard; web: lint and typecheck) and, for the driver app, `flutter analyze && flutter test` pass, and the CI checks are green; tests added (isolation and authorization where relevant); docs/ADR updated; no unrelated changes.
 
 ## Spec-first for features
 A feature starts with an approved spec and plan (module by module, see [functional requirements](../business/functional-requirements.md)). Unanswered business questions block the module until the user answers them.

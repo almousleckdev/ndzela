@@ -5,11 +5,16 @@ import com.ndzela.admin.auth.application.model.TokenRotation;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.InvalidCredentialsException;
 import com.ndzela.admin.common.exception.SessionExpiredException;
+import com.ndzela.admin.common.exception.TooManyRequestsException;
+import com.ndzela.admin.common.ratelimit.RateLimiter;
+import com.ndzela.admin.common.web.ClientAddress;
+import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
 import com.ndzela.admin.driver.domain.DriverStatus;
 import com.ndzela.admin.driver.domain.LoginCandidate;
 import com.ndzela.admin.driverapp.api.dto.DriverTokens;
+import com.ndzela.admin.security.OpaqueTokens;
 import com.ndzela.admin.security.jwt.JwtService;
 import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.tenant.model.TenantContext;
@@ -18,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,19 +39,27 @@ public class DriverAuthService {
     private final JwtService jwt;
     private final RefreshTokenService refreshTokens;
     private final DriverLoginAttempts attempts;
+    private final RateLimiter limiter;
+    private final AppProperties props;
     private final String unknownDriverHash;
 
-    public DriverAuthService(DriverRepository drivers, PasswordEncoder encoder, JwtService jwt, RefreshTokenService refreshTokens, DriverLoginAttempts attempts) {
+    public DriverAuthService(DriverRepository drivers, PasswordEncoder encoder, JwtService jwt, RefreshTokenService refreshTokens,
+                             DriverLoginAttempts attempts, RateLimiter limiter, AppProperties props) {
         this.drivers = drivers;
         this.encoder = encoder;
         this.jwt = jwt;
         this.refreshTokens = refreshTokens;
         this.attempts = attempts;
+        this.limiter = limiter;
+        this.props = props;
         this.unknownDriverHash = encoder.encode("no-such-driver");
     }
 
     // Deliberately not transactional: it runs in the driver's country, which is only known after the lookup.
     public DriverTokens login(String identifier, String password) {
+        if (!limiter.tryAcquire("login-ip", ClientAddress.current(), props.rateLimit().loginAttemptsPerIpPerMinute(), Duration.ofMinutes(1))) {
+            throw new TooManyRequestsException("Too many login attempts. Please try again later.");
+        }
         LoginCandidate candidate = findCandidate(identifier.trim());
         if (candidate == null) {
             encoder.matches(password, unknownDriverHash);
@@ -56,7 +70,7 @@ public class DriverAuthService {
 
     public DriverTokens refresh(String refreshToken) {
         TokenRotation rotation = refreshTokens.rotate(refreshToken);
-        String[] subject = rotation.email().split(":");
+        String[] subject = rotation.subject().split(":");
         if (subject.length != 3 || !SUBJECT_PREFIX.equals(subject[0] + ":")) {
             refreshTokens.revoke(rotation.newToken());
             throw new SessionExpiredException("Invalid or expired session.");
@@ -68,7 +82,13 @@ public class DriverAuthService {
             refreshTokens.revoke(rotation.newToken());
             throw new SessionExpiredException("Invalid or expired session.");
         }
-        return new DriverTokens(jwt.generateDriverAccessToken(driverId, countryId), rotation.newToken(), jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
+        // A token for a session that was since replaced (a new login elsewhere) must not revive it,
+        // even though it survived rotation: the driver's current session id is the only truth.
+        if (!java.util.Objects.equals(driver.getSessionId(), rotation.sessionId())) {
+            refreshTokens.revoke(rotation.newToken());
+            throw new SessionExpiredException("Invalid or expired session.");
+        }
+        return new DriverTokens(jwt.generateDriverAccessToken(driverId, countryId, driver.getSessionId()), rotation.newToken(), jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
     }
 
     public void logout(String refreshToken) {
@@ -92,7 +112,6 @@ public class DriverAuthService {
         }
         driver.setPasswordHash(encoder.encode(newPassword));
         driver.setMustChangePassword(false);
-        refreshTokens.revokeAll(subjectOf(driver));
         return tokensFor(driver);
     }
 
@@ -104,6 +123,7 @@ public class DriverAuthService {
         driver.setMustChangePassword(false);
         driver.setFailedLoginAttempts(0);
         driver.setLoginLockedUntil(null);
+        driver.setSessionId(OpaqueTokens.generate());
         refreshTokens.revokeAll(subjectOf(driver));
     }
 
@@ -121,12 +141,18 @@ public class DriverAuthService {
             throw new InvalidCredentialsException(INVALID_LOGIN);
         }
         attempts.succeeded(driverId);
+        // attempts.succeeded() just committed lastLoginAt/failedLoginAttempts in its own transaction;
+        // re-fetch so tokensFor's save() below doesn't write back the stale pre-login values.
+        driver = drivers.findById(driverId).orElseThrow();
         return tokensFor(driver);
     }
 
     private DriverTokens tokensFor(Driver driver) {
-        return new DriverTokens(jwt.generateDriverAccessToken(driver.getId(), driver.getCountryId()), refreshTokens.issue(subjectOf(driver)),
-                jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
+        driver.setSessionId(OpaqueTokens.generate());
+        drivers.save(driver);
+        refreshTokens.revokeAll(subjectOf(driver));
+        return new DriverTokens(jwt.generateDriverAccessToken(driver.getId(), driver.getCountryId(), driver.getSessionId()),
+                refreshTokens.issue(subjectOf(driver), driver.getSessionId()), jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
     }
 
     // A phone is matched on its end, so "074 11 11 11" finds "+24174111111"; an ambiguous number matches nobody.

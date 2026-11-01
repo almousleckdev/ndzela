@@ -1,8 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// The upload key lives in android/key.properties (git-ignored; see key.properties.example).
+val keyProperties = Properties().apply {
+    rootProject.file("key.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+val hasUploadKey = keyProperties.containsKey("storeFile")
 
 android {
     namespace = "com.ndzela.driver"
@@ -15,22 +23,35 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.ndzela.driver"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasUploadKey) {
+            create("upload") {
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+                storeFile = rootProject.file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Without the upload key `flutter run --release` still works (debug keys); a Play bundle is refused below.
+            signingConfig = signingConfigs.getByName(if (hasUploadKey) "upload" else "debug")
         }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    if (!hasUploadKey && allTasks.any { it.name == "bundleRelease" }) {
+        throw GradleException("android/key.properties is missing: a Play bundle must be signed with the upload key (see docs/mobile/release.md).")
     }
 }
 

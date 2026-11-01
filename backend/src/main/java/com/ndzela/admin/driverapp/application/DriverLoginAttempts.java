@@ -1,9 +1,11 @@
 package com.ndzela.admin.driverapp.application;
 
+import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.AccountLockedException;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
+import com.ndzela.admin.tenant.TenantHolder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class DriverLoginAttempts {
     private final DriverRepository drivers;
     private final AppProperties props;
+    private final AuditService audit;
 
     public void assertNotLocked(Driver driver) {
         if (driver.getLoginLockedUntil() != null && driver.getLoginLockedUntil().isAfter(OffsetDateTime.now())) {
@@ -41,6 +44,7 @@ public class DriverLoginAttempts {
         if (failures >= props.bruteForce().maxFailedAttempts()) {
             driver.setLoginLockedUntil(OffsetDateTime.now().plus(props.bruteForce().lockDuration()));
             log.warn("Driver sign-in locked after {} failed attempts: {}", failures, driverId);
+            audit.record("DRIVER_LOGIN_LOCKED", "DRIVER", driverId.toString(), driverId.toString(), TenantHolder.requireCountry(), "failed attempts: " + failures);
         }
     }
 

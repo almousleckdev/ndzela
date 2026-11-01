@@ -7,7 +7,7 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import type { UserSummary } from "@/features/users/types";
 
-export type UserAction = "edit" | "resend-invitation" | "reset-mfa" | "suspend" | "reactivate" | "block" | "unblock" | "delete";
+export type UserAction = "view" | "edit" | "resend-invitation" | "reset-mfa" | "suspend" | "reactivate" | "block" | "unblock" | "delete";
 
 interface UserActionsMenuProps {
   user: UserSummary;
@@ -20,7 +20,7 @@ type Item = { action: UserAction; label: string; destructive?: boolean };
 // Only offers the actions that make sense for this user's state and that the admin is allowed to do.
 export function UserActionsMenu({ user, isSelf, onAction }: UserActionsMenuProps) {
   const { can } = usePermissions();
-  const safe: Item[] = [];
+  const safe: Item[] = [{ action: "view", label: "Voir les détails" }];
   const risky: Item[] = [];
 
   if (can(PERMISSIONS.USERS_UPDATE)) safe.push({ action: "edit", label: "Modifier" });

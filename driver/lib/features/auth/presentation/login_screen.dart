@@ -14,7 +14,9 @@ import '../../../core/widgets/adaptive/app_password_field.dart';
 import '../../../core/widgets/adaptive/app_tappable.dart';
 import '../../../core/widgets/adaptive/app_text_field.dart';
 import '../../../core/widgets/feedback/error_banner.dart';
+import '../domain/session.dart';
 import 'login_controller.dart';
+import 'session_controller.dart';
 import 'widgets/login_header.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -28,6 +30,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _identifier = TextEditingController();
   final _password = TextEditingController();
+  // Captured once at mount so it survives later rebuilds, after the controller's own flag is acknowledged/cleared.
+  bool _signedOutElsewhere = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (ref.read(sessionControllerProvider) case SignedOut(forced: true)) {
+      _signedOutElsewhere = true;
+      ref.read(sessionControllerProvider.notifier).acknowledgeForcedSignOut();
+    }
+  }
 
   @override
   void dispose() {
@@ -98,6 +111,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         validator: (v) =>
                             _required(v, 'Saisissez votre mot de passe.'),
                       ),
+                      if (_signedOutElsewhere) ...[
+                        const SizedBox(height: 16),
+                        const ErrorBanner(
+                          message:
+                              'Votre session a pris fin (connexion sur un autre appareil ou session expirée). Reconnectez-vous.',
+                        ),
+                      ],
                       if (login.hasError) ...[
                         const SizedBox(height: 16),
                         ErrorBanner(message: messageFor(login.error!)),

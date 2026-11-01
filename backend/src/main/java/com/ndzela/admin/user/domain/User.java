@@ -9,7 +9,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -64,9 +66,33 @@ public class User {
     @Column(name = "lock_expiration")
     private OffsetDateTime lockExpiration;
 
+    @Column(name = "session_id")
+    private String sessionId;
+
+    // Default/home country: where the switcher starts and which brand an email uses. Not a security boundary.
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "country_id")
     private Country country;
+
+    @Column(name = "is_global")
+    private boolean global;
+
+    // The full set of countries this user may work in; empty when global. The authorization boundary.
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_countries",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "country_id")
+    )
+    private Set<Country> countries = new HashSet<>();
+
+    // Extra numbers on top of phoneNumber, mainly useful for a global or multi-country user.
+    @Builder.Default
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_phone_numbers", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "phone_number")
+    private List<String> additionalPhoneNumbers = new ArrayList<>();
 
     @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
@@ -87,10 +113,6 @@ public class User {
 
     public boolean isSuperAdmin() {
         return roles.stream().anyMatch(role -> "SUPER_ADMIN".equals(role.getName()));
-    }
-
-    public boolean isGlobal() {
-        return country == null;
     }
 
     public boolean isCountryActive() {

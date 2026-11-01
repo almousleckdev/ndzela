@@ -92,6 +92,10 @@ public class DriverApplication extends TenantOwned {
     @Column(name = "reviewed_at")
     private OffsetDateTime reviewedAt;
 
+    // True when the decision e-mail was attempted (ACCEPTED/REJECTED with an address) and failed to send.
+    @Column(name = "notification_failed", nullable = false)
+    private boolean notificationFailed;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

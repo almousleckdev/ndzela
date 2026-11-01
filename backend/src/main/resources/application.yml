@@ -59,6 +59,7 @@ springdoc:
     enabled: ${SWAGGER_ENABLED:false}
 
 app:
+  environment: ${APP_ENVIRONMENT:}   # development | staging | production; unset: COOKIE_SECURE=true means production (strict startup checks)
   mail:
     provider: ${MAIL_PROVIDER:smtp} # smtp | resend (HTTPS API) | log (prints to console, local dev only)
     resend:
@@ -118,8 +119,8 @@ app:
   ocpp:
     base-url: ${OCPP_BASE_URL:https://zella-ocpp.com}
     api-key: ${OCPP_FLEET_API_KEY:${OCPP_API_KEY:}}  # the Fleet API key (X-API-Key); never in a frontend or the app. Empty: no sync
-    webhook-secret: ${OCPP_WEBHOOK_SECRET:}         # empty: every webhook is refused
-    webhook-header: ${OCPP_WEBHOOK_HEADER:X-Webhook-Secret}
+    webhook-secret: ${OCPP_WEBHOOK_SECRET:}         # the HMAC-SHA256 signing secret of their webhooks; empty: every webhook is refused
+    webhook-header: ${OCPP_WEBHOOK_HEADER:X-Webhook-Signature}   # the header carrying the signature
     country-code: ${OCPP_COUNTRY:GA}                # the country the platform's stations and sessions belong to
     sync-enabled: ${OCPP_SYNC_ENABLED:true}
     sync-interval: ${OCPP_SYNC_INTERVAL:PT10S}       # between two syncs when no webhook asked for one (6 of the 60 requests a minute)
@@ -128,6 +129,8 @@ app:
   rate-limit:
     password-reset-per-address: ${RATE_LIMIT_RESET_PER_ADDRESS:10}   # reset requests one address can send in an hour
     password-reset-per-account: ${RATE_LIMIT_RESET_PER_ACCOUNT:3}    # reset e-mails one account receives in an hour
+    pvit-callback-per-minute: ${RATE_LIMIT_PVIT_CALLBACK:120}        # callbacks one address may send per minute (the recheck job settles any that are refused)
+    login-attempts-per-ip-per-minute: ${RATE_LIMIT_LOGIN_PER_IP:20}  # staff or driver login attempts one address may send per minute, before account lookup
   public-site:
     country-code: ${PUBLIC_SITE_COUNTRY:GA}          # the country the website's applications and messages belong to
     max-submissions-per-hour: ${PUBLIC_SITE_MAX_PER_HOUR:5}

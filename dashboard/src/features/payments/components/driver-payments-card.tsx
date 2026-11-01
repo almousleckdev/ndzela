@@ -11,6 +11,7 @@ import { formatDateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
+import { ContractProgressBlock } from "@/features/payments/components/contract-progress-block";
 import { RecordPaymentDialog } from "@/features/payments/components/record-payment-dialog";
 import { WaiverDialog } from "@/features/payments/components/waiver-dialog";
 import { DAY_STATUS_CLASS, DAY_STATUS_LABELS, ENTRY_TYPE_LABELS, LEVEL_BADGE, LEVEL_LABELS, METHOD_LABELS } from "@/features/payments/lib/payment-labels";
@@ -42,6 +43,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
         <p className="text-sm text-slate-500">Pas de contrat actif : aucun loyer n&apos;est dû.</p>
       ) : (
         <div className="space-y-5">
+          {a.progress && <ContractProgressBlock progress={a.progress} />}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div><p className="text-xs text-slate-500">Niveau</p><span className={cn("mt-1 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium", LEVEL_BADGE[a.level])}>{LEVEL_LABELS[a.level]}</span></div>
             <div><p className="text-xs text-slate-500">Montant dû</p><p className="text-lg font-semibold text-slate-900">{formatFcfa(a.overdueAmount)}</p></div>
@@ -49,6 +51,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
             <div><p className="text-xs text-slate-500">À temps / en retard / impayés</p><p className="text-lg font-semibold text-slate-900">{a.paidOnTime} / {a.paidLate} / {a.unpaid}</p></div>
           </div>
           {a.overdueSince && <p className="text-xs text-slate-500">En retard depuis le {formatDateTime(a.overdueSince)}.</p>}
+          <p className={cn("text-xs", a.weekSettled ? "text-emerald-700" : "text-amber-700")}>{a.weekSettled ? "Semaine réglée" : "Semaine non réglée"} · clôture le {formatDateTime(a.weekClosesAt)}</p>
 
           <div>
             <h3 className="mb-2 text-sm font-semibold text-slate-900">Derniers jours</h3>
@@ -56,7 +59,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
               <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {a.days.slice(0, 14).map((d) => (
                   <li key={d.day} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-1.5 text-sm">
-                    <span>{day(d.day)}</span>
+                    <span>{day(d.day)}{d.settledAt && <span className="ml-2 text-xs text-slate-500">payé le {formatDateTime(d.settledAt)}</span>}</span>
                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", DAY_STATUS_CLASS[d.status])}>{DAY_STATUS_LABELS[d.status]}</span>
                   </li>
                 ))}

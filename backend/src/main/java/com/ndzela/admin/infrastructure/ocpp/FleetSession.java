@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 // One session of the Fleet API's sync. Any field may be null; the whole item is kept as received.
 public record FleetSession(String transactionId, String deviceId, Integer connectorId, String idTag, String status, OffsetDateTime startedAt, OffsetDateTime stoppedAt,
                            BigDecimal energyKwh, Integer durationSeconds, String stopReason, Long costMinor, String currency, Integer currencyDecimals,
-                           Long pricePerKwhMinor, OffsetDateTime updatedAt, String raw) {
+                           Long pricePerKwhMinor, Integer socStartPercent, Integer socEndPercent, OffsetDateTime updatedAt, String raw) {
 
     /** Null when the item has no transaction id: it cannot be told apart from another. */
     static FleetSession from(JsonNode item) {
@@ -18,7 +18,7 @@ public record FleetSession(String transactionId, String deviceId, Integer connec
         }
         return new FleetSession(transactionId, text(item, "deviceId"), integer(item, "connectorId"), text(item, "idTag"), text(item, "status"), time(item, "startedAt"),
                 time(item, "stoppedAt"), number(item, "energyKwh"), integer(item, "durationSeconds"), text(item, "stopReason"), whole(item, "costMinor"), text(item, "currency"),
-                integer(item, "currencyDecimals"), whole(item, "pricePerKwhMinor"), time(item, "updatedAt"), item.toString());
+                integer(item, "currencyDecimals"), whole(item, "pricePerKwhMinor"), percent(item, "socStartPercent"), percent(item, "socEndPercent"), time(item, "updatedAt"), item.toString());
     }
 
     private static String text(JsonNode node, String name) {
@@ -43,6 +43,12 @@ public record FleetSession(String transactionId, String deviceId, Integer connec
     private static Integer integer(JsonNode node, String name) {
         Long value = whole(node, name);
         return value == null || value < Integer.MIN_VALUE || value > Integer.MAX_VALUE ? null : Math.toIntExact(value);
+    }
+
+    // The platform already ignores the 0 a charge point sends at start; anything outside 1..100 is not a reading
+    private static Integer percent(JsonNode node, String name) {
+        Integer value = integer(node, name);
+        return value == null || value < 1 || value > 100 ? null : value;
     }
 
     private static OffsetDateTime time(JsonNode node, String name) {

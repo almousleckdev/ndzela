@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { vehicleSchema, type VehicleValues } from "@/features/vehicles/schemas/vehicle";
 import { vehiclesService } from "@/features/vehicles/services/vehicles.service";
+import { VehicleImagesField } from "@/features/vehicles/components/vehicle-images-field";
 import { VehicleRecap } from "@/features/vehicles/components/vehicle-recap";
 import type { Vehicle } from "@/features/vehicles/types";
 
@@ -24,6 +25,7 @@ interface VehicleFormDialogProps {
 export function VehicleFormDialog({ vehicle, onClose, onSaved }: VehicleFormDialogProps) {
   const { addToast } = useToast();
   const [step, setStep] = useState<"form" | "recap">("form");
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
   const { register, control, handleSubmit, getValues, formState } = useForm<VehicleValues>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
@@ -42,8 +44,18 @@ export function VehicleFormDialog({ vehicle, onClose, onSaved }: VehicleFormDial
 
   const save = async (values: VehicleValues) => {
     try {
-      if (vehicle) await vehiclesService.update(vehicle.id, values);
-      else await vehiclesService.create(values);
+      if (vehicle) {
+        await vehiclesService.update(vehicle.id, values);
+      } else {
+        const created = await vehiclesService.create(values);
+        if (pendingImages.length > 0) {
+          try {
+            await vehiclesService.uploadImages(created.id, pendingImages);
+          } catch (imageError) {
+            addToast({ title: "Erreur", description: getErrorMessage(imageError, "Le véhicule est enregistré, mais les photos n'ont pas pu être envoyées."), type: "error" });
+          }
+        }
+      }
       addToast({ title: "Succès", description: vehicle ? "Véhicule mis à jour." : "Véhicule ajouté.", type: "success" });
       onSaved();
     } catch (error) {
@@ -78,6 +90,7 @@ export function VehicleFormDialog({ vehicle, onClose, onSaved }: VehicleFormDial
             <FormField label="Loyer journalier (FCFA) *" inputMode="numeric" error={errors.dailyRent?.message} {...register("dailyRent")} />
           </div>
           <FormField label="N° de série (VIN)" hint="Facultatif." error={errors.vin?.message} {...register("vin")} />
+          <VehicleImagesField vehicleId={vehicle?.id ?? null} pendingFiles={pendingImages} onPendingFilesChange={setPendingImages} />
           <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
             <Button variant="outline" onClick={onClose}>Annuler</Button>
             <Button type="submit" isLoading={formState.isSubmitting}>{vehicle ? "Enregistrer" : "Continuer"}</Button>

@@ -13,7 +13,7 @@ Product overview: [README.md](README.md). Only the **admin foundation** exists (
 | 1 | **Tenancy foundation** (countries, country-scoped staff, global super admin, header filter, isolation tests; Gabon as the first country) | Now | **Built** (tenancy foundation plan, tasks 1 to 9) | [multi-tenancy](../multi-tenancy/multi-tenancy.md) |
 | 2 | **Vehicles** (add car, recap, list, statuses) | Now | **Built** | [vehicles.md](vehicles.md) |
 | 3 | **Drivers + contracts** (5-step wizard, financial recap, French contract PDF for Gabon, training-centre list) | Now | **Built**: drivers, assignment, training centres, contract terms, recap and the French Gabon PDF (Mali template pending) | [drivers.md](drivers.md), [contracts.md](contracts.md) |
-| 4 | **Payments and arrears, phase 1** (ledger, staff-recorded cash/manual payments, arrears engine, 24/48/72 h levels, email warnings, automatic suspension state) | Now | **Built for Gabon, phase 1** (ledger, staff-recorded payments, arrears engine, 24/48/72 h levels, email warnings, automatic suspension, screens); caution, terminated-contract debts and PVit later | [payments-and-arrears.md](payments-and-arrears.md) |
+| 4 | **Payments and arrears, phase 1** (ledger, staff-recorded cash/manual payments, arrears engine, levels by unpaid days, email warnings, automatic suspension state) | Now | **Built for Gabon, phase 1** (ledger, staff-recorded payments, arrears engine, levels by unpaid days, email warnings, automatic suspension, screens); caution, terminated-contract debts and PVit later | [payments-and-arrears.md](payments-and-arrears.md) |
 | 5 | **Admin quick access** (Suivi paiements, Gérer impayés, Historique, Chauffeurs, Véhicules, Contrats, Rapports) | Now | Menu built: a "Finance" sidebar group (Suivi paiements, Gérer impayés, Historique) and "Recharge Énergie", as "Bientôt disponible" pages guarded by the provisional `transactions:read` until the payment permissions are created in round B; the audit page is now "Journal d'audit" | [admin-quick-access.md](admin-quick-access.md) |
 | 6 | **Audit trail** (who did what and when; kept at least 5 years) | Now | **Built** (users, roles, sign-in, vehicles, drivers, assignments, training centres) | [database](../database/database.md), [api](../api/conventions.md) |
 | 7 | **Driver mobile API and Flutter app**, in-app payments via **PVit** (Airtel Money, Moov Money Gabon), push notifications | Later | Decided (stack), design to be supplied | [mobile](../mobile/architecture.md) |
@@ -37,7 +37,7 @@ Design consequence: because the app comes later, driver records are created in p
 **Contracts and payments**
 - Contract in **French**, generated after successful driver creation, **one template per country** (Gabon sample provided). **1 248 billable days** (Mon-Sat), daily rent **23 000 FCFA**, start date = creation date, number `NDZ-` + 8 digits.
 - Deposit follows the contract: returned only if all is paid and the car is returned in good condition; kept on breach; used for the ownership-transfer costs. **Ownership transfers if all days are paid and no violation ended the contract** (a simple warning does not cancel it).
-- Rent is due **Mon-Sat before 12:00 the next day**. Levels: **+24 h yellow + warning, +48 h dark yellow + urgent reminder + penalty (to be paid), +72 h red/urgent, then automatic suspension**. Payments settle whole days, oldest first. **Cash is allowed.** Warnings by **push and email**.
+- Rent is due **Mon-Sat before 12:00 the next day**. Levels follow the **number of unpaid days** ([ADR-0019](../adr/0019-arrears-levels-follow-the-number-of-unpaid-days.md)): **1 day yellow "Rappel" + warning, 2 days red "Urgent" + urgent reminder + penalty (to be paid), 3 days or more deep red, automatic suspension**. Payments settle whole days, oldest first. **Cash is allowed.** Warnings by **push and email**.
 - **Aggregator in Gabon: PVit** (Airtel Money, Moov Money Gabon).
 - **Audit:** record who did what and when for every change to drivers, contracts, vehicles, payments (including cash), suspensions and role changes, **kept at least 5 years** (legal minimum to be checked with the accountant).
 - **Quick access shortcuts:** Suivi paiements, Gérer impayés, Historique, Chauffeurs, Véhicules, Contrats, Rapports.
@@ -51,7 +51,7 @@ Design consequence: because the app comes later, driver records are created in p
 
 - **Saturday's rent is due Sunday 12:00** (same rule every day; configurable calendar per country).
 - **Penalty:** amount to be provided later; per-country setting, **default 0**.
-- **Remote vehicle blocking (GPS):** **not in this platform for now**; the dashboard shows an alert at +72 h and staff block the car in the GPS supplier's tool.
+- **Remote vehicle blocking (GPS):** **not in this platform for now**; the dashboard shows an alert from 3 unpaid days and staff block the car in the GPS supplier's tool.
 
 ## Open questions still to answer
 

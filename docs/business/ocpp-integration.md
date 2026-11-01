@@ -52,7 +52,7 @@ So this module covers **two customer types**: drivers (contract holders) and **p
 ## Still open (to ask)
 
 1. The Swagger/OpenAPI file and the API key (to be sent by a secure channel, then put in `backend/.env`).
-2. **Webhooks:** how a delivery is authenticated (signature or shared secret), and which public URL they will call.
+2. **Webhooks:** authenticated by an HMAC-SHA256 signature of the body (`X-Webhook-Signature`), implemented 2026-10-21 ([ADR-0017](../adr/0017-ocpp-sessions-from-the-fleet-api-sync.md) addendum). Still to confirm with the developer: the encoding (hex or base64), whether a timestamp is signed, and the public URL they will call (`https://api.ndzela.com/api/v1/webhooks/ocpp`).
 3. **The charging application:** who runs it, how the `idTag` is chosen when a user scans and pays, and whether it has an API or a webhook that gives, per `orderId`, the amount paid, the method, the mobile-money reference and the user. Without it, phases 2 and 3 are not possible.
 4. How a driver's `idTag` is tied to an NDZELA driver (for example the app user's phone number matching the driver's).
 5. Whether VAT applies to what the customer pays, since the engine amount is before VAT.

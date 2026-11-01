@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,8 +47,12 @@ public class ProfileService {
                 .flatMap(role -> role.getPermissions().stream())
                 .map(Permission::getName)
                 .collect(Collectors.toSet());
+        List<CountryResponse> countries = user.getCountries().stream()
+                .map(CountryResponse::from)
+                .sorted(java.util.Comparator.comparing(CountryResponse::name))
+                .toList();
         return new ProfileResponse(user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhoneNumber(),
-                user.getProfilePictureUrl(), user.isMfaEnabled(), roles, permissions,
+                user.getProfilePictureUrl(), user.isMfaEnabled(), roles, permissions, user.isGlobal(), countries,
                 user.getCountry() == null ? null : CountryResponse.from(user.getCountry()));
     }
 

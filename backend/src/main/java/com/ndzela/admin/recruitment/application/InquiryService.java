@@ -1,5 +1,6 @@
 package com.ndzela.admin.recruitment.application;
 
+import com.ndzela.admin.infrastructure.storage.FileContent;
 import com.ndzela.admin.common.text.Strings;
 import com.ndzela.admin.common.security.Actor;
 import com.ndzela.admin.audit.application.AuditService;
@@ -38,8 +39,7 @@ public class InquiryService {
     private final DocumentStorage storage;
     private final AuditService audit;
     private final ApplicationNotifier notifier;
-
-    public record FileContent(Resource resource, String contentType) {}
+    private final ContactMessageNotifier messageNotifier;
 
     @Transactional(readOnly = true)
     public PageResponse<ApplicationResponse> listApplications(ApplicationStatus status, String q, int page, int size) {
@@ -67,8 +67,11 @@ public class InquiryService {
         application.setStaffNote(Strings.blankToNull(request.note()));
         application.setInterviewAt(status == ApplicationStatus.ACCEPTED ? request.interviewAt() : null);
         application.setCandidateMessage(status == ApplicationStatus.ACCEPTED || status == ApplicationStatus.REJECTED ? reason : null);
-        if ((status == ApplicationStatus.ACCEPTED || status == ApplicationStatus.REJECTED) && application.getEmail() != null) {
-            notifier.send(application);
+        boolean decides = status == ApplicationStatus.ACCEPTED || status == ApplicationStatus.REJECTED;
+        if (decides && application.getEmail() != null) {
+            application.setNotificationFailed(!notifier.send(application));
+        } else {
+            application.setNotificationFailed(false);
         }
         application.setReviewedBy(Actor.name());
         application.setReviewedAt(OffsetDateTime.now());
@@ -101,11 +104,50 @@ public class InquiryService {
 
     @Transactional
     public MessageResponse handleMessage(UUID id) {
-        ContactMessage message = messages.findById(id).orElseThrow(() -> new ResourceNotFoundException("Message not found."));
+        ContactMessage message = message(id);
         message.setStatus(MessageStatus.HANDLED);
         message.setHandledBy(Actor.name());
         message.setHandledAt(OffsetDateTime.now());
         return MessageResponse.from(message);
+    }
+
+    // Actually e-mails the visitor the reply, instead of leaving it to a mailto: link the admin must send themselves.
+    @Transactional
+    public MessageResponse replyToMessage(UUID id, String reply) {
+        ContactMessage message = message(id);
+        if (message.getEmail() == null) {
+            throw new BusinessRuleViolationException("NO_EMAIL_ON_FILE", "This visitor left no e-mail address.");
+        }
+        boolean sent = messageNotifier.send(message, reply);
+        message.setReplyMessage(reply);
+        message.setRepliedBy(Actor.name());
+        message.setRepliedAt(OffsetDateTime.now());
+        message.setReplyFailed(!sent);
+        message.setStatus(MessageStatus.HANDLED);
+        message.setHandledBy(Actor.name());
+        message.setHandledAt(OffsetDateTime.now());
+        audit.record("MESSAGE_REPLIED", "CONTACT_MESSAGE", id.toString(), message.getName(), message.getCountryId(), sent ? null : "e-mail failed to send");
+        return MessageResponse.from(message);
+    }
+
+    @Transactional
+    public void deleteApplication(UUID id) {
+        DriverApplication application = application(id);
+        java.util.stream.Stream.of(application.getPhotoFile(), application.getLicenceFile(), application.getIdFile(), application.getAddressProofFile())
+                .forEach(storage::delete);
+        applications.delete(application);
+        audit.record("APPLICATION_DELETED", "DRIVER_APPLICATION", id.toString(), application.getFirstName() + " " + application.getLastName(), application.getCountryId(), null);
+    }
+
+    @Transactional
+    public void deleteMessage(UUID id) {
+        ContactMessage message = message(id);
+        messages.delete(message);
+        audit.record("MESSAGE_DELETED", "CONTACT_MESSAGE", id.toString(), message.getName(), message.getCountryId(), null);
+    }
+
+    private ContactMessage message(UUID id) {
+        return messages.findById(id).orElseThrow(() -> new ResourceNotFoundException("Message not found."));
     }
 
     @Transactional(readOnly = true)

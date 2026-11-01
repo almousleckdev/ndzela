@@ -35,7 +35,7 @@ interface UsersTableProps {
 // The staff list is small, so it is searched, filtered, sorted and paged in the browser.
 export function UsersTable({ users, onAction, onInvite }: UsersTableProps) {
   const myEmail = useAuthStore((state) => state.user?.email);
-  const isGlobal = useAuthStore((state) => state.user?.country === null);
+  const showCountryColumn = useAuthStore((state) => state.user?.isGlobal || (state.user?.countries.length ?? 0) > 1);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [role, setRole] = useState("");
@@ -57,14 +57,18 @@ export function UsersTable({ users, onAction, onInvite }: UsersTableProps) {
       <div className="flex items-center gap-3"><Avatar name={c.getValue()} src={c.row.original.profilePictureUrl} size="sm" /><Stack primary={c.getValue()} secondary={c.row.original.email} /></div>
     ) }),
     col.accessor((u) => u.roles.map((r) => r.name).join(", "), { id: "roles", header: "Rôles", enableSorting: false, cell: (c) => <div className="flex flex-wrap gap-1.5">{c.row.original.roles.map((r) => <RoleChip key={r.id} role={r.name} />)}</div> }),
-    ...(isGlobal ? [col.accessor((u) => u.country?.name ?? "Global", { id: "country", header: "Pays", cell: (c) => c.row.original.country ? <span className="inline-flex items-center gap-2"><CountryFlag code={c.row.original.country.code} />{c.row.original.country.name}</span> : <span className="text-muted">Global</span> })] : []),
+    ...(showCountryColumn ? [col.accessor((u) => u.isGlobal ? "Global" : u.countries.map((c) => c.name).join(", "), { id: "country", header: "Pays", cell: (c) => {
+      const row = c.row.original;
+      if (row.isGlobal) return <span className="text-muted">Global</span>;
+      return <div className="flex flex-wrap gap-1.5">{row.countries.map((country) => <span key={country.id} className="inline-flex items-center gap-1.5"><CountryFlag code={country.code} />{country.name}</span>)}</div>;
+    } })] : []),
     col.accessor("status", { id: "status", header: "Statut", cell: (c) => <Stack primary={<Status tone={TONE[c.getValue()]}>{STATUS_META[c.getValue()].label}</Status>} secondary={c.row.original.statusReason} /> }),
     col.accessor("mfaEnabled", { id: "mfa", header: "Authentificateur", cell: (c) => (
       <span className={c.getValue() ? "inline-flex items-center gap-1.5" : "inline-flex items-center gap-1.5 text-muted"}>{c.getValue() ? <ShieldCheck className="h-4 w-4 text-emerald-600" /> : <ShieldAlert className="h-4 w-4" />}{c.getValue() ? "Configuré" : "Pas encore"}</span>
     ) }),
     col.accessor("createdAt", { id: "createdAt", header: "Créé le", cell: (c) => <span className="whitespace-nowrap tabular-nums">{new Date(c.getValue()).toLocaleDateString("fr-FR")}</span> }),
     col.display({ id: "actions", header: () => <span className="sr-only">Actions</span>, enableHiding: false, cell: (c) => <div className="flex justify-end"><UserActionsMenu user={c.row.original} isSelf={c.row.original.email === myEmail} onAction={onAction} /></div> }),
-  ]), [isGlobal, myEmail, onAction]);
+  ]), [showCountryColumn, myEmail, onAction]);
 
   const count = (key: UserStatus) => users.filter((user) => user.status === key).length;
   const statusOptions = (Object.keys(STATUS_META) as UserStatus[]).map((value) => ({ value, label: STATUS_META[value].label, count: count(value) }));

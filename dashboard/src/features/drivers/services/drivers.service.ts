@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
+import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
 import type { Contract } from "@/features/contracts/types";
@@ -9,11 +10,11 @@ import type { Uploads } from "@/features/drivers/lib/driver-form";
 export type DriverDetailsBody = Record<string, unknown>;
 
 export const driversService = {
-  list: ({ status, onLeave, late, q, from, to, sort, page, size }: DriverQuery) => apiClient<Page<Driver>>(`/drivers?${queryString({ status: status === "ALL" ? undefined : status, onLeave, late, q: q.trim(), from, to, sort, page, size })}`),
+  list: ({ status, scope, onLeave, late, q, from, to, sort, page, size }: DriverQuery) => apiClient<Page<Driver>>(`/drivers?${queryString({ status: status === "ALL" ? undefined : status, scope, onLeave, late, q: q.trim(), from, to, sort, page, size })}`),
 
   stats: () => apiClient<DriverStats>("/drivers/stats"),
 
-  exportPath: ({ status, onLeave, late, q, from, to }: Pick<DriverQuery, "status" | "onLeave" | "late" | "q" | "from" | "to">) => `/drivers/export?${queryString({ status: status === "ALL" ? undefined : status, onLeave, late, q: q.trim(), from, to })}`,
+  exportPath: ({ status, onLeave, late, q, from, to }: Pick<DriverQuery, "status" | "onLeave" | "late" | "q" | "from" | "to">, format: ExportFormat) => `/drivers/export?${queryString({ status: status === "ALL" ? undefined : status, onLeave, late, q: q.trim(), from, to, format })}`,
 
   leaves: (id: string) => apiClient<Leave[]>(`/drivers/${id}/leaves`),
 
@@ -41,6 +42,8 @@ export const driversService = {
   block: (id: string, reason: string) => apiClient<Driver>(`/drivers/${id}/block`, { method: "POST", body: { reason } }),
 
   reactivate: (id: string) => apiClient<Driver>(`/drivers/${id}/reactivate`, { method: "POST" }),
+
+  unlockLogin: (id: string) => apiClient<Driver>(`/drivers/${id}/unlock-login`, { method: "POST" }),
 
   remove: (id: string) => apiClient(`/drivers/${id}`, { method: "DELETE" }),
 

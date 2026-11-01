@@ -14,9 +14,9 @@ import { LEVEL_LABELS } from "@/features/payments/lib/payment-labels";
 import type { AccountRow, ArrearsLevel, IncidentKind } from "@/features/payments/types";
 
 const col = columnsFor<AccountRow>();
-export const LEVEL_TONE: Record<ArrearsLevel, Tone> = { NONE: "good", LATE: "neutral", YELLOW: "watch", DARK_YELLOW: "alert", RED: "bad" };
+export const LEVEL_TONE: Record<ArrearsLevel, Tone> = { NONE: "good", LATE: "neutral", YELLOW: "watch", DARK_YELLOW: "bad", RED: "critical" };
 // The 3 px marker on a row's left edge.
-export const LEVEL_MARKER: Record<ArrearsLevel, string | undefined> = { NONE: undefined, LATE: "bg-slate-400", YELLOW: "bg-yellow-400", DARK_YELLOW: "bg-orange-500", RED: "bg-red-600" };
+export const LEVEL_MARKER: Record<ArrearsLevel, string | undefined> = { NONE: undefined, LATE: "bg-slate-400", YELLOW: "bg-yellow-400", DARK_YELLOW: "bg-red-500", RED: "bg-red-900" };
 const STATE = { SUSPENDED: "Suspendu", BLOCKED: "Bloqué", INACTIVE: "Inactif" } as Record<string, string>;
 
 interface Options {
@@ -41,6 +41,7 @@ export function useAccountColumns({ onPay, onWaive, onIncident, contact, showCol
     col.accessor("unpaidDays", { id: "unpaidDays", header: "Jours impayés", enableSorting: false, cell: (c) => <UnpaidDays days={c.getValue()} /> }),
     col.accessor("daysLeft", { id: "daysLeft", header: "Jours restants", enableSorting: false, cell: (c) => <DaysLeft days={c.getValue()} hasContract={Boolean(c.row.original.contractId)} /> }),
     col.accessor("overdueAmount", { id: "overdueAmount", header: "Montant dû", cell: (c) => <span className={c.getValue() > 0 ? "font-semibold" : "text-muted"}>{formatFcfa(c.getValue())}</span> }),
+    col.accessor("awaitingAmount", { id: "awaitingAmount", header: "À régler avant midi", enableSorting: false, cell: (c) => (c.getValue() > 0 ? <span className="whitespace-nowrap">{formatFcfa(c.getValue())}</span> : <None />) }),
     col.accessor("overdueSince", { id: "overdueSince", header: "En retard depuis", cell: (c) => (c.getValue() ? <span className="whitespace-nowrap tabular-nums">{formatDateTime(c.getValue() as string)}</span> : <None />) }),
     ...(showCollected ? [col.accessor("collected", { id: "collected", header: "Encaissé sur la période", enableSorting: false, cell: (c) => (c.getValue() === null ? <None /> : formatFcfa(c.getValue() as number)) })] : []),
     col.accessor("lastPaymentAt", { id: "lastPaymentAt", header: "Dernier paiement", enableSorting: false, cell: (c) => (c.getValue() ? <span className="whitespace-nowrap tabular-nums">{formatDateTime(c.getValue() as string)}</span> : <None />) }),

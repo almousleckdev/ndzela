@@ -27,20 +27,40 @@ class JwtServiceTest {
     @Test
     void tokenRoundTripsSubject() {
         JwtService service = new JwtService(TestProperties.create());
-        assertEquals("test@ndzela.com", service.extractUsername(service.generateAccessToken(user)));
+        assertEquals("test@ndzela.com", service.extractUsername(service.generateAccessToken(user, "session-1")));
+    }
+
+    @Test
+    void tokenRoundTripsSessionId() {
+        JwtService service = new JwtService(TestProperties.create());
+        String token = service.generateAccessToken(user, "abc123");
+        assertEquals("test@ndzela.com", service.extractUsername(token));
+        assertEquals("abc123", service.extractSessionId(token));
+    }
+
+    @Test
+    void driverTokenRoundTripsSessionId() {
+        JwtService service = new JwtService(TestProperties.create());
+        java.util.UUID driverId = java.util.UUID.randomUUID();
+        java.util.UUID countryId = java.util.UUID.randomUUID();
+        String token = service.generateDriverAccessToken(driverId, countryId, "xyz789");
+        DriverClaims claims = service.parseDriverToken(token);
+        assertEquals(driverId, claims.driverId());
+        assertEquals(countryId, claims.countryId());
+        assertEquals("xyz789", claims.sessionId());
     }
 
     @Test
     void expiredTokenIsRejected() {
         JwtService service = serviceWith(new JwtProperties(TestProperties.JWT_SECRET, "ndzela-test", Duration.ofMillis(-1000)));
-        String token = service.generateAccessToken(user);
+        String token = service.generateAccessToken(user, "session-1");
         assertThrows(JwtException.class, () -> service.extractUsername(token));
     }
 
     @Test
     void tokenFromAnotherIssuerIsRejected() {
         String foreign = serviceWith(new JwtProperties(TestProperties.JWT_SECRET, "someone-else", Duration.ofMinutes(5)))
-                .generateAccessToken(user);
+                .generateAccessToken(user, "session-1");
         JwtService service = new JwtService(TestProperties.create());
         assertThrows(JwtException.class, () -> service.extractUsername(foreign));
     }
@@ -48,7 +68,7 @@ class JwtServiceTest {
     @Test
     void tamperedTokenIsRejected() {
         JwtService service = new JwtService(TestProperties.create());
-        String token = service.generateAccessToken(user);
+        String token = service.generateAccessToken(user, "session-1");
         String tampered = token.substring(0, token.length() - 4) + "AAAA";
         assertThrows(JwtException.class, () -> service.extractUsername(tampered));
     }

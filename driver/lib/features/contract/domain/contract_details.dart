@@ -1,4 +1,5 @@
 import '../../../core/money/money.dart';
+import 'contract_progress.dart';
 
 class ContractDetails {
   const ContractDetails({
@@ -7,6 +8,7 @@ class ContractDetails {
     required this.endDate,
     required this.durationMonths,
     required this.dailyRent,
+    required this.progress,
   });
 
   final String number;
@@ -14,4 +16,5 @@ class ContractDetails {
   final DateTime endDate;
   final int durationMonths;
   final Money dailyRent;
+  final ContractProgress progress;
 }

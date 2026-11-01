@@ -62,6 +62,17 @@ public class DriverStatusService {
         return change(driver, DriverStatus.ACTIVE, null, "DRIVER_REACTIVATED");
     }
 
+    // Clears the login-attempt lockout only; never touches DriverStatus (suspend/block are separate, business-level locks).
+    @Transactional
+    public Driver unlockLogin(UUID id) {
+        Driver driver = load(id);
+        driver.setFailedLoginAttempts(0);
+        driver.setLoginLockedUntil(null);
+        drivers.save(driver);
+        audit.record("DRIVER_LOGIN_UNLOCKED", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(), null);
+        return driver;
+    }
+
     private Driver change(Driver driver, DriverStatus target, String reason, String action) {
         if (driver.getStatus() != target) {
             driver.setStatus(target);

@@ -19,6 +19,11 @@ export interface Vehicle {
   createdAt: string;
 }
 
+export interface VehicleImage {
+  id: string;
+  createdAt: string;
+}
+
 export type VehicleCounts = Record<VehicleStatus, number>;
 
 export interface VehicleQuery {

@@ -7,7 +7,9 @@ class SessionLoading extends Session {
 }
 
 class SignedOut extends Session {
-  const SignedOut();
+  // true when the server rejected the session (e.g. signed in on another device), not a voluntary logout.
+  final bool forced;
+  const SignedOut({this.forced = false});
 }
 
 // Signed in with the password Ndzela set

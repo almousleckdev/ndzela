@@ -20,8 +20,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-// The sync does not carry the battery level; the platform gives it per session, so it is read here for sessions under way and just finished.
-// "After" is the latest level seen; "before" is the first one seen while the session was still running, so a session first seen already finished has no "before".
+// The sync carries the start and end levels (socStartPercent, socEndPercent) once the platform has a valid reading; the latest reading is read here so a session under way shows its current level.
+// "Before" comes only from the sync: the first metering reading of a session is the 0 the charge point sends at start.
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -67,10 +67,7 @@ public class OcppBatteryService {
 
     private void record(ChargingSession session, FleetMetering reading) {
         Integer level = reading.stateOfChargePercent();
-        if (level != null) {
-            if (session.getSocBefore() == null && session.getEndedAt() == null) {
-                session.setSocBefore(level);
-            }
+        if (level != null && level > 0) {
             session.setSocAfter(level);
         }
         session.setPowerKw(session.getEndedAt() == null ? reading.powerKw() : null);

@@ -34,7 +34,7 @@ public class DriverPasswordResetService {
 
     // Not transactional: the country is known only after the lookup.
     public void requestCode(String identifier, String address) {
-        limiter.check("reset-address", address, props.rateLimit().passwordResetPerAddress(), Duration.ofHours(1));
+        limiter.check("driver-reset-address", address, props.rateLimit().passwordResetPerAddress(), Duration.ofHours(1));
         LoginCandidate candidate = auth.findCandidate(identifier.trim());
         if (candidate == null) {
             return;
@@ -70,7 +70,7 @@ public class DriverPasswordResetService {
         CountryBrand brand = CountryBrand.ofCountry(driver.getCountry().getCode());
         try {
             email.sendHtmlEmail(driver.getEmail(), brand.name() + " : votre code de réinitialisation", "driver-reset-code-email",
-                    Map.of("name", driver.getFirstName(), "code", code, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex()));
+                    Map.of("name", driver.getFirstName(), "code", code, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(), "logo", brand.logoDataUri()));
         } catch (RuntimeException e) {
             log.warn("Could not send the reset code to driver {}", driverId, e);
         }

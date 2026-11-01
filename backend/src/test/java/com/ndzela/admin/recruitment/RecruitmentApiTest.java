@@ -82,7 +82,7 @@ class RecruitmentApiTest extends AbstractIntegrationTest {
         decide(manager, url, "{\"status\":\"ACCEPTED\",\"interviewAt\":\"" + java.time.OffsetDateTime.now().minusDays(1) + "\"}").andExpect(status().isUnprocessableEntity());
         decide(manager, url, "{\"status\":\"REJECTED\"}").andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("REASON_REQUIRED"));
         decide(manager, url, "{\"status\":\"REJECTED\",\"candidateMessage\":\"Permis trop récent.\"}").andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"))
-                .andExpect(jsonPath("$.interviewAt").doesNotExist()).andExpect(jsonPath("$.notified").value(true));
+                .andExpect(jsonPath("$.interviewAt").doesNotExist()).andExpect(jsonPath("$.notificationFailed").value(false));
         decide(manager, url, "{\"status\":\"CONTACTED\"}").andExpect(status().isOk());
     }
 
@@ -111,6 +111,50 @@ class RecruitmentApiTest extends AbstractIntegrationTest {
         String id = JsonPath.read(body, "$.items[0].id");
         mvc.perform(post("/api/v1/contact-messages/" + id + "/handle").header("Authorization", bearer(manager))).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("HANDLED"));
         mvc.perform(get("/api/v1/inquiries/new-count").header("Authorization", bearer(manager))).andExpect(jsonPath("$.count").value(0));
+    }
+
+    @Test
+    void staffCanReplyToAMessageByEmailAndDeleteItAfterward() throws Exception {
+        contact(message("Awa")).andExpect(status().isAccepted());
+        String body = mvc.perform(get("/api/v1/contact-messages").header("Authorization", bearer(manager))).andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(body, "$.items[0].id");
+
+        mvc.perform(post("/api/v1/contact-messages/" + id + "/reply").contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"Merci, nous revenons vers vous.\"}")
+                        .header("Authorization", bearer(manager)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("HANDLED")).andExpect(jsonPath("$.replyFailed").value(false))
+                .andExpect(jsonPath("$.replyMessage").value("Merci, nous revenons vers vous."));
+        assertEquals(1, jdbc.queryForObject("select count(*) from audit_logs where action = 'MESSAGE_REPLIED'", Integer.class));
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/contact-messages/" + id).header("Authorization", bearer(viewer)))
+                .andExpect(status().isForbidden());
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/contact-messages/" + id).header("Authorization", bearer(manager)))
+                .andExpect(status().isNoContent());
+        assertEquals(0, jdbc.queryForObject("select count(*) from contact_messages", Integer.class));
+        assertEquals(1, jdbc.queryForObject("select count(*) from audit_logs where action = 'MESSAGE_DELETED'", Integer.class));
+    }
+
+    @Test
+    void aMessageWithNoEmailCannotBeRepliedToByEmail() throws Exception {
+        contact("{\"name\":\"Awa\",\"phone\":\"+241620000000\",\"subject\":\"Question\",\"message\":\"Bonjour\"}").andExpect(status().isAccepted());
+        String body = mvc.perform(get("/api/v1/contact-messages").header("Authorization", bearer(manager))).andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(body, "$.items[0].id");
+
+        mvc.perform(post("/api/v1/contact-messages/" + id + "/reply").contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"Bonjour\"}")
+                        .header("Authorization", bearer(manager)))
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("NO_EMAIL_ON_FILE"));
+    }
+
+    @Test
+    void staffCanDeleteAnApplicationWithItsDocuments() throws Exception {
+        apply(APPLICATION, true).andExpect(status().isAccepted());
+        String body = mvc.perform(get("/api/v1/applications").header("Authorization", bearer(manager))).andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(body, "$.items[0].id");
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/applications/" + id).header("Authorization", bearer(manager)))
+                .andExpect(status().isNoContent());
+        assertEquals(0, jdbc.queryForObject("select count(*) from driver_applications", Integer.class));
+        assertEquals(1, jdbc.queryForObject("select count(*) from audit_logs where action = 'APPLICATION_DELETED'", Integer.class));
+        mvc.perform(get("/api/v1/applications/" + id).header("Authorization", bearer(manager))).andExpect(status().isNotFound());
     }
 
     @Test

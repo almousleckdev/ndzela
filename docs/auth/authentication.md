@@ -28,6 +28,16 @@ MFA is **mandatory for every staff account**. Unknown/wrong credentials always r
 - `POST /api/v1/auth/logout` revokes the refresh token and clears the cookie. Password change, MFA reset, disabling, blocking and deleting a user call `revokeAll`.
 - CSRF protection is disabled because the API is stateless; the only ambient credential (the refresh cookie) is `SameSite=Strict` and limited to the auth path.
 
+## Single-device sessions (Implemented, ADR-0022)
+
+Every account (staff and driver alike) may be signed in on **one device at a time**. A successful login overwrites a `session_id`
+column on the account with a fresh opaque value and stamps it as the `sid` claim of the access token it issues. `JwtAuthenticationFilter`
+and `DriverJwtAuthenticationFilter` already re-read the account from the database on every request (so `DISABLED`/`LOCKED` takes effect
+immediately); the `sid` claim is compared to the account's current `session_id` in that same read, and a mismatch is rejected exactly
+like a disabled account. Logging in elsewhere therefore: revokes every refresh token the old session held **immediately**
+(`RefreshTokenService.revokeAll`), and makes the old access token fail on its **next** validated request — within its remaining TTL
+(15 min for staff), the same latency every other instant account-state change already has.
+
 ## Account states and lockout (Implemented)
 
 `UserStatus`: `MFA_SETUP` (invited/enrolling), `ACTIVE`, `LOCKED`, `DISABLED`.
@@ -39,7 +49,14 @@ MFA is **mandatory for every staff account**. Unknown/wrong credentials always r
 ## Invitation and password reset (Implemented)
 
 New staff are created with an unusable random password and receive an emailed link (`/reset-password?token=...`, TTL 48 h) to choose one.
-Forgot-password uses the same mechanism (TTL 15 min) and never reveals whether the email exists. Tokens are single-use and stored hashed in Redis.
+Tokens are single-use and stored hashed in Redis.
+
+Forgot-password is **OTP-code based**, matching the driver app: `POST /api/v1/auth/forgot-password` emails a 6-digit code
+(reusing `OtpService` — expiring, single-use, limited verification attempts, resend cooldown) and `POST /api/v1/auth/forgot-password/reset`
+takes the email, code and new password. It never reveals whether the email exists: an unknown email gets the same response,
+and a wrong code on an unknown email fails exactly like a wrong code on a known one. A successful reset revokes every refresh token the
+account held. This is a separate flow from invitation redemption, which stays link-based (a brand-new account has nothing to guess).
+
 Password policy: 8-128 chars with digit, lower, upper and special (`@StrongPassword`, mirrored in `features/auth/schemas/password.ts`).
 
 ## Secrets at rest

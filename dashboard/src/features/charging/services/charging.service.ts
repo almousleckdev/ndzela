@@ -1,7 +1,8 @@
 import { apiClient } from "@/lib/api/api-client";
+import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import type { ChargingPeriod, ChargingSummary, Recharge, RecordRechargeInput, Station, VehicleOption, ChargingSessionRow } from "@/features/charging/types";
+import type { ChargingSummary, Recharge, RecordRechargeInput, Station, VehicleOption, ChargingSessionRow } from "@/features/charging/types";
 
 export const chargingService = {
   summary: () => apiClient<ChargingSummary>("/charging/summary"),
@@ -17,7 +18,8 @@ export const chargingService = {
 
   vehicles: (q = "") => apiClient<VehicleOption[]>(`/charging/vehicles${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`),
 
-  exportPath: (period: ChargingPeriod, date: string) => `/charging/export?period=${period}&date=${date}`,
+  exportPath: ({ q, from, to }: { q: string; from: string; to: string }, format: ExportFormat) => `/charging/export?${queryString({ q: q.trim(), from, to, format })}`,
+  exportSessionsPath: ({ q, from, to }: { q: string; from: string; to: string }, format: ExportFormat) => `/charging/sessions/export?${queryString({ q: q.trim(), from, to, format })}`,
 
   stations: () => apiClient<Station[]>("/charging/stations"),
   createStation: (name: string) => apiClient<Station>("/charging/stations", { method: "POST", body: { name } }),

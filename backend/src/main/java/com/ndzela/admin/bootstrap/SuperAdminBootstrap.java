@@ -48,6 +48,7 @@ public class SuperAdminBootstrap implements CommandLineRunner {
                 .status(UserStatus.MFA_SETUP)
                 .firstName("Super")
                 .lastName("Admin")
+                .global(true)
                 .roles(new HashSet<>(Set.of(role)))
                 .build());
         log.info("Created initial SUPER_ADMIN {}. MFA enrolment is required at first login.", email);

@@ -79,7 +79,7 @@ class AuditTrailTest extends AbstractIntegrationTest {
         String viewerRole = roles.findByName("VIEWER").orElseThrow().getId().toString();
 
         mvc.perform(post("/api/v1/users").header("Authorization", bearer(root)).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"new@ndzela.test\",\"roleIds\":[\"" + viewerRole + "\"],\"countryId\":\"" + country("ML").getId() + "\"}"))
+                        .content("{\"email\":\"new@ndzela.test\",\"roleIds\":[\"" + viewerRole + "\"],\"countryIds\":[\"" + country("ML").getId() + "\"]}"))
                 .andExpect(status().isCreated());
 
         assertEquals("ML", jdbc.queryForObject(

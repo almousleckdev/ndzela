@@ -5,6 +5,7 @@ import com.ndzela.admin.config.properties.OcppProperties;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -37,6 +38,8 @@ public class OcppFleetClient {
                 return uri.build();
             }).header("X-API-Key", props.apiKey()).retrieve().body(String.class);
             return page(mapper.readTree(body));
+        } catch (JacksonException e) {
+            throw new FleetException("The Fleet API answered something unreadable.", e);
         } catch (RestClientResponseException e) {
             throw failure(e);
         } catch (RestClientException e) {
@@ -49,6 +52,8 @@ public class OcppFleetClient {
         try {
             String body = client.get().uri("/api/v1/sessions/{id}/metering", transactionId).header("X-API-Key", props.apiKey()).retrieve().body(String.class);
             return FleetMetering.from(mapper.readTree(body));
+        } catch (JacksonException e) {
+            throw new FleetException("The Fleet API answered something unreadable.", e);
         } catch (RestClientResponseException e) {
             if (e.getStatusCode().value() == 404) {
                 return null;
@@ -62,6 +67,9 @@ public class OcppFleetClient {
     private static FleetException failure(RestClientResponseException e) {
         if (e.getStatusCode().value() == 429) {
             return new FleetRateLimitedException(retryAfter(e));
+        }
+        if (e.getStatusCode().value() == 410) {
+            return new FleetCursorExpiredException(e);
         }
         return new FleetException("The Fleet API answered " + e.getStatusCode().value() + ".", e);
     }

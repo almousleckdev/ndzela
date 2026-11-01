@@ -3,6 +3,7 @@ package com.ndzela.admin.recruitment.api;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.recruitment.api.dto.ApplicationResponse;
 import com.ndzela.admin.recruitment.api.dto.ApplicationStatusRequest;
+import com.ndzela.admin.recruitment.api.dto.MessageReplyRequest;
 import com.ndzela.admin.recruitment.api.dto.MessageResponse;
 import com.ndzela.admin.recruitment.application.InquiryService;
 import com.ndzela.admin.recruitment.domain.ApplicationStatus;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -53,6 +55,13 @@ public class InquiryController {
         return inquiries.updateApplication(id, request);
     }
 
+    @DeleteMapping("/applications/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('inquiries:manage')")
+    public void deleteApplication(@PathVariable UUID id) {
+        inquiries.deleteApplication(id);
+    }
+
     @GetMapping("/contact-messages")
     @PreAuthorize("hasAuthority('inquiries:read')")
     public PageResponse<MessageResponse> messages(@RequestParam(required = false) MessageStatus status, @RequestParam(required = false) String q,
@@ -64,6 +73,19 @@ public class InquiryController {
     @PreAuthorize("hasAuthority('inquiries:manage')")
     public MessageResponse handle(@PathVariable UUID id) {
         return inquiries.handleMessage(id);
+    }
+
+    @PostMapping("/contact-messages/{id}/reply")
+    @PreAuthorize("hasAuthority('inquiries:manage')")
+    public MessageResponse reply(@PathVariable UUID id, @Valid @RequestBody MessageReplyRequest request) {
+        return inquiries.replyToMessage(id, request.message());
+    }
+
+    @DeleteMapping("/contact-messages/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('inquiries:manage')")
+    public void deleteMessage(@PathVariable UUID id) {
+        inquiries.deleteMessage(id);
     }
 
     @GetMapping("/inquiries/new-count")

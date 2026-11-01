@@ -16,6 +16,8 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID>,
 
     Optional<LedgerEntry> findByRequestId(UUID requestId);
 
+    List<LedgerEntry> findAllByRequestIdIn(Collection<UUID> requestIds);
+
     boolean existsByReversesEntryId(UUID reversesEntryId);
 
     List<LedgerEntry> findAllByReversesEntryIdIn(Collection<UUID> ids);

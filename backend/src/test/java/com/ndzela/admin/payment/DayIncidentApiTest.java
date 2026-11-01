@@ -90,7 +90,7 @@ class DayIncidentApiTest extends AbstractDriverTest {
 
     @Test
     void sundayTheFutureAndDaysBeforeTheContractAreRefused() throws Exception {
-        LocalDate sunday = pastRentDay;
+        LocalDate sunday = LocalDate.now(ZONE).minusDays(1); // the latest Sunday is at most 6 days back, so always inside the 10-day-old contract
         while (sunday.getDayOfWeek() != DayOfWeek.SUNDAY) {
             sunday = sunday.minusDays(1);
         }

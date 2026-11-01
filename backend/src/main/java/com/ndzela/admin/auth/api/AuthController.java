@@ -9,6 +9,7 @@ import com.ndzela.admin.auth.api.dto.MfaSetupRequest;
 import com.ndzela.admin.auth.api.dto.MfaSetupResponse;
 import com.ndzela.admin.auth.api.dto.OtpVerifyRequest;
 import com.ndzela.admin.auth.api.dto.ResetPasswordRequest;
+import com.ndzela.admin.auth.api.dto.ResetPasswordWithCodeRequest;
 import com.ndzela.admin.auth.api.dto.TotpVerifyRequest;
 import com.ndzela.admin.auth.application.AuthService;
 import com.ndzela.admin.auth.application.PasswordResetService;
@@ -80,10 +81,17 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public MessageResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest http) {
-        passwordResetService.requestReset(request.email(), http.getRemoteAddr());
-        return new MessageResponse("If the email exists, a reset link was sent.");
+        passwordResetService.requestCode(request.email(), http.getRemoteAddr());
+        return new MessageResponse("If the email exists, a reset code was sent.");
     }
 
+    @PostMapping("/forgot-password/reset")
+    public MessageResponse resetWithCode(@Valid @RequestBody ResetPasswordWithCodeRequest request) {
+        passwordResetService.resetWithCode(request.email(), request.code(), request.newPassword());
+        return new MessageResponse("Password reset successfully.");
+    }
+
+    // Accepting an invitation: a brand-new account choosing its first password from the emailed link.
     @PostMapping("/reset-password")
     public MessageResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.reset(request.token(), request.newPassword());
