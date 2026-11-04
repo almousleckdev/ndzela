@@ -90,9 +90,11 @@ public abstract class AbstractIntegrationTest {
         if (ocppKeys != null && !ocppKeys.isEmpty()) {
             redis.delete(ocppKeys);
         }
-        var limits = redis.keys("ratelimit:*");
-        if (limits != null && !limits.isEmpty()) {
-            redis.delete(limits);
+        for (String pattern : new String[] {"ratelimit:*", "auth:otp*"}) {
+            var keys = redis.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redis.delete(keys);
+            }
         }
     }
 
