@@ -37,7 +37,7 @@ public final class TestProperties {
                 new MfaProperties("NDZela Test", MFA_KEY),
                 new BootstrapProperties("admin@test.com", "Str0ng!Pass"),
                 new StorageProperties("testcloud", "test-key", "test-secret", "ndzela-test", Duration.ofSeconds(5)),
-                new PvitProperties("https://pvit.test", "ACC_TEST", "test-password", "secretcode", "paymentcode", "statuscode", "feescode", "kyccode", "CB001", "NDZELA", "LOYER", "CUSTOMER",
+                new PvitProperties("https://pvit.test", "ACC_TEST", "ACC_TEST_MOOV", "test-password", "secretcode", "paymentcode", "statuscode", "feescode", "kyccode", "CB001", "NDZELA", "LOYER", "CUSTOMER",
                         null, Duration.ofSeconds(5), Duration.ofMinutes(3), Duration.ofMinutes(30), false),
                 new DriverAppProperties(3),
                 new PublicSiteProperties("GA", 5, List.of("https://ndzela.test")),

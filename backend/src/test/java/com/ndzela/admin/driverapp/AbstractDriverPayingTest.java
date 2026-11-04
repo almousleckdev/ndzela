@@ -63,7 +63,7 @@ abstract class AbstractDriverPayingTest extends AbstractDriverAppTest {
 
     protected void pvitConfirms(BigDecimal paid) {
         String reference = jdbc.queryForObject("select reference from payment_intents", String.class);
-        when(pvit.transaction(anyString())).thenReturn(new PvitTransaction(PvitStatus.SUCCESS, reference, paid, BigDecimal.ZERO, "AIRTEL_MONEY"));
+        when(pvit.transaction(anyString(), anyString())).thenReturn(new PvitTransaction(PvitStatus.SUCCESS, reference, paid, BigDecimal.ZERO, "AIRTEL_MONEY"));
         settlement.settleByReference(reference, "TX1");
     }
 }

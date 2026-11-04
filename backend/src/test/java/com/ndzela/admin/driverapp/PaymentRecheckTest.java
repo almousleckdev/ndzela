@@ -110,7 +110,7 @@ class PaymentRecheckTest extends AbstractPvitFlowTest {
     void anAttemptPvitDoesNotKnowYetIsLeftAloneWhileItIsRecent() throws Exception {
         startOk();
         jdbc.update("update payment_intents set created_at = now() - interval '10 minutes'");
-        when(pvit.transaction(anyString())).thenThrow(new PvitException("PVit answered 404.", null, true));
+        when(pvit.transaction(anyString(), anyString())).thenThrow(new PvitException("PVit answered 404.", null, true));
 
         settlement.recheckPending();
 

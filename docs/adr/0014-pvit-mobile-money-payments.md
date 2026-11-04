@@ -21,3 +21,5 @@
 **Deferred.** IP filtering of PVit's addresses (to be done at the proxy in production; the status read-back already makes a forged callback harmless), refunds (`GIVE_CHANGE`) for the caution, and PVit's account balance and reports.
 
 **Consequences.** (+) Money is only recorded from PVit's own answer, once, whatever order or number of callbacks arrive; a lost callback heals itself. (-) Every callback costs one extra PVit call; the sandbox's fixed amount means test payments do not match the real arrears.
+
+**Amendment (2026-11-04): one operation account per operator.** Airtel Money and Moov Money are paid into separate PVit operation accounts (`PVIT_AIRTEL_OPERATION_ACCOUNT_CODE`, `PVIT_MOOV_OPERATION_ACCOUNT_CODE`). The account is chosen by the attempt's operator for starting a payment, reading its status and quoting fees; PVit's secret key is renewed and kept per account. The password, the URL codes and the callback code are shared. Production refuses to start unless both codes are set.

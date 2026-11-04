@@ -138,7 +138,7 @@ class PvitCallbackTest extends AbstractPvitFlowTest {
     @Test
     void pvitAnsweringForAnotherReferenceIsNeverTrusted() throws Exception {
         startOk();
-        when(pvit.transaction(anyString())).thenReturn(new PvitTransaction(PvitStatus.SUCCESS, "SOMEONE-ELSES", amount(), BigDecimal.ONE, "AIRTEL_MONEY"));
+        when(pvit.transaction(anyString(), anyString())).thenReturn(new PvitTransaction(PvitStatus.SUCCESS, "SOMEONE-ELSES", amount(), BigDecimal.ONE, "AIRTEL_MONEY"));
 
         callback(reference(), "PAY1", 200).andExpect(status().isOk());
 
@@ -149,7 +149,7 @@ class PvitCallbackTest extends AbstractPvitFlowTest {
     @Test
     void whenPvitCannotBeReadTheCallbackIsStillAcknowledgedAndTheAttemptStaysPending() throws Exception {
         startOk();
-        when(pvit.transaction(anyString())).thenThrow(new PvitException("down"));
+        when(pvit.transaction(anyString(), anyString())).thenThrow(new PvitException("down"));
 
         callback(reference(), "PAY1", 200).andExpect(status().isOk());
 

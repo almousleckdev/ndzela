@@ -98,7 +98,8 @@ app:
     request-timeout: 15s
   pvit:
     base-url: ${PVIT_BASE_URL:https://api.mypvit.pro}
-    operation-account-code: ${PVIT_OPERATION_ACCOUNT_CODE:}
+    airtel-operation-account-code: ${PVIT_AIRTEL_OPERATION_ACCOUNT_CODE:}
+    moov-operation-account-code: ${PVIT_MOOV_OPERATION_ACCOUNT_CODE:}
     secret-password: ${PVIT_SECRET_PASSWORD:}
     code-url-secret: ${PVIT_CODE_URL_SECRET:}
     code-url-payment: ${PVIT_CODE_URL_PAYMENT:}

@@ -66,7 +66,7 @@ public class PaymentSettlementService {
         }
         PvitTransaction transaction;
         try {
-            transaction = pvit.transaction(intent.getReference());
+            transaction = pvit.transaction(intent.getOperatorCode(), intent.getReference());
         } catch (PvitException e) {
             log.warn("Could not read payment {} from PVit: {}", intent.getReference(), e.getMessage());
             if (e.isNotFound()) {
