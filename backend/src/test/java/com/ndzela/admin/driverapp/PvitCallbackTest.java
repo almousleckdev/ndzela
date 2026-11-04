@@ -131,7 +131,7 @@ class PvitCallbackTest extends AbstractPvitFlowTest {
         startOk();
 
         callback("NDZUNKNOWN0000", "PAYX", 200).andExpect(status().isOk()).andExpect(jsonPath("$.transactionId").value("PAYX"));
-        verify(pvit, never()).transaction(anyString());
+        verify(pvit, never()).transaction(anyString(), anyString());
         assertEquals("PENDING", intentStatus());
     }
 
