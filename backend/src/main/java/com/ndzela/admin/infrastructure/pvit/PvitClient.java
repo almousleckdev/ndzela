@@ -39,13 +39,14 @@ public class PvitClient {
         body.put("service", "RESTFUL");
         body.put("callback_url_code", props.callbackUrlCode());
         body.put("customer_account_number", request.customerNumber());
-        body.put("merchant_operation_account_code", props.operationAccountCode());
+        String account = props.operationAccountCode(request.operatorCode());
+        body.put("merchant_operation_account_code", account);
         body.put("transaction_type", "PAYMENT");
         body.put("owner_charge", props.ownerCharge());
         body.put("owner_charge_operator", "CUSTOMER");
         body.put("free_info", request.freeInfo());
         body.put("operator_code", request.operatorCode());
-        JsonNode json = withSecret(secret -> client.post().uri("/v2/{code}/rest", props.codeUrlPayment())
+        JsonNode json = withSecret(account, secret -> client.post().uri("/v2/{code}/rest", props.codeUrlPayment())
                 .header("X-Secret", secret).header("X-Callback-MediaType", MediaType.APPLICATION_JSON_VALUE)
                 .contentType(MediaType.APPLICATION_JSON).body(body.toString()).retrieve().body(String.class));
         PvitStatus status = PvitStatus.from(json.path("status").asString(null));
@@ -56,19 +57,21 @@ public class PvitClient {
     }
 
     // PVit's status API is asked with OUR reference (the one sent when the payment was started)
-    public PvitTransaction transaction(String merchantReference) {
-        JsonNode json = withSecret(secret -> client.get()
+    public PvitTransaction transaction(String operatorCode, String merchantReference) {
+        String account = props.operationAccountCode(operatorCode);
+        JsonNode json = withSecret(account, secret -> client.get()
                 .uri("/{code}/status?transactionId={id}&accountOperationCode={account}&transactionOperation=PAYMENT",
-                        props.codeUrlStatus(), merchantReference, props.operationAccountCode())
+                        props.codeUrlStatus(), merchantReference, account)
                 .header("X-Secret", secret).retrieve().body(String.class));
         return new PvitTransaction(PvitStatus.from(json.path("status").asString(null)), json.path("merchant_reference_id").asString(null),
                 decimal(json.path("amount")), decimal(json.path("fees")), json.path("operator").asString(null));
     }
 
     public PvitFees fees(String operatorCode, BigDecimal amount) {
-        JsonNode json = withSecret(secret -> client.get()
+        String account = props.operationAccountCode(operatorCode);
+        JsonNode json = withSecret(account, secret -> client.get()
                 .uri("/v2/{code}/get-fees?accountOperationCode={account}&transactionType=PAYMENT&amount={amount}&operatorCode={operator}",
-                        props.codeUrlFees(), props.operationAccountCode(), amount.toPlainString(), operatorCode)
+                        props.codeUrlFees(), account, amount.toPlainString(), operatorCode)
                 .header("X-Secret", secret).retrieve().body(String.class));
         return new PvitFees(decimal(json.path("fees")), decimal(json.path("totalAmount")));
     }
@@ -87,13 +90,13 @@ public class PvitClient {
     }
 
     // A rejected key is renewed once, then the call is tried again.
-    private JsonNode withSecret(Function<String, String> call) {
+    private JsonNode withSecret(String account, Function<String, String> call) {
         try {
-            return mapper.readTree(call.apply(secrets.current()));
+            return mapper.readTree(call.apply(secrets.current(account)));
         } catch (RestClientResponseException e) {
             if (isRejectedKey(e.getStatusCode())) {
-                secrets.invalidate();
-                return retry(call);
+                secrets.invalidate(account);
+                return retry(account, call);
             }
             throw failure(e);
         } catch (RestClientException e) {
@@ -101,9 +104,9 @@ public class PvitClient {
         }
     }
 
-    private JsonNode retry(Function<String, String> call) {
+    private JsonNode retry(String account, Function<String, String> call) {
         try {
-            return mapper.readTree(call.apply(secrets.current()));
+            return mapper.readTree(call.apply(secrets.current(account)));
         } catch (RestClientResponseException e) {
             throw failure(e);
         } catch (RestClientException e) {

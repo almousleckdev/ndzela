@@ -20,7 +20,8 @@ public class PvitProductionGuard {
             throw new IllegalStateException("PVIT_SANDBOX_AMOUNT must be empty in production.");
         }
         List<String> missing = new ArrayList<>();
-        require(missing, "PVIT_OPERATION_ACCOUNT_CODE", pvit.operationAccountCode());
+        require(missing, "PVIT_AIRTEL_OPERATION_ACCOUNT_CODE", pvit.airtelOperationAccountCode());
+        require(missing, "PVIT_MOOV_OPERATION_ACCOUNT_CODE", pvit.moovOperationAccountCode());
         require(missing, "PVIT_SECRET_PASSWORD", pvit.secretPassword());
         require(missing, "PVIT_CODE_URL_SECRET", pvit.codeUrlSecret());
         require(missing, "PVIT_CODE_URL_PAYMENT", pvit.codeUrlPayment());

@@ -60,7 +60,7 @@ abstract class AbstractPvitFlowTest extends AbstractDriverAppTest {
     }
 
     protected void pvitSays(PvitStatus status, BigDecimal paid, String fees) {
-        when(pvit.transaction(anyString())).thenAnswer(call -> new PvitTransaction(status, reference(), paid, fees == null ? null : new BigDecimal(fees), "AIRTEL_MONEY"));
+        when(pvit.transaction(anyString(), anyString())).thenAnswer(call -> new PvitTransaction(status, reference(), paid, fees == null ? null : new BigDecimal(fees), "AIRTEL_MONEY"));
     }
 
     protected ResultActions callback(String reference, String transactionId, int code) throws Exception {

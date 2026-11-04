@@ -12,8 +12,10 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
-// Keeps PVit's secret key in memory and renews it before its one-hour life ends
+// Keeps PVit's secret key of each operation account in memory and renews it before its one-hour life ends
 @Slf4j
 public class PvitSecretProvider {
     private static final Duration RENEW_MARGIN = Duration.ofMinutes(5);
@@ -22,8 +24,9 @@ public class PvitSecretProvider {
     private final PvitProperties props;
     private final ObjectMapper mapper;
 
-    private String secret;
-    private Instant renewAt = Instant.MIN;
+    private record Key(String secret, Instant renewAt) {}
+
+    private final Map<String, Key> keys = new HashMap<>();
 
     public PvitSecretProvider(RestClient client, PvitProperties props, ObjectMapper mapper) {
         this.client = client;
@@ -31,21 +34,22 @@ public class PvitSecretProvider {
         this.mapper = mapper;
     }
 
-    public synchronized String current() {
-        if (secret == null || !Instant.now().isBefore(renewAt)) {
-            renew();
+    public synchronized String current(String account) {
+        Key key = keys.get(account);
+        if (key == null || !Instant.now().isBefore(key.renewAt())) {
+            key = renew(account);
         }
-        return secret;
+        return key.secret();
     }
 
     // Forgets the key, for when PVit says it is no longer valid.
-    public synchronized void invalidate() {
-        secret = null;
+    public synchronized void invalidate(String account) {
+        keys.remove(account);
     }
 
-    private void renew() {
+    private Key renew(String account) {
         var form = new LinkedMultiValueMap<String, String>();
-        form.add("operationAccountCode", props.operationAccountCode());
+        form.add("operationAccountCode", account);
         form.add("password", props.secretPassword());
         try {
             String body = client.post().uri("/v2/{code}/renew-secret", props.codeUrlSecret())
@@ -56,11 +60,12 @@ public class PvitSecretProvider {
                 throw new PvitException("PVit returned no secret key.");
             }
             long seconds = json.path("expires_in").asLong(3600);
-            secret = renewed;
-            renewAt = Instant.now().plusSeconds(seconds).minus(RENEW_MARGIN);
+            Key key = new Key(renewed, Instant.now().plusSeconds(seconds).minus(RENEW_MARGIN));
+            keys.put(account, key);
             log.info("PVit secret key renewed");
+            return key;
         } catch (RestClientException e) {
-            secret = null;
+            keys.remove(account);
             throw new PvitException("Could not renew the PVit secret key.", e);
         }
     }

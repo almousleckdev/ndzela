@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -65,9 +66,9 @@ class PaymentRecheckTest extends AbstractPvitFlowTest {
 
         callback(reference(), "PAY0110261325109", 200).andExpect(status().isOk());
 
-        verify(pvit).transaction(reference());
-        verify(pvit, never()).transaction("PAY0110261325109");
-        verify(pvit, never()).transaction("PAY1");
+        verify(pvit).transaction(anyString(), eq(reference()));
+        verify(pvit, never()).transaction(anyString(), eq("PAY0110261325109"));
+        verify(pvit, never()).transaction(anyString(), eq("PAY1"));
     }
 
     @Test
@@ -89,7 +90,7 @@ class PaymentRecheckTest extends AbstractPvitFlowTest {
         jdbc.update("update payment_intents set status = 'EXPIRED', completed_at = now() - interval '7 hours', created_at = now() - interval '8 hours'");
 
         assertEquals(0, settlement.recheckPending());
-        verify(pvit, never()).transaction(anyString());
+        verify(pvit, never()).transaction(anyString(), anyString());
     }
 
     @Test
@@ -97,11 +98,11 @@ class PaymentRecheckTest extends AbstractPvitFlowTest {
         startOk();
         jdbc.update("update payment_intents set created_at = now() - interval '40 minutes'");
 
-        doThrow(new PvitException("PVit could not be reached.")).when(pvit).transaction(anyString());
+        doThrow(new PvitException("PVit could not be reached.")).when(pvit).transaction(anyString(), anyString());
         settlement.recheckPending();
         assertEquals("PENDING", intentStatus());
 
-        doThrow(new PvitException("PVit answered 404.", null, true)).when(pvit).transaction(anyString());
+        doThrow(new PvitException("PVit answered 404.", null, true)).when(pvit).transaction(anyString(), anyString());
         settlement.recheckPending();
         assertEquals("EXPIRED", intentStatus());
     }
@@ -110,7 +111,7 @@ class PaymentRecheckTest extends AbstractPvitFlowTest {
     void anAttemptPvitDoesNotKnowYetIsLeftAloneWhileItIsRecent() throws Exception {
         startOk();
         jdbc.update("update payment_intents set created_at = now() - interval '10 minutes'");
-        when(pvit.transaction(anyString())).thenThrow(new PvitException("PVit answered 404.", null, true));
+        when(pvit.transaction(anyString(), anyString())).thenThrow(new PvitException("PVit answered 404.", null, true));
 
         settlement.recheckPending();
 

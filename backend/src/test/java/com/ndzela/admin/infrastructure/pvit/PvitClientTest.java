@@ -35,7 +35,7 @@ class PvitClientTest {
 
     @BeforeEach
     void setup() {
-        PvitProperties props = new PvitProperties(BASE, "ACC_TEST", "pw", "S", "P", "T", "F", "K", "CB1", "NDZELA", "LOYER", "CUSTOMER", null,
+        PvitProperties props = new PvitProperties(BASE, "ACC_TEST", "ACC_MOOV", "pw", "S", "P", "T", "F", "K", "CB1", "NDZELA", "LOYER", "CUSTOMER", null,
                 Duration.ofSeconds(5), Duration.ofMinutes(3), Duration.ofMinutes(30), false);
         RestClient.Builder builder = RestClient.builder().baseUrl(BASE);
         server = MockRestServiceServer.bindTo(builder).build();
@@ -45,9 +45,13 @@ class PvitClientTest {
     }
 
     private void expectKeyRenewal() {
+        expectKeyRenewal("ACC_TEST");
+    }
+
+    private void expectKeyRenewal(String account) {
         server.expect(once(), requestTo(BASE + "/v2/S/renew-secret")).andExpect(method(HttpMethod.POST))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED))
-                .andExpect(content().string(org.hamcrest.Matchers.allOf(org.hamcrest.Matchers.containsString("operationAccountCode=ACC_TEST"), org.hamcrest.Matchers.containsString("password=pw"))))
+                .andExpect(content().string(org.hamcrest.Matchers.allOf(org.hamcrest.Matchers.containsString("operationAccountCode=" + account), org.hamcrest.Matchers.containsString("password=pw"))))
                 .andRespond(withSuccess(SECRET_BODY, MediaType.APPLICATION_JSON));
     }
 
@@ -70,12 +74,23 @@ class PvitClientTest {
     }
 
     @Test
+    void eachOperatorIsPaidIntoItsOwnAccountWithItsOwnKey() {
+        expectKeyRenewal("ACC_MOOV");
+        server.expect(once(), requestTo(BASE + "/v2/P/rest")).andExpect(jsonPath("$.merchant_operation_account_code").value("ACC_MOOV"))
+                .andExpect(jsonPath("$.operator_code").value("MOOV_MONEY"))
+                .andRespond(withSuccess("{\"status\":\"PENDING\",\"reference_id\":\"PAY2\"}", MediaType.APPLICATION_JSON));
+
+        assertEquals("PAY2", client.startPayment(new PvitPaymentRequest("NDZ124", new BigDecimal("69000"), "MOOV_MONEY", "062111111", "Loyer")).providerReference());
+        server.verify();
+    }
+
+    @Test
     void anAmountThatCannotBeReadIsAProviderError() {
         expectKeyRenewal();
         server.expect(once(), requestTo(BASE + "/T/status?transactionId=NDZ123&accountOperationCode=ACC_TEST&transactionOperation=PAYMENT"))
                 .andRespond(withSuccess("{\"status\":\"SUCCESS\",\"amount\":\"abc\",\"merchant_reference_id\":\"NDZ123\"}", MediaType.APPLICATION_JSON));
 
-        assertThrows(PvitException.class, () -> client.transaction("NDZ123"));
+        assertThrows(PvitException.class, () -> client.transaction("AIRTEL_MONEY", "NDZ123"));
     }
 
     @Test
@@ -86,8 +101,8 @@ class PvitClientTest {
         server.expect(once(), requestTo(BASE + "/T/status?transactionId=NDZ456&accountOperationCode=ACC_TEST&transactionOperation=PAYMENT")).andExpect(header("X-Secret", "sk_test"))
                 .andRespond(withSuccess("{\"status\":\"FAILED\",\"amount\":150,\"merchant_reference_id\":\"NDZ456\"}", MediaType.APPLICATION_JSON));
 
-        PvitTransaction first = client.transaction("NDZ123");
-        PvitTransaction second = client.transaction("NDZ456");
+        PvitTransaction first = client.transaction("AIRTEL_MONEY", "NDZ123");
+        PvitTransaction second = client.transaction("AIRTEL_MONEY", "NDZ456");
 
         assertEquals(PvitStatus.SUCCESS, first.status());
         assertEquals(0, new BigDecimal("150").compareTo(first.amount()));
@@ -106,7 +121,7 @@ class PvitClientTest {
         server.expect(once(), requestTo(BASE + "/T/status?transactionId=NDZ123&accountOperationCode=ACC_TEST&transactionOperation=PAYMENT"))
                 .andRespond(withSuccess("{\"status\":\"SUCCESS\",\"amount\":150,\"merchant_reference_id\":\"NDZ123\"}", MediaType.APPLICATION_JSON));
 
-        assertEquals(PvitStatus.SUCCESS, client.transaction("NDZ123").status());
+        assertEquals(PvitStatus.SUCCESS, client.transaction("AIRTEL_MONEY", "NDZ123").status());
         server.verify();
     }
 
@@ -115,7 +130,7 @@ class PvitClientTest {
         expectKeyRenewal();
         server.expect(once(), requestTo(BASE + "/T/status?transactionId=NDZ123&accountOperationCode=ACC_TEST&transactionOperation=PAYMENT")).andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
-        assertThrows(PvitException.class, () -> client.transaction("NDZ123"));
+        assertThrows(PvitException.class, () -> client.transaction("AIRTEL_MONEY", "NDZ123"));
     }
 
     @Test
@@ -130,13 +145,13 @@ class PvitClientTest {
     void anUnreachablePvitIsAPvitException() {
         server.expect(once(), requestTo(BASE + "/v2/S/renew-secret")).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
-        assertThrows(PvitException.class, () -> client.transaction("NDZ123"));
+        assertThrows(PvitException.class, () -> client.transaction("AIRTEL_MONEY", "NDZ123"));
     }
 
     @Test
     void theFeeQuoteAndTheAccountHolderAreRead() {
-        expectKeyRenewal();
-        server.expect(once(), requestTo(BASE + "/v2/F/get-fees?accountOperationCode=ACC_TEST&transactionType=PAYMENT&amount=69000&operatorCode=MOOV_MONEY")).andExpect(header("X-Secret", "sk_test"))
+        expectKeyRenewal("ACC_MOOV");
+        server.expect(once(), requestTo(BASE + "/v2/F/get-fees?accountOperationCode=ACC_MOOV&transactionType=PAYMENT&amount=69000&operatorCode=MOOV_MONEY")).andExpect(header("X-Secret", "sk_test"))
                 .andRespond(withSuccess("{\"fees\":2415.0,\"totalAmount\":71415.0}", MediaType.APPLICATION_JSON));
         server.expect(once(), requestTo(BASE + "/v2/K/kyc?customerAccountNumber=074111111&operatorCode=MOOV_MONEY"))
                 .andRespond(withSuccess("{\"data\":{\"firstname\":\"Awa Nze\"}}", MediaType.APPLICATION_JSON));

@@ -20,7 +20,7 @@ class PvitProductionGuardTest {
     private static AppProperties with(BigDecimal sandboxAmount, String operationAccount, String callbackCode) {
         AppProperties base = TestProperties.create();
         PvitProperties p = base.pvit();
-        PvitProperties pvit = new PvitProperties(p.baseUrl(), operationAccount, p.secretPassword(), p.codeUrlSecret(), p.codeUrlPayment(), p.codeUrlStatus(), p.codeUrlFees(),
+        PvitProperties pvit = new PvitProperties(p.baseUrl(), operationAccount, operationAccount, p.secretPassword(), p.codeUrlSecret(), p.codeUrlPayment(), p.codeUrlStatus(), p.codeUrlFees(),
                 p.codeUrlKyc(), callbackCode, p.agent(), p.product(), p.ownerCharge(), sandboxAmount, Duration.ofSeconds(5), Duration.ofMinutes(3), Duration.ofMinutes(30), false);
         return new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), base.jwt(), base.auth(), base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(),
                 base.storage(), pvit, base.driverApp(), base.publicSite(), base.ocpp(), base.rateLimit());
@@ -34,7 +34,7 @@ class PvitProductionGuardTest {
     @Test
     void namesEveryMissingCredentialInProduction() {
         var failure = assertThrows(IllegalStateException.class, () -> new PvitProductionGuard(with(null, "", null), PRODUCTION));
-        assertTrue(failure.getMessage().contains("PVIT_OPERATION_ACCOUNT_CODE") && failure.getMessage().contains("PVIT_CALLBACK_URL_CODE"), failure.getMessage());
+        assertTrue(failure.getMessage().contains("PVIT_AIRTEL_OPERATION_ACCOUNT_CODE") && failure.getMessage().contains("PVIT_MOOV_OPERATION_ACCOUNT_CODE") && failure.getMessage().contains("PVIT_CALLBACK_URL_CODE"), failure.getMessage());
     }
 
     @Test
