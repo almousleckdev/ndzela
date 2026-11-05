@@ -91,4 +91,49 @@ export interface ChargingSessionRow {
   powerKw: number | null;
   // The recharge that recorded its payment
   rechargeId: string | null;
+  // The driver who charged and the car they held then; null for a public customer
+  holder: SessionHolder | null;
+  // What the driver paid from the Zella wallet; null when nothing was reported
+  payment: SessionPayment | null;
+}
+
+export type PaymentState = "PENDING" | "CHARGED" | "NOT_CHARGED" | "UNDER_REVIEW" | "REFUNDED";
+
+export interface SessionPayment {
+  state: PaymentState | null;
+  total: number | null;
+  energyCost: number | null;
+  vat: number | null;
+  serviceFee: number | null;
+  currency: string | null;
+  method: string | null;
+  breakdownEstimated: boolean;
+  // The charge was limited to the authorised budget: the parts add up to more than the total
+  capped: boolean;
+}
+
+export interface SessionHolder {
+  driverId: string;
+  driverName: string;
+  vehicleId: string | null;
+  vehicle: string | null;
+}
+
+export type IdTagStatus = "LINKED" | "SUGGESTED" | "UNLINKED";
+
+export interface IdTagRow {
+  id: string;
+  // Null until the customer's first charge
+  idTag: string | null;
+  customerId: string;
+  status: IdTagStatus;
+  matchedOn: string;
+  zellaName: string;
+  driverId: string;
+  driverName: string | null;
+  driverEmail: string | null;
+  driverPhone: string | null;
+  nameMatches: boolean;
+  decidedBy: string;
+  decidedAt: string;
 }

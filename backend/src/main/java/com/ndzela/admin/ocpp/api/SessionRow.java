@@ -9,17 +9,29 @@ import java.util.UUID;
 // A session as staff see it: energy in kWh, and the platform's amount (before VAT, not proof of payment) in whole currency units
 public record SessionRow(UUID id, String transactionId, String chargePointId, String connectorId, String idTag, OffsetDateTime startedAt, OffsetDateTime endedAt,
                          String status, BigDecimal energyKwh, Long costMinor, BigDecimal amount, String currency, String stopReason, Integer socBefore, Integer socAfter,
-                         Integer durationSeconds, BigDecimal pricePerKwh, BigDecimal powerKw, UUID rechargeId) {
+                         Integer durationSeconds, BigDecimal pricePerKwh, BigDecimal powerKw, UUID rechargeId, SessionHolder holder, SessionPaymentView payment) {
     public static SessionRow from(ChargingSession s) {
         BigDecimal kwh = s.getEnergyWh() == null ? null : BigDecimal.valueOf(s.getEnergyWh()).movePointLeft(3);
         return new SessionRow(s.getId(), s.getTransactionId(), s.getChargePointId(), s.getConnectorId(), s.getIdTag(), s.getStartedAt(), s.getEndedAt(), s.getStatus(), kwh,
-                s.getCostMinor(), amount(s), s.getCurrency(), s.getStopReason(), s.getSocBefore(), s.getSocAfter(), s.getDurationSeconds(), pricePerKwh(s), s.getPowerKw(), null);
+                s.getCostMinor(), amount(s), s.getCurrency(), s.getStopReason(), s.getSocBefore(), s.getSocAfter(), s.getDurationSeconds(), pricePerKwh(s), s.getPowerKw(), null, null, null);
     }
 
     /** The same session, marked as paid by this recharge. */
     public SessionRow withRecharge(UUID recharge) {
         return new SessionRow(id, transactionId, chargePointId, connectorId, idTag, startedAt, endedAt, status, energyKwh, costMinor, amount, currency, stopReason, socBefore, socAfter,
-                durationSeconds, pricePerKwh, powerKw, recharge);
+                durationSeconds, pricePerKwh, powerKw, recharge, holder, payment);
+    }
+
+    /** The same session, with the driver who charged. */
+    public SessionRow withHolder(SessionHolder who) {
+        return new SessionRow(id, transactionId, chargePointId, connectorId, idTag, startedAt, endedAt, status, energyKwh, costMinor, amount, currency, stopReason, socBefore, socAfter,
+                durationSeconds, pricePerKwh, powerKw, rechargeId, who, payment);
+    }
+
+    /** The same session, with what the driver paid. */
+    public SessionRow withPayment(SessionPaymentView paid) {
+        return new SessionRow(id, transactionId, chargePointId, connectorId, idTag, startedAt, endedAt, status, energyKwh, costMinor, amount, currency, stopReason, socBefore, socAfter,
+                durationSeconds, pricePerKwh, powerKw, rechargeId, holder, paid);
     }
 
     private static BigDecimal pricePerKwh(ChargingSession s) {

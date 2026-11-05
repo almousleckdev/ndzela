@@ -28,7 +28,7 @@ import java.util.Set;
 // Integration test base
 @SpringBootTest
 @AutoConfigureMockMvc
-@org.springframework.context.annotation.Import({FakeStorageConfig.class, FakeFleetConfig.class})
+@org.springframework.context.annotation.Import({FakeStorageConfig.class, FakeFleetConfig.class, FakeZellaConfig.class})
 public abstract class AbstractIntegrationTest {
     public static final String PASSWORD = "Str0ng!Pass";
 
@@ -71,6 +71,7 @@ public abstract class AbstractIntegrationTest {
 
     @Autowired protected FakeCloudinaryClient cloud;
     @Autowired protected FakeFleetClient fleet;
+    @Autowired protected FakeZellaClient zella;
     @Autowired protected JdbcTemplate jdbc;
     @Autowired protected org.springframework.data.redis.core.StringRedisTemplate redis;
     @Autowired protected MockMvc mvc;
@@ -82,15 +83,16 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void resetData() {
-        jdbc.execute("TRUNCATE TABLE tenant_test_items, charging_sessions, ocpp_sync_state, driver_applications, contact_messages, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
+        jdbc.execute("TRUNCATE TABLE tenant_test_items, session_payments, zella_sync_state, charging_sessions, ocpp_sync_state, driver_applications, contact_messages, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
         jdbc.update("UPDATE countries SET active = TRUE, late_penalty = 0, charging_critical_percent = 20");
         cloud.clear();
         fleet.clear();
+        zella.clear();
         var ocppKeys = redis.keys("ocpp:sync:*");
         if (ocppKeys != null && !ocppKeys.isEmpty()) {
             redis.delete(ocppKeys);
         }
-        for (String pattern : new String[] {"ratelimit:*", "auth:otp*"}) {
+        for (String pattern : new String[] {"ratelimit:*", "auth:otp*", "zella:*"}) {
             var keys = redis.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redis.delete(keys);

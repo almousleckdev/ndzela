@@ -26,5 +26,7 @@ public interface VehicleAssignmentRepository extends JpaRepository<VehicleAssign
 
     java.util.Optional<VehicleAssignment> findFirstByVehicleIdAndEndedAtIsNull(UUID vehicleId);
 
+    List<VehicleAssignment> findAllByDriverIdIn(Collection<UUID> driverIds);
+
     List<VehicleAssignment> findAllByDriverIdInAndEndedAtIsNull(Collection<UUID> driverIds);
 }

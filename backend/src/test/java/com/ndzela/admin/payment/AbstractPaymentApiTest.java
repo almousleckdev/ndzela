@@ -1,5 +1,6 @@
 package com.ndzela.admin.payment;
 
+import com.jayway.jsonpath.JsonPath;
 import com.ndzela.admin.driver.AbstractDriverTest;
 import com.ndzela.admin.driver.DriverJson;
 import com.ndzela.admin.user.domain.User;
@@ -36,6 +37,6 @@ abstract class AbstractPaymentApiTest extends AbstractDriverTest {
     }
 
     protected String entryId(ResultActions result) throws Exception {
-        return com.jayway.jsonpath.JsonPath.read(result.andReturn().getResponse().getContentAsString(), "$.entry.id");
+        return JsonPath.read(result.andReturn().getResponse().getContentAsString(), "$.entry.id");
     }
 }
