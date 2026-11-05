@@ -8,6 +8,7 @@ import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.driver.api.dto.AssignVehicleRequest;
 import com.ndzela.admin.driver.api.dto.CreateDriverRequest;
 import com.ndzela.admin.driver.api.dto.DriverResponse;
+import com.ndzela.admin.driver.api.dto.SuspendRequest;
 import com.ndzela.admin.driver.api.dto.UpdateDriverRequest;
 import com.ndzela.admin.driver.api.dto.DriverStats;
 import com.ndzela.admin.contract.api.dto.ContractResponse;
@@ -97,8 +98,8 @@ public class DriverController {
 
     @PostMapping("/{id}/suspend")
     @PreAuthorize("hasAuthority('drivers:suspend')")
-    public DriverResponse suspend(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {
-        return drivers.suspend(id, request.reason());
+    public DriverResponse suspend(@PathVariable UUID id, @Valid @RequestBody SuspendRequest request) {
+        return drivers.suspend(id, request.reason(), Boolean.TRUE.equals(request.releaseVehicle()));
     }
 
     @PostMapping("/{id}/deactivate")

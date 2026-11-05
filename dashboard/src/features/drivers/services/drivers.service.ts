@@ -37,7 +37,7 @@ export const driversService = {
 
   update: (id: string, body: DriverDetailsBody) => apiClient<Driver>(`/drivers/${id}`, { method: "PUT", body }),
 
-  suspend: (id: string, reason: string) => apiClient<Driver>(`/drivers/${id}/suspend`, { method: "POST", body: { reason } }),
+  suspend: (id: string, reason: string, releaseVehicle = false) => apiClient<Driver>(`/drivers/${id}/suspend`, { method: "POST", body: { reason, releaseVehicle } }),
 
   block: (id: string, reason: string) => apiClient<Driver>(`/drivers/${id}/block`, { method: "POST", body: { reason } }),
 

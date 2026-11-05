@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api/api-client";
 import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import type { ChargingSummary, Recharge, RecordRechargeInput, Station, VehicleOption, ChargingSessionRow } from "@/features/charging/types";
+import type { ChargingSummary, SessionSummary, Recharge, RecordRechargeInput, Station, VehicleOption, ChargingSessionRow } from "@/features/charging/types";
 
 export const chargingService = {
   summary: () => apiClient<ChargingSummary>("/charging/summary"),
@@ -11,6 +11,8 @@ export const chargingService = {
 
   sessions: (query: { q?: string; status?: string; from?: string; to?: string }, page: number, size: number) =>
     apiClient<Page<ChargingSessionRow>>(`/charging/sessions?${queryString({ q: query.q?.trim(), status: query.status, from: query.from, to: query.to, page, size })}`),
+
+  sessionSummary: () => apiClient<SessionSummary>("/charging/sessions/summary"),
 
   record: (input: RecordRechargeInput) => apiClient<Recharge>("/charging/recharges", { method: "POST", body: input }),
 

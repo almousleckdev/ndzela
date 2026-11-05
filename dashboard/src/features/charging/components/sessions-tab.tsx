@@ -12,10 +12,10 @@ import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { columnsFor } from "@/components/data-table/features";
 import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
-import { Toolbar } from "@/components/layout/page";
+import { KpiBand, Panel, Toolbar, type Kpi } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
 import { usePolling } from "@/hooks/use-polling";
-import { describeRange, NO_RANGE, rangeOf } from "@/lib/date-range";
+import { describeRange, NO_RANGE } from "@/lib/date-range";
 import { formatFcfa } from "@/lib/money";
 import { formatDateTime } from "@/lib/time";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
@@ -26,15 +26,22 @@ import type { ChargingSessionRow } from "@/features/charging/types";
 
 const col = columnsFor<ChargingSessionRow>();
 
-// A session still under way is measured up to now.
-// The recharges reported by the OCPP platform; the amount is its own calculation (energy times tariff, before VAT), not a payment.
+// The network's sessions as the OCPP platform reports them; the amount is its calculation (energy times tariff), not a payment.
 export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionRow) => void }) {
   const { can } = usePermissions();
-  const query = useTableQuery({ range: rangeOf("last7") });
+  const query = useTableQuery({ range: NO_RANGE });
   const { range } = query;
   const list = useAsync(() => chargingService.sessions({ q: query.q, from: range.from, to: range.to }, query.page, query.size), [query.q, range.from, range.to, query.page, query.size]);
 
-  usePolling(list.reload, 5000);
+  const summary = useAsync(chargingService.sessionSummary, []);
+  usePolling(() => { list.reload(); summary.reload(); }, 5000);
+  const s = summary.data;
+  const kpis: Kpi[] = [
+    { label: "Recharges du jour", value: s?.sessionsToday ?? "-" },
+    { label: "FCFA du jour", value: s ? formatFcfa(s.fcfaToday) : "-" },
+    { label: "FCFA de la semaine", value: s ? formatFcfa(s.fcfaWeek) : "-" },
+    { label: "FCFA du mois", value: s ? formatFcfa(s.fcfaMonth) : "-" },
+  ];
 
   const columns = useMemo(() => col.columns([
     col.accessor("startedAt", { id: "startedAt", header: "Début", enableSorting: false, cell: (c) => (c.getValue() ? <span className="whitespace-nowrap tabular-nums">{formatDateTime(c.getValue() as string)}</span> : <None />) }),
@@ -61,7 +68,8 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
 
   return (
     <>
-      <p className="mb-4 text-sm text-muted">Les sessions de la borne, en direct, telles que la plateforme de recharge les transmet. Le montant calculé (énergie × tarif, avant TVA) n&apos;est pas la preuve d&apos;un paiement : une fois le client payé, enregistrez le paiement pour que la recharge compte dans les recettes.</p>
+      <KpiBand items={kpis} />
+      <Panel>
       <Toolbar start={(
         <>
           <SearchField label="Rechercher une session" placeholder="Borne, identifiant ou référence" value={query.search} onChange={query.setSearch} />
@@ -74,6 +82,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
       <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} numeric={["energyKwh", "amount"]}
         server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: [], onSortingChange: () => {} }}
         empty={<EmptyState title="Aucune session" description="Aucune session de recharge reçue sur cette période." />} />
+      </Panel>
     </>
   );
 }

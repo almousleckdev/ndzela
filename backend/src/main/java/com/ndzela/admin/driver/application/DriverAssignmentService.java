@@ -61,6 +61,14 @@ public class DriverAssignmentService {
                 vehicle.fleetNumber() + " " + vehicle.plate() + ", reason: " + reason.trim());
     }
 
+    // Frees the car (and ends the contract) when the driver has one; nothing to do otherwise.
+    @Transactional
+    public void releaseIfAny(Driver driver, String reason) {
+        if (assignments.findByDriverIdAndEndedAtIsNull(driver.getId()).isPresent()) {
+            unassign(driver, reason);
+        }
+    }
+
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public void discardOf(Driver driver) {
         assignments.findByDriverIdAndEndedAtIsNull(driver.getId()).ifPresent(open -> vehicleService.release(open.getVehicleId()));
