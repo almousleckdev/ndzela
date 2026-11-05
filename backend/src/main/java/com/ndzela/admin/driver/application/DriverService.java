@@ -79,19 +79,30 @@ public class DriverService {
         return queries.response(saved);
     }
 
+    // A manual suspension may also free the car; the automatic one never does (the driver still pays).
     @Transactional
-    public DriverResponse suspend(UUID id, String reason) {
-        return queries.response(statusService.suspend(id, reason));
+    public DriverResponse suspend(UUID id, String reason, boolean releaseVehicle) {
+        Driver driver = statusService.suspend(id, reason);
+        if (releaseVehicle) {
+            assignmentService.releaseIfAny(driver, reason);
+        }
+        return queries.response(driver);
     }
 
+    // A blocked driver no longer holds a car.
     @Transactional
     public DriverResponse block(UUID id, String reason) {
-        return queries.response(statusService.block(id, reason));
+        Driver driver = statusService.block(id, reason);
+        assignmentService.releaseIfAny(driver, reason);
+        return queries.response(driver);
     }
 
+    // A driver who quits no longer holds a car.
     @Transactional
     public DriverResponse deactivate(UUID id, String reason) {
-        return queries.response(statusService.deactivate(id, reason));
+        Driver driver = statusService.deactivate(id, reason);
+        assignmentService.releaseIfAny(driver, reason);
+        return queries.response(driver);
     }
 
     @Transactional

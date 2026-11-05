@@ -13,6 +13,8 @@ interface ReasonDialogProps {
   confirmText: string;
   destructive?: boolean;
   onClose: () => void;
+  // Extra controls shown under the reason
+  children?: React.ReactNode;
   // Receives the trimmed reason; a thrown error is shown and the dialog stays open.
   onConfirm: (reason: string) => Promise<void>;
 }
@@ -20,7 +22,7 @@ interface ReasonDialogProps {
 const MAX_LENGTH = 255;
 
 // Asks for the mandatory reason of a restrictive action (suspend, block, remove...).
-export function ReasonDialog({ title, description, confirmText, destructive = false, onClose, onConfirm }: ReasonDialogProps) {
+export function ReasonDialog({ title, description, confirmText, destructive = false, onClose, onConfirm, children }: ReasonDialogProps) {
   const { addToast } = useToast();
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string>();
@@ -54,6 +56,7 @@ export function ReasonDialog({ title, description, confirmText, destructive = fa
           />
           {error && <p role="alert" className="mt-1 text-xs font-medium text-red-600">{error}</p>}
         </div>
+        {children}
         <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
           <Button variant="outline" onClick={onClose} disabled={isSaving}>Annuler</Button>
           <Button variant={destructive ? "destructive" : "default"} onClick={submit} isLoading={isSaving}>{confirmText}</Button>

@@ -5,6 +5,7 @@ import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions";
+import { SuspendDialog } from "@/features/drivers/components/suspend-dialog";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver } from "@/features/drivers/types";
 
@@ -27,9 +28,8 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
 }
 
 const REASONED = {
-  deactivate: { title: "Mettre ce chauffeur inactif ?", text: "Il ne travaille pas pour le moment. Ce n'est pas une sanction.", button: "Mettre inactif", success: "Chauffeur inactif.", run: driversService.deactivate, destructive: false },
-  suspend: { title: "Suspendre ce chauffeur ?", text: "Il ne pourra plus utiliser l'application. Vous pourrez le réactiver.", button: "Suspendre", success: "Chauffeur suspendu.", run: driversService.suspend, destructive: false },
-  block: { title: "Bloquer ce chauffeur ?", text: "Le blocage est durable : seul un administrateur pourra le lever.", button: "Bloquer", success: "Chauffeur bloqué.", run: driversService.block, destructive: true },
+  deactivate: { title: "Mettre ce chauffeur inactif ?", text: "Il quitte ou arrête le travail : son véhicule redevient disponible et son contrat en cours est résilié.", button: "Mettre inactif", success: "Chauffeur inactif.", run: driversService.deactivate, destructive: false },
+  block: { title: "Bloquer ce chauffeur ?", text: "Le blocage est durable : seul un administrateur pourra le lever. Son véhicule redevient disponible et son contrat en cours est résilié.", button: "Bloquer", success: "Chauffeur bloqué.", run: driversService.block, destructive: true },
   "remove-vehicle": { title: "Retirer le véhicule ?", text: "Le véhicule redeviendra disponible et le contrat en cours sera résilié. L'historique est conservé.", button: "Retirer", success: "Véhicule retiré.", run: driversService.removeVehicle, destructive: false },
 } as const;
 
@@ -47,7 +47,9 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
   const { kind, driver } = target;
   const name = `${driver.personal.lastName} ${driver.personal.firstName}`;
 
-  if (kind === "suspend" || kind === "block" || kind === "deactivate" || kind === "remove-vehicle") {
+  if (kind === "suspend") return <SuspendDialog driver={driver} name={name} onClose={onClose} onDone={() => onDone(kind)} />;
+
+  if (kind === "block" || kind === "deactivate" || kind === "remove-vehicle") {
     const copy = REASONED[kind];
     return (
       <ReasonDialog title={copy.title} description={`${name}. ${copy.text}`} confirmText={copy.button} destructive={copy.destructive} onClose={onClose}

@@ -47,6 +47,13 @@ export interface ChargingSummary {
   managers: number;
 }
 
+export interface SessionSummary {
+  sessionsToday: number;
+  fcfaToday: number;
+  fcfaWeek: number;
+  fcfaMonth: number;
+}
+
 export interface RecordRechargeInput {
   vehicleId?: string;
   publicLabel?: string;

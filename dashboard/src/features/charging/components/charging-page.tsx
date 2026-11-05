@@ -97,7 +97,7 @@ function ChargingContent() {
         )}
       />
       <Tabs tabs={[{ value: "recharges" as const, label: "Recharges" }, { value: "sessions" as const, label: "Sessions du réseau" }]} value={tab} onChange={setTab} label="Recharge énergie" />
-      {tab === "sessions" ? <Panel><SessionsTab onRecord={setRecordingSession} /></Panel> : <>
+      {tab === "sessions" ? <SessionsTab onRecord={setRecordingSession} /> : <>
       <KpiBand items={kpis} />
       <Panel>
         <Toolbar start={(

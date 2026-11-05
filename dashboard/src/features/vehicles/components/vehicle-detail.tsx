@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { BackLink } from "@/components/layout/back-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,22 +18,11 @@ import { formatFcfa } from "@/lib/money";
 import { RequirePermission } from "@/features/access/components/require-permission";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
+import { DetailRows } from "@/features/vehicles/components/detail-rows";
+import { VehicleRentalCard, VehicleDriverCard } from "@/features/vehicles/components/vehicle-rental-cards";
 import { VehicleGallery } from "@/features/vehicles/components/vehicle-gallery";
 import { STATUS_ACTIONS, STATUS_LABELS, STATUS_VARIANTS } from "@/features/vehicles/lib/vehicle-status";
 import { vehiclesService } from "@/features/vehicles/services/vehicles.service";
-
-function Rows({ rows }: { rows: [string, React.ReactNode][] }) {
-  return (
-    <dl className="divide-y divide-slate-100">
-      {rows.map(([label, value]) => (
-        <div key={label} className="flex justify-between gap-4 py-2 text-sm">
-          <dt className="text-slate-500">{label}</dt>
-          <dd className="text-right font-medium text-slate-900">{value || "-"}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
 
 function VehicleDetailContent({ id }: { id: string }) {
   const { can } = usePermissions();
@@ -84,7 +72,7 @@ function VehicleDetailContent({ id }: { id: string }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardTitle>Véhicule</CardTitle>
-          <Rows rows={[
+          <DetailRows rows={[
             ["Numéro", v.fleetNumber],
             ["Marque et modèle", `${v.brand} ${v.model}`],
             ["Année", String(v.year)],
@@ -93,22 +81,13 @@ function VehicleDetailContent({ id }: { id: string }) {
             ["N° de série (VIN)", v.vin],
             ["Prix d'achat", formatFcfa(v.purchasePrice)],
             ["Loyer journalier", formatFcfa(v.dailyRent)],
+            ["Ajouté le", new Date(v.createdAt).toLocaleDateString("fr-FR")],
           ]} />
         </Card>
-        <Card>
-          <CardTitle>Chauffeur</CardTitle>
-          {!can(PERMISSIONS.DRIVERS_READ) ? (
-            <p className="text-sm text-slate-500">Vous n&apos;avez pas accès aux chauffeurs.</p>
-          ) : driver.isLoading && !driver.data ? <Skeleton className="h-16 w-full" /> : driver.data ? (
-            <Rows rows={[
-              ["Nom", <Link key="n" href={`/drivers/${driver.data.id}`} className="text-primary hover:underline">{driver.data.personal.lastName} {driver.data.personal.firstName}</Link>],
-              ["Téléphone", driver.data.personal.phonePrimary],
-              ["Email", driver.data.personal.email],
-            ]} />
-          ) : (
-            <p className="text-sm text-slate-500">Ce véhicule n&apos;est loué à aucun chauffeur.</p>
-          )}
-        </Card>
+        {!can(PERMISSIONS.DRIVERS_READ) ? (
+          <Card><CardTitle>Chauffeur</CardTitle><p className="text-sm text-slate-500">Vous n&apos;avez pas accès aux chauffeurs.</p></Card>
+        ) : driver.isLoading && !driver.data ? <Skeleton className="h-64 w-full" /> : <VehicleDriverCard driver={driver.data} />}
+        {can(PERMISSIONS.DRIVERS_READ) && !(driver.isLoading && !driver.data) && <VehicleRentalCard driver={driver.data} rent={v.dailyRent} />}
       </div>
 
       <VehicleGallery vehicleId={id} />

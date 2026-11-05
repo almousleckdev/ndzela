@@ -1,5 +1,6 @@
 package com.ndzela.admin.charging.api;
 
+import com.ndzela.admin.charging.api.dto.SessionSummary;
 import com.ndzela.admin.charging.application.ChargingSessionService;
 import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.web.dto.PageResponse;
@@ -27,6 +28,12 @@ public class ChargingSessionController {
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                          @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         return sessions.list(status, q, from, to, page, size);
+    }
+
+    @GetMapping("/api/v1/charging/sessions/summary")
+    @PreAuthorize("hasAuthority('charging:read')")
+    public SessionSummary summary() {
+        return sessions.summary();
     }
 
     @GetMapping("/api/v1/charging/sessions/export")
