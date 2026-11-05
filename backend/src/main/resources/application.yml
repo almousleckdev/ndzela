@@ -133,6 +133,7 @@ app:
     country-code: ${ZELLA_COUNTRY:GA}                # the country the key and its drivers belong to
     lookup-enabled: ${ZELLA_LOOKUP_ENABLED:true}
     lookup-interval: ${ZELLA_LOOKUP_INTERVAL:PT15M}  # between two lookups of the drivers not matched yet
+    # app.zella.feed-interval (PT30S) and the two *-initial-delay settings can be overridden; tests push the schedules out so the jobs never run by themselves
     request-timeout: 10s
   rate-limit:
     password-reset-per-address: ${RATE_LIMIT_RESET_PER_ADDRESS:10}   # reset requests one address can send in an hour

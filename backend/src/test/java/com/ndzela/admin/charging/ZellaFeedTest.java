@@ -122,7 +122,7 @@ class ZellaFeedTest extends AbstractDriverTest {
     @Test
     void aRefusedCursorStartsTheFeedOverFromTheBeginning() throws Exception {
         session("7");
-        jdbc.update("insert into zella_sync_state (country_id, sync_cursor) select id, 'old' from countries where code = 'GA'");
+        jdbc.update("insert into zella_sync_state (country_id, sync_cursor) select id, 'old' from countries where code = 'GA' on conflict (country_id) do update set sync_cursor = 'old'");
         zella.refuseCursor("old");
         zella.serveFeed(null, "", new ZellaFeedPage(List.of(paid("7", "cust-1", "CHARGED", 4000, "2026-11-05T10:00:00Z")), "c1", false));
 

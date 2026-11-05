@@ -21,7 +21,7 @@ public class ZellaFeedJob {
     private final CountryService countries;
     private final AppProperties props;
 
-    @Scheduled(fixedDelayString = "${app.zella.feed-interval:PT30S}", initialDelayString = "PT45S")
+    @Scheduled(fixedDelayString = "${app.zella.feed-interval:PT30S}", initialDelayString = "${app.zella.feed-initial-delay:PT45S}")
     public void run() {
         var country = countries.list().stream().filter(c -> c.code().equals(props.zella().countryCode())).findFirst().orElse(null);
         if (country == null) {

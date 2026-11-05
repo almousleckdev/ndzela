@@ -28,7 +28,7 @@ public class IdTagLookupJob {
     private final CountryService countries;
     private final AppProperties props;
 
-    @Scheduled(fixedDelayString = "${app.zella.lookup-interval:PT15M}", initialDelayString = "PT1M")
+    @Scheduled(fixedDelayString = "${app.zella.lookup-interval:PT15M}", initialDelayString = "${app.zella.lookup-initial-delay:PT1M}")
     public void run() {
         UUID countryId = zellaCountry();
         if (countryId == null) {
