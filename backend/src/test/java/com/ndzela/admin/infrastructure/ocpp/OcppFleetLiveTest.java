@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OcppFleetLiveTest {
     private static OcppFleetClient client(String key) {
         OcppProperties base = TestProperties.create().ocpp();
-        OcppProperties live = new OcppProperties("https://zella-ocpp.com", key, base.webhookSecret(), base.webhookHeader(), base.countryCode(), false, base.syncInterval(), 100, Duration.ofSeconds(20));
+        OcppProperties live = new OcppProperties("https://zella-ocpp.com", key, System.getenv("OCPP_SIGNING_SECRET"), base.webhookSecret(), base.webhookHeader(), base.countryCode(), false, base.syncInterval(), 100, Duration.ofSeconds(20));
         return new OcppFleetClient(RestClient.builder().baseUrl(live.baseUrl()).build(), live, JsonMapper.builder().build());
     }
 

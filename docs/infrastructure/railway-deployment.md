@@ -30,7 +30,7 @@ Reference variables (`${{Service.NAME}}`) are filled by Railway. **Generate new 
 | `PUBLIC_SITE_ORIGINS` | `https://ndzela.com,https://www.ndzela.com`: the public website, which may only post its forms to `/api/v1/public`, never with the cookie (see [ADR-0018](../adr/0018-railway-hosting-and-domains.md)) |
 | `MAIL_PROVIDER`, `RESEND_API_KEY`, `MAIL_FROM` | `resend`, the Resend key, a sender on the verified domain (for example `no-reply@ndzela.com`). Railway's smaller plans block outgoing SMTP, so do not use `smtp`; never `log` |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | From the console. `CLOUDINARY_ROOT_FOLDER=ndzela-prod` |
-| `OCPP_FLEET_API_KEY`, `OCPP_WEBHOOK_SECRET`, `OCPP_WEBHOOK_HEADER`, `OCPP_COUNTRY` | The Fleet key, the webhook signing secret the OCPP developer gives you (they sign with it; it is not a value we choose), `X-Webhook-Signature`, `GA` |
+| `OCPP_FLEET_API_KEY`, `OCPP_SIGNING_SECRET`, `OCPP_WEBHOOK_SECRET`, `OCPP_WEBHOOK_HEADER`, `OCPP_COUNTRY` | The Fleet key, the HMAC signing secret of our account (a third secret, different from the other two; ask the OCPP team), the webhook signing secret the OCPP developer gives you (they sign with it; it is not a value we choose), `X-Webhook-Signature`, `GA` |
 | `PVIT_*` | Staging: the sandbox values and `PVIT_SANDBOX_AMOUNT=150`. Production: the real account, no `PVIT_SANDBOX_AMOUNT`; follow the [payment go-live checklist](infrastructure-and-deployment.md#payment-go-live-pvit) before announcing payments |
 
 ## Domain `api.ndzela.com` (PlanetHoster DNS)
