@@ -84,8 +84,9 @@ public class DriverController {
                                  @RequestPart(value = "photo", required = false) MultipartFile photo,
                                  @RequestPart(value = "licence", required = false) MultipartFile licence,
                                  @RequestPart(value = "id", required = false) MultipartFile id,
-                                 @RequestPart(value = "addressProof", required = false) MultipartFile addressProof) {
-        return drivers.create(request, new DriverUploads(photo, licence, id, addressProof));
+                                 @RequestPart(value = "addressProof", required = false) MultipartFile addressProof,
+                                 @RequestPart(value = "residenceCertificate", required = false) MultipartFile residenceCertificate) {
+        return drivers.create(request, new DriverUploads(photo, licence, id, addressProof, residenceCertificate));
     }
 
     @PutMapping("/{id}")

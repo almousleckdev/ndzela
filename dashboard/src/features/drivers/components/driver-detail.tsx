@@ -157,7 +157,7 @@ function DriverDetailContent({ id }: { id: string }) {
           <Card>
             <CardTitle>Formation</CardTitle>
             <Rows rows={[
-              ["Centre", d.training.trainingCenter.name],
+              ["Centre", d.training.trainingCenter?.name],
               ["Date de formation", date(d.training.trainingDate)],
               ["N° de certificat", d.training.certificateNumber],
             ]} />

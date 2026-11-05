@@ -16,7 +16,7 @@ class PaymentTrackingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -25,7 +25,7 @@ class PaymentTrackingView extends StatelessWidget {
             Text(
               'Validez sur votre téléphone',
               textAlign: TextAlign.center,
-              style: AppTextStyles.display(24),
+              style: AppTextStyles.title,
             ),
             const SizedBox(height: 12),
             Text(
@@ -33,7 +33,7 @@ class PaymentTrackingView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppColors.muted,
-                fontSize: 15,
+                fontSize: 14,
                 height: 1.4,
               ),
             ),

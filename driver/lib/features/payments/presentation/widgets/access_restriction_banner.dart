@@ -34,7 +34,7 @@ class AccessRestrictionBanner extends StatelessWidget {
               message,
               style: const TextStyle(
                 color: AppColors.danger,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
                 height: 1.35,
               ),
             ),

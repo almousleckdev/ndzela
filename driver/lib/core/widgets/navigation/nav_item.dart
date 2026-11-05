@@ -58,8 +58,8 @@ class NavItem extends StatelessWidget {
               tab.label,
               style: TextStyle(
                 color: color,
-                fontSize: 11.5,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w500 : FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),

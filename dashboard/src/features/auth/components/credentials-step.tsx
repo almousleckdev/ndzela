@@ -20,7 +20,6 @@ export function CredentialsStep({ onSubmit, onForgotPassword }: CredentialsStepP
       <FormField
         label="Adresse Email"
         icon={Mail}
-        variant="glass"
         type="email"
         autoComplete="username"
         placeholder="admin@ndzela.com"
@@ -30,7 +29,6 @@ export function CredentialsStep({ onSubmit, onForgotPassword }: CredentialsStepP
       <FormField
         label="Mot de passe"
         icon={KeyRound}
-        variant="glass"
         type="password"
         autoComplete="current-password"
         placeholder="••••••••"

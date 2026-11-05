@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/brand_colors.dart';
 import '../../platform/app_icon.dart';
 import '../../platform/app_icons.dart';
@@ -38,45 +39,34 @@ class ActionRow extends StatelessWidget {
       label: label,
       child: AppTappable(
         onTap: busy ? () {} : onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
             children: [
               CircleBadge(
                 color: soft,
-                size: 40,
-                child: PlatformIcon(icon, size: 20, color: color),
+                size: 32,
+                child: PlatformIcon(icon, size: 16, color: color),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       label,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
+                      style: AppTextStyles.body.copyWith(
                         color: destructive ? AppColors.danger : AppColors.ink,
                       ),
                     ),
-                    if (hint != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        hint!,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                    ],
+                    if (hint != null) Text(hint!, style: AppTextStyles.caption),
                   ],
                 ),
               ),
               const PlatformIcon(
                 AppIcons.next,
-                size: 18,
+                size: 16,
                 color: AppColors.muted,
               ),
             ],

@@ -27,6 +27,12 @@ class DriverCreationTest extends AbstractDriverTest {
     }
 
     @Test
+    void theTrainingCentreIsOptional() throws Exception {
+        createDriver(manager, DriverJson.create(vehicle, null)).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.training.trainingCenter").doesNotExist());
+    }
+
+    @Test
     void createsTheDriverTheAssignmentAndMarksTheVehicleAssigned() throws Exception {
         createDriver(manager, body().personal("phonePrimary", "+241 62 82 18 55").personal("email", "Jean@Ndzela.TEST"))
                 .andExpect(status().isCreated())

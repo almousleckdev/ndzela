@@ -53,12 +53,12 @@ class DayCountTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               ),
               Text(
                 option.amount.toString(),
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
             ],
           ),

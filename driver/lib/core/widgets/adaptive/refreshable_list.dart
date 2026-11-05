@@ -9,7 +9,7 @@ class RefreshableList extends StatelessWidget {
     super.key,
     required this.onRefresh,
     required this.children,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(16),
   });
 
   final Future<void> Function() onRefresh;

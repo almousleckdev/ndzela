@@ -71,6 +71,13 @@ public class DriverAppController {
         return app.documents(driver.driverId());
     }
 
+    @GetMapping("/documents/contract")
+    @PreAuthorize("hasAuthority('driver:self')")
+    public ResponseEntity<byte[]> contractPdf(@AuthenticationPrincipal DriverPrincipal driver) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).cacheControl(CacheControl.noStore())
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"contrat.pdf\"").body(app.contractPdf(driver.driverId()));
+    }
+
     @GetMapping("/support")
     @PreAuthorize("hasAuthority('driver:self')")
     public SupportContactsResponse support(@AuthenticationPrincipal DriverPrincipal driver) {

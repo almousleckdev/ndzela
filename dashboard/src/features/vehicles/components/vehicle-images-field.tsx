@@ -39,8 +39,7 @@ export function VehicleImagesField({ vehicleId, pendingFiles, onPendingFilesChan
     let cancelled = false;
     (async () => {
       try {
-        const list = await vehiclesService.images(vehicleId);
-        const withUrls = await Promise.all(list.map(async (image) => ({ ...image, url: URL.createObjectURL(await vehiclesService.imageBlob(vehicleId, image.id)) })));
+        const withUrls = await vehiclesService.imagesWithUrls(vehicleId);
         if (!cancelled) setRemote(withUrls);
       } catch (error) {
         if (!cancelled) addToast({ title: "Erreur", description: getErrorMessage(error, "Impossible de charger les photos."), type: "error" });
@@ -67,9 +66,8 @@ export function VehicleImagesField({ vehicleId, pendingFiles, onPendingFilesChan
     if (vehicleId) {
       setIsUploading(true);
       try {
-        const updated = await vehiclesService.uploadImages(vehicleId, files);
-        const withUrls = await Promise.all(updated.map(async (image) => ({ ...image, url: URL.createObjectURL(await vehiclesService.imageBlob(vehicleId, image.id)) })));
-        setRemote(withUrls);
+        await vehiclesService.uploadImages(vehicleId, files);
+        setRemote(await vehiclesService.imagesWithUrls(vehicleId));
       } catch (error) {
         addToast({ title: "Erreur", description: getErrorMessage(error, "Impossible d'ajouter la photo."), type: "error" });
       } finally {

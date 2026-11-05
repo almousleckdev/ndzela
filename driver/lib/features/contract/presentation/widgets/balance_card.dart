@@ -4,11 +4,10 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../../../../app/theme/brand_colors.dart';
 import '../../../../core/platform/app_icons.dart';
 import '../../../../core/widgets/adaptive/app_button.dart';
-import '../../../../core/widgets/display/road_line.dart';
 import '../../../../core/widgets/display/status_chip.dart';
 import '../../../payments/domain/arrears_summary.dart';
 
-// The first thing a driver sees
+// The first thing a driver sees: what is owed, and the way to pay it.
 class BalanceCard extends StatelessWidget {
   const BalanceCard({
     super.key,
@@ -23,23 +22,12 @@ class BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final late = arrears.isLate;
     final brand = context.brand;
-    final onBrand = Colors.white.withValues(alpha: 0.82);
+    final onBrand = Colors.white.withValues(alpha: 0.85);
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: LinearGradient(
-          colors: [brand.primary, brand.primaryInk],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: brand.primary.withValues(alpha: 0.28),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: brand.primary,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,11 +37,7 @@ class BalanceCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Solde à régulariser',
-                  style: TextStyle(
-                    color: onBrand,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                  style: AppTextStyles.label.copyWith(color: onBrand),
                 ),
               ),
               StatusChip(
@@ -63,7 +47,7 @@ class BalanceCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -72,49 +56,34 @@ class BalanceCard extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: arrears.total.digits,
-                    style: AppTextStyles.display(
-                      44,
-                      color: Colors.white,
-                      height: 1.05,
-                    ),
+                    style: AppTextStyles.hero.copyWith(color: Colors.white),
                   ),
                   TextSpan(
                     text: ' ${arrears.total.currencyLabel}',
-                    style: AppTextStyles.display(20, color: onBrand),
+                    style: AppTextStyles.heading.copyWith(color: onBrand),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 2),
           Text(
             late
                 ? (arrears.unpaidDays > 1
                       ? '${arrears.unpaidDays} jours de retard'
                       : '1 jour de retard')
-                : 'Aucun loyer en retard',
-            style: TextStyle(
-              color: onBrand,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
+                : 'Aucun loyer en retard. Merci !',
+            style: AppTextStyles.label.copyWith(color: onBrand),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            child: RoadLine(color: Colors.white, opacity: 0.55),
-          ),
-          if (late)
+          if (late) ...[
+            const SizedBox(height: 14),
             AppButton(
               label: 'Régulariser maintenant',
               icon: AppIcons.pay,
               variant: AppButtonVariant.light,
               onPressed: onRegularise,
-            )
-          else
-            Text(
-              'Merci, votre compte est en règle.',
-              style: TextStyle(color: onBrand, fontWeight: FontWeight.w600),
             ),
+          ],
         ],
       ),
     );

@@ -101,7 +101,7 @@ public class Driver extends TenantOwned {
     private String emergencyAddress;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "training_center_id", nullable = false)
+    @JoinColumn(name = "training_center_id")
     private TrainingCenter trainingCenter;
 
     @Column(name = "training_date", nullable = false)
@@ -121,6 +121,9 @@ public class Driver extends TenantOwned {
 
     @Column(name = "address_proof_file")
     private String addressProofFile;
+
+    @Column(name = "residence_certificate_file")
+    private String residenceCertificateFile;
 
     @Column(name = "status_reason")
     private String statusReason;

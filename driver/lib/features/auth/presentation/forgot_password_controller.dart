@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth_providers.dart';
 
-// The two steps of a forgotten password
+// The steps of a forgotten password: ask for a code, check it, choose the new password
 class ForgotPasswordController extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
@@ -12,6 +12,19 @@ class ForgotPasswordController extends AsyncNotifier<void> {
     state = await AsyncValue.guard(
       () =>
           ref.read(authRepositoryProvider).requestResetCode(identifier.trim()),
+    );
+    return !state.hasError;
+  }
+
+  Future<bool> verifyCode({
+    required String identifier,
+    required String code,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref
+          .read(authRepositoryProvider)
+          .verifyResetCode(identifier: identifier.trim(), code: code.trim()),
     );
     return !state.hasError;
   }

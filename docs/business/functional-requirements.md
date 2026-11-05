@@ -31,7 +31,7 @@ Design consequence: because the app comes later, driver records are created in p
 
 **Drivers and vehicles**
 - Drivers **never self-register**: the **gestionnaire** creates them (5-step wizard, **all-or-nothing, no draft**), assigns a car and creates the contract; the driver later signs in with **email or phone + password only** and **must change the initial password** (min. 8 characters) at first login. The **ADMIN** suspends, blocks and reactivates drivers (every restriction needs a reason); the driver photo is mandatory and documents are uploads.
-- Driver must be **18 or older** on the creation date. Civilité: Male/Female. ID type selected, then the number typed (no upload). Licence category: A, B, C or D. Training centre from a **managed list** (gestionnaire). ID number, licence number, phone, email **unique per country**. N° Certificat optional.
+- Driver must be **18 or older** on the creation date. Civilité: Male/Female. ID type selected, then the number typed (no upload). Licence category: A, B, C or D. Training centre **optional**, from a **managed list** (gestionnaire). ID number, licence number, phone, email **unique per country**. N° Certificat optional.
 - Vehicles: **Marque, Modèle, Année, Immatriculation, Couleur, Prix d'achat, Loyer journalier, Numéro du véhicule** required; **VIN optional**; vehicle number and plate **unique**; statuses `AVAILABLE`, `ASSIGNED`, `IN_MAINTENANCE`, `OUT_OF_SERVICE`; the daily rent is fixed on the car. One driver = one contract; one car = one driver. The **gestionnaire** manages vehicles, drivers and contracts.
 
 **Contracts and payments**

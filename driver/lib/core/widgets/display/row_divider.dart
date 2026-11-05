@@ -8,7 +8,7 @@ class RowDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.only(left: 52),
+    padding: EdgeInsets.only(left: 44),
     child: SizedBox(
       height: 1,
       width: double.infinity,

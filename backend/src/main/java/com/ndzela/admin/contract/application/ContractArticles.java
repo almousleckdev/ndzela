@@ -1,5 +1,6 @@
 package com.ndzela.admin.contract.application;
 
+import com.ndzela.admin.common.text.ColorNames;
 import com.ndzela.admin.contract.domain.Contract;
 import com.ndzela.admin.contract.domain.snapshot.ContractSnapshot;
 
@@ -60,7 +61,7 @@ final class ContractArticles {
         b.article("ARTICLE 2 : DÉSIGNATION ET IDENTIFICATION DU VÉHICULE");
         b.para("2.1. Le véhicule objet du présent contrat est identifié comme suit :");
         b.grid(List.of(row("Caractéristique", "Valeur"), row("Marque", v.brand()), row("Modèle", v.model()), row("N° Véhicule NDZELA", v.fleetNumber()),
-                row("Immatriculation", v.plate()), row("Couleur", v.color()), row("N° de série (VIN)", v.vin() == null ? "Non renseigné" : v.vin()),
+                row("Immatriculation", v.plate()), row("Couleur", ColorNames.of(v.color())), row("N° de série (VIN)", v.vin() == null ? "Non renseigné" : v.vin()),
                 row("Année", String.valueOf(v.year()))), true);
         b.para("2.2. Équipements fournis avec le véhicule :");
         b.bullet("Branding complet aux couleurs NDZELA (habillage, logos, signalétique) ;");
@@ -73,7 +74,7 @@ final class ContractArticles {
         var t = s.training();
         b.article("ARTICLE 3 : CONDITIONS PRÉALABLES D'OBTENTION");
         b.para("3.1. Formation validée :", BOLD);
-        b.rows(List.of(row("Centre de formation", t.centerName()), row("Date de formation", date(t.date())),
+        b.rows(List.of(row("Centre de formation", t.centerName() == null ? "Non renseigné" : t.centerName()), row("Date de formation", date(t.date())),
                 row("N° Certificat", t.certificateNumber() == null ? "À compléter" : t.certificateNumber())));
         b.para("3.2. Permis de conduire :", BOLD);
         b.rows(List.of(row("N° Permis", s.licence().number()), row("Catégorie", s.licence().category()), row("Délivré le", date(s.licence().issueDate()))));
@@ -81,6 +82,7 @@ final class ContractArticles {
         if (s.documents().licence()) provided.add("Permis de conduire");
         if (s.documents().id()) provided.add("Pièce d'identité");
         if (s.documents().addressProof()) provided.add("Justificatif de domicile de moins de 3 mois");
+        if (s.documents().residenceCertificate()) provided.add("Certificat de résidence");
         b.para("3.3. Documents fournis : " + (provided.isEmpty() ? "Aucun document numérisé à ce jour." : String.join(", ", provided) + "."));
     }
 

@@ -32,7 +32,7 @@ class WeekBanner extends StatelessWidget {
               'Semaine non réglée : payez avant le ${formatDateTime(arrears.weekClosesAt!)}.',
               style: const TextStyle(
                 color: AppColors.danger,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
                 height: 1.35,
               ),
             ),

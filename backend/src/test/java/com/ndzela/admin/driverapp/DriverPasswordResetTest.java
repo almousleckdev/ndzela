@@ -21,6 +21,11 @@ class DriverPasswordResetTest extends AbstractDriverAppTest {
                 .content("{\"identifier\":\"" + identifier + "\",\"code\":\"" + code + "\",\"newPassword\":\"" + password + "\"}"));
     }
 
+    private ResultActions verify(String identifier, String code) throws Exception {
+        return mvc.perform(post("/api/v1/driver/auth/verify-reset-code").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"identifier\":\"" + identifier + "\",\"code\":\"" + code + "\"}"));
+    }
+
     private String code() {
         return redis.opsForValue().get("auth:otp:driver-reset:" + driverId);
     }
@@ -42,6 +47,16 @@ class DriverPasswordResetTest extends AbstractDriverAppTest {
         // A reset must also end any access token that was already live, not just the refresh chain.
         asDriver("/api/v1/driver/account", oldAccessToken).andExpect(status().isUnauthorized());
         reset(email, code, "Autre12345").andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INVALID_RESET_CODE"));
+    }
+
+    @Test
+    void theCodeCanBeCheckedBeforeChoosingThePasswordAndStaysUsable() throws Exception {
+        forgot(email).andExpect(status().isAccepted());
+        String code = code();
+        verify(email, "000000".equals(code) ? "111111" : "000000").andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INVALID_RESET_CODE"));
+        verify(email, code).andExpect(status().isNoContent());
+        reset(email, code, "Nouveau123").andExpect(status().isNoContent());
+        verify(email, code).andExpect(status().isUnprocessableEntity());
     }
 
     @Test

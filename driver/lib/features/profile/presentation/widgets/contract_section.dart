@@ -15,18 +15,12 @@ class ContractSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SectionCard(
-      title: 'Mon contrat',
+      title: 'Détails du contrat',
       child: AsyncView(
         value: ref.watch(contractDetailsProvider),
         onRetry: () => ref.invalidate(contractDetailsProvider),
         data: (contract) => Column(
           children: [
-            InfoRow(
-              icon: AppIcons.contract,
-              label: 'N° de contrat',
-              value: contract.number,
-            ),
-            const RowDivider(),
             InfoRow(
               icon: AppIcons.calendar,
               label: 'Date de début',
@@ -37,19 +31,6 @@ class ContractSection extends ConsumerWidget {
               icon: AppIcons.duration,
               label: 'Durée totale',
               value: formatMonths(contract.durationMonths),
-            ),
-            const RowDivider(),
-            InfoRow(
-              icon: AppIcons.money,
-              label: 'Loyer journalier',
-              value: contract.dailyRent.toString(),
-            ),
-            const RowDivider(),
-            InfoRow(
-              icon: AppIcons.calendar,
-              label: 'Jours payés',
-              value:
-                  '${contract.progress.paidDays} sur ${contract.progress.elapsedDays}',
             ),
             const RowDivider(),
             InfoRow(

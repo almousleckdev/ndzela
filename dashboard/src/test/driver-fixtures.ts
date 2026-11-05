@@ -22,7 +22,7 @@ export const storedDriver = {
   emergency: { ...validDriverValues.emergency, phone: "+241 66685807" },
   training: { trainingCenter: { id: "center-1", name: "NDZELA" }, trainingDate: "2026-10-15", certificateNumber: null },
   status: "ACTIVE", onLeave: false, statusReason: null,
-  files: { photo: true, licence: true, id: true, addressProof: false },
+  files: { photo: true, licence: true, id: true, addressProof: false, residenceCertificate: false },
   mustChangePassword: false, vehicle: null,
   contract: { deposit: 500000 },
   arrears: { level: "NONE", overdueAmount: 0, overdueSince: null, unpaidDays: 0, paidDays: 0, daysLeft: 1248 },

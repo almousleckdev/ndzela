@@ -61,7 +61,7 @@ class PrivacySection extends ConsumerWidget {
                 hint: 'Comment vos données sont utilisées',
                 onTap: () => _open(context, AppConfig.privacyUri),
               ),
-              const Divider(height: 1, color: AppColors.line, indent: 54),
+              const Divider(height: 1, color: AppColors.line, indent: 44),
               ActionRow(
                 icon: AppIcons.document,
                 label: 'Conditions d’utilisation',

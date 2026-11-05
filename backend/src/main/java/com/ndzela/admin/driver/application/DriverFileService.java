@@ -31,7 +31,7 @@ public class DriverFileService {
     private final CountryService countries;
     private final AuditService audit;
 
-    public List<String> attach(Driver driver, UUID countryId, MultipartFile photo, MultipartFile licence, MultipartFile id, MultipartFile addressProof) {
+    public List<String> attach(Driver driver, UUID countryId, MultipartFile photo, MultipartFile licence, MultipartFile id, MultipartFile addressProof, MultipartFile residenceCertificate) {
         if (photo == null || photo.isEmpty()) {
             throw new BusinessRuleViolationException("PHOTO_REQUIRED", "A profile picture is required.");
         }
@@ -42,6 +42,7 @@ public class DriverFileService {
             put(driver, DriverFileKind.LICENCE, licence, countryCode, written);
             put(driver, DriverFileKind.ID, id, countryCode, written);
             put(driver, DriverFileKind.ADDRESS_PROOF, addressProof, countryCode, written);
+            put(driver, DriverFileKind.RESIDENCE_CERTIFICATE, residenceCertificate, countryCode, written);
         } catch (RuntimeException e) {
             discard(written);
             throw e;

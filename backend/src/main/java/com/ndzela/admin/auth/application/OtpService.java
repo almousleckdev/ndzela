@@ -38,7 +38,17 @@ public class OtpService {
         return otp;
     }
 
+    // Checks and consumes the code.
     public boolean verify(String email, String provided) {
+        return check(email, provided, true);
+    }
+
+    // Checks the code without consuming it (still counts as an attempt); the final verify() uses it up.
+    public boolean matches(String email, String provided) {
+        return check(email, provided, false);
+    }
+
+    private boolean check(String email, String provided, boolean consume) {
         String stored = redis.opsForValue().get(OTP_PREFIX + email);
         if (stored == null) {
             throw new BusinessRuleViolationException("OTP expired or not found.");
@@ -52,7 +62,9 @@ public class OtpService {
             throw new BusinessRuleViolationException("Too many invalid attempts. Please request a new code.");
         }
         if (OpaqueTokens.constantTimeEquals(stored, provided)) {
-            invalidate(email);
+            if (consume) {
+                invalidate(email);
+            }
             return true;
         }
         return false;

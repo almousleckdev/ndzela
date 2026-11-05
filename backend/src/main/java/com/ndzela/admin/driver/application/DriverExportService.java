@@ -56,7 +56,7 @@ public class DriverExportService {
             VehicleResponse v = vehicles.get(vehicleOf.get(d.getId()));
             return Arrays.<Object>asList(d.getLastName(), d.getFirstName(), d.getPhonePrimary(), d.getEmail(),
                     onLeaveIds.contains(d.getId()) ? "En arrêt" : STATUS.get(d.getStatus()), d.getStatusReason() == null ? "" : d.getStatusReason(),
-                    v == null ? "" : v.fleetNumber(), v == null ? "" : v.plate(), d.getTrainingCenter().getName(), branding.day(d.getCreatedAt()));
+                    v == null ? "" : v.fleetNumber(), v == null ? "" : v.plate(), d.getTrainingCenter() == null ? "" : d.getTrainingCenter().getName(), branding.day(d.getCreatedAt()));
         }).toList();
         audit.record("DRIVERS_EXPORTED", "DRIVER", null, "Export chauffeurs", TenantHolder.current().countryId(), lines.size() + " lignes");
         ExportTable table = new ExportTable("Liste des chauffeurs", branding.header(from, to), List.of(ExportColumn.text("Nom", 22), ExportColumn.text("Prénom", 20), ExportColumn.text("Téléphone", 16),

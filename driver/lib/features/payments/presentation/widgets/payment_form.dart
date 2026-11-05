@@ -82,14 +82,14 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
         ? null
         : form.days ?? (options.isEmpty ? null : options.last.days);
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       children: [
         PaymentAmountCard(
           arrears: widget.arrears,
           selected: options.where((option) => option.days == days).firstOrNull,
         ),
         if (options.length > 1) ...[
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           const SectionTitle('Jours à régler'),
           DayCountSelector(
             options: options,
@@ -97,7 +97,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
             onSelected: controller.selectDays,
           ),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         const SectionTitle('Numéro Mobile Money'),
         AppTextField(
           label: 'Numéro',
@@ -114,7 +114,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
           validator: (v) =>
               isValidMobileMoneyNumber(v ?? '') ? null : 'Numéro invalide',
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         const SectionTitle('Opérateur'),
         AsyncView(
           value: operators,
@@ -125,7 +125,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
             onSelected: controller.selectOperator,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         const SectionTitle('Récapitulatif'),
         PaymentSummaryCard(
           arrears: widget.arrears,
@@ -135,7 +135,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
               ? null
               : operatorLabel(form.operator!.code, operators.asData?.value),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         AppButton(
           label: quoted == null ? 'Payer' : 'Payer ${quoted.total}',
           loading: form.submitting,

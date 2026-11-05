@@ -4,6 +4,7 @@ import 'mocks.dart';
 import 'package:dio/dio.dart';
 import 'package:driver/app/app.dart';
 import 'package:driver/core/money/money.dart';
+import 'package:driver/core/platform/open_file.dart';
 import 'package:driver/core/platform/share_file.dart';
 import 'package:driver/core/storage/token_storage.dart';
 import 'package:driver/features/auth/presentation/auth_providers.dart';
@@ -51,6 +52,9 @@ class FakeBackend {
     when(
       () => profile.fetchDocuments(),
     ).thenAnswer((_) async => sampleDocuments);
+    when(
+      () => profile.fetchContractPdf(),
+    ).thenAnswer((_) async => sampleReceipt);
     when(() => contract.fetchDetails()).thenAnswer((_) async => sampleContract);
     when(() => support.fetchContacts()).thenAnswer((_) async => sampleSupport);
     when(() => support.sendMessage(any())).thenAnswer((_) async {});
@@ -98,6 +102,12 @@ class FakeBackend {
     );
     when(() => auth.signOut()).thenAnswer((_) async {});
     when(() => auth.requestResetCode(any())).thenAnswer((_) async {});
+    when(
+      () => auth.verifyResetCode(
+        identifier: any(named: 'identifier'),
+        code: any(named: 'code'),
+      ),
+    ).thenAnswer((_) async {});
     when(
       () => auth.resetPassword(
         identifier: any(named: 'identifier'),
@@ -149,6 +159,9 @@ class FakeBackend {
 
   // What the phone's share sheet was asked to send
   final shared = <({String filename, String mimeType, int size})>[];
+
+  // The files shown in the phone's viewer
+  final opened = <({String filename, int size})>[];
 }
 
 DioException apiError(int status, String code) {
@@ -172,6 +185,12 @@ Widget appWith(FakeBackend backend) {
       contractRepositoryProvider.overrideWithValue(backend.contract),
       paymentsRepositoryProvider.overrideWithValue(backend.payments),
       supportRepositoryProvider.overrideWithValue(backend.support),
+      fileOpenerProvider.overrideWithValue(({
+        required bytes,
+        required filename,
+      }) async {
+        backend.opened.add((filename: filename, size: bytes.length));
+      }),
       fileSharerProvider.overrideWithValue(({
         required bytes,
         required filename,

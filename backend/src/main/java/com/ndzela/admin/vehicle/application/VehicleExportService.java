@@ -1,6 +1,7 @@
 package com.ndzela.admin.vehicle.application;
 
 import com.ndzela.admin.common.export.ExportKind;
+import com.ndzela.admin.common.text.ColorNames;
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.export.ExportFile;
 import com.ndzela.admin.common.export.ExportFormat;
@@ -34,7 +35,7 @@ public class VehicleExportService {
     @Transactional
     public ExportFile export(VehicleStatus status, String q, java.time.LocalDate from, java.time.LocalDate to, ExportFormat format) {
         List<VehicleResponse> rows = vehicleQueries.listForExport(status, q, from, to);
-        List<List<Object>> lines = rows.stream().map(v -> Arrays.<Object>asList(v.fleetNumber(), v.brand(), v.model(), String.valueOf(v.year()), v.plate(), v.color(),
+        List<List<Object>> lines = rows.stream().map(v -> Arrays.<Object>asList(v.fleetNumber(), v.brand(), v.model(), String.valueOf(v.year()), v.plate(), ColorNames.of(v.color()),
                 v.dailyRent(), v.purchasePrice(), STATUS.get(v.status()), v.statusReason() == null ? "" : v.statusReason())).toList();
         audit.record("VEHICLES_EXPORTED", "VEHICLE", null, "Export véhicules", TenantHolder.current().countryId(), lines.size() + " lignes");
         ExportTable table = new ExportTable("Liste des véhicules", branding.header(from, to), List.of(ExportColumn.text("Numéro", 10), ExportColumn.text("Marque", 14), ExportColumn.text("Modèle", 16),

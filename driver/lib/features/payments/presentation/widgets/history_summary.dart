@@ -25,7 +25,7 @@ class HistorySummary extends StatelessWidget {
             confirmed.first.amount.currency,
           );
     return AppCard(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           Expanded(
@@ -36,26 +36,23 @@ class HistorySummary extends StatelessWidget {
                   'Total payé',
                   style: TextStyle(
                     color: AppColors.muted,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  total?.toString() ?? '0',
-                  style: AppTextStyles.display(28),
-                ),
+                Text(total?.toString() ?? '0', style: AppTextStyles.title),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('${confirmed.length}', style: AppTextStyles.display(28)),
+              Text('${confirmed.length}', style: AppTextStyles.title),
               Text(
                 confirmed.length > 1 ? 'paiements' : 'paiement',
                 style: const TextStyle(
                   color: AppColors.muted,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],

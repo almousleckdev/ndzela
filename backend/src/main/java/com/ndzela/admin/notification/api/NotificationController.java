@@ -1,6 +1,7 @@
 package com.ndzela.admin.notification.api;
 
 import com.ndzela.admin.notification.api.dto.NotificationListResponse;
+import com.ndzela.admin.notification.api.dto.NotificationResponse;
 import com.ndzela.admin.notification.application.NotificationService;
 
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,11 @@ public class NotificationController {
     @GetMapping
     public NotificationListResponse list(Authentication authentication) {
         return notificationService.list(authentication.getName());
+    }
+
+    @GetMapping("/{id}")
+    public NotificationResponse get(Authentication authentication, @PathVariable UUID id) {
+        return notificationService.get(authentication.getName(), id);
     }
 
     @PostMapping("/{id}/read")

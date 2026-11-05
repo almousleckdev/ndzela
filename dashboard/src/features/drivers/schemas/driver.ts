@@ -44,7 +44,7 @@ export const driverSchema = z.object({
     address: text(255),
   }),
   training: z.object({
-    trainingCenterId: z.string().min(1, "Choisissez un centre de formation"),
+    trainingCenterId: z.string(),
     trainingDate: pastDate(),
     certificateNumber: z.string().trim().max(50, "50 caractères maximum"),
   }),

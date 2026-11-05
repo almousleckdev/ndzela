@@ -39,7 +39,7 @@ class PaymentHistoryTile extends StatelessWidget {
             children: [
               CircleBadge(
                 color: look.soft,
-                size: 42,
+                size: 36,
                 child: PlatformIcon(look.icon, size: 21, color: look.color),
               ),
               const SizedBox(width: 14),
@@ -50,8 +50,8 @@ class PaymentHistoryTile extends StatelessWidget {
                     Text(
                       operatorName,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -68,17 +68,14 @@ class PaymentHistoryTile extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    attempt.amount.toString(),
-                    style: AppTextStyles.display(16),
-                  ),
+                  Text(attempt.amount.toString(), style: AppTextStyles.heading),
                   const SizedBox(height: 2),
                   Text(
                     look.label,
                     style: TextStyle(
                       color: look.color,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],

@@ -62,7 +62,7 @@ class _SupportMessageScreenState extends ConsumerState<SupportMessageScreen> {
       ),
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(

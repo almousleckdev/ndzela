@@ -25,6 +25,15 @@ class ProfileRepository {
     ];
   }
 
+  // The driver's own contract as a PDF, drawn by the server.
+  Future<Uint8List> fetchContractPdf() async {
+    final response = await _dio.get<List<int>>(
+      '/documents/contract',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return Uint8List.fromList(response.data!);
+  }
+
   // The driver's profile picture, or null when none was uploaded.
   Future<Uint8List?> fetchPhoto() async {
     try {

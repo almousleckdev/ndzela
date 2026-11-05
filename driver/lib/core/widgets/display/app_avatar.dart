@@ -22,7 +22,7 @@ class AppAvatar extends StatelessWidget {
       initials,
       style: TextStyle(
         color: context.brand.primaryInk,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
         fontSize: radius * 0.8,
       ),
     );

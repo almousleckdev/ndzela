@@ -45,6 +45,26 @@ public class DriverPasswordResetService {
         });
     }
 
+    // Lets the app confirm the code before asking for the new password; the code stays usable for reset().
+    public void verifyCode(String identifier, String code) {
+        LoginCandidate candidate = auth.findCandidate(identifier.trim());
+        if (candidate == null) {
+            throw invalidCode();
+        }
+        TenantHolder.callAs(TenantContext.country(candidate.getCountryId()), () -> {
+            boolean valid;
+            try {
+                valid = otp.matches(key(candidate.getId()), code);
+            } catch (BusinessRuleViolationException expiredOrTooMany) {
+                throw invalidCode();
+            }
+            if (!valid) {
+                throw invalidCode();
+            }
+            return null;
+        });
+    }
+
     public void reset(String identifier, String code, String newPassword) {
         LoginCandidate candidate = auth.findCandidate(identifier.trim());
         if (candidate == null) {

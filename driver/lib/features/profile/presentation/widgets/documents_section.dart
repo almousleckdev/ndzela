@@ -6,6 +6,7 @@ import '../../../../core/widgets/display/section_card.dart';
 import '../../../../core/widgets/feedback/async_view.dart';
 import '../../domain/document_kind.dart';
 import '../profile_providers.dart';
+import 'contract_file_actions.dart';
 import 'document_row.dart';
 
 class DocumentsSection extends ConsumerWidget {
@@ -16,6 +17,7 @@ class DocumentsSection extends ConsumerWidget {
     DocumentKind.licence: 'Permis de conduire',
     DocumentKind.idCard: "Pièce d'identité",
     DocumentKind.addressProof: 'Casier judiciaire',
+    DocumentKind.residenceCertificate: 'Certificat de résidence',
   };
 
   @override
@@ -32,6 +34,9 @@ class DocumentsSection extends ConsumerWidget {
               DocumentRow(
                 name: _labels[documents[i].kind]!,
                 available: documents[i].available,
+                actions: documents[i].kind == DocumentKind.contract
+                    ? const ContractFileActions()
+                    : null,
               ),
             ],
           ],

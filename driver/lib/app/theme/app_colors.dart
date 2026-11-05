@@ -11,5 +11,7 @@ abstract final class AppColors {
   static const success = Color(0xFF0F766E);
   static const airtel = Color(0xFFE11D2E);
   static const moov = Color(0xFF0066B3);
+  static const whatsapp = Color(0xFF25D366);
+  static const whatsappSoft = Color(0xFFDCFCE7);
   static const orange = Color(0xFFFF7900);
 }

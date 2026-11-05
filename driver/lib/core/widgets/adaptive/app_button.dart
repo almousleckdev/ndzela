@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/brand_colors.dart';
 import '../../platform/app_icon.dart';
@@ -53,7 +54,7 @@ class AppButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                PlatformIcon(icon!, size: 20),
+                PlatformIcon(icon!, size: 18),
                 const SizedBox(width: 8),
               ],
               Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
@@ -68,14 +69,12 @@ class AppButton extends StatelessWidget {
             ? Colors.transparent
             : (loading ? _fill(context) : AppColors.line),
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        minimumSize: const Size.fromHeight(54),
+        minimumSize: const Size.fromHeight(AppTheme.controlHeight),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         onPressed: action,
         child: DefaultTextStyle.merge(
-          style: TextStyle(
+          style: AppTextStyles.action.copyWith(
             fontFamily: AppTheme.bodyFamily,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
             color: textColor,
           ),
           child: IconTheme.merge(
@@ -87,7 +86,7 @@ class AppButton extends StatelessWidget {
       return _outlined
           ? DecoratedBox(
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.line, width: 1.5),
+                border: Border.all(color: AppColors.line),
                 borderRadius: BorderRadius.circular(AppTheme.radius),
               ),
               child: button,
@@ -98,17 +97,13 @@ class AppButton extends StatelessWidget {
       return OutlinedButton(
         onPressed: action,
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(54),
+          minimumSize: const Size.fromHeight(AppTheme.controlHeight),
           foregroundColor: AppColors.ink,
-          side: const BorderSide(color: AppColors.line, width: 1.5),
+          side: const BorderSide(color: AppColors.line),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radius),
           ),
-          textStyle: const TextStyle(
-            fontFamily: AppTheme.bodyFamily,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppTextStyles.action,
         ),
         child: content,
       );

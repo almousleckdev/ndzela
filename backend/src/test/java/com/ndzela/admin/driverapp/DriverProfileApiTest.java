@@ -58,12 +58,20 @@ class DriverProfileApiTest extends AbstractDriverAppTest {
 
     @Test
     void theDocumentsTellWhichOnesExist() throws Exception {
-        asDriver("/api/v1/driver/documents", token).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(4)))
+        asDriver("/api/v1/driver/documents", token).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(5)))
                 .andExpect(jsonPath("$[?(@.kind=='CONTRACT')].available").value(true))
                 .andExpect(jsonPath("$[?(@.kind=='LICENCE')].available").value(false));
 
         jdbc.update("update drivers set licence_file = 'licence.pdf'");
         asDriver("/api/v1/driver/documents", token).andExpect(jsonPath("$[?(@.kind=='LICENCE')].available").value(true));
+    }
+
+    @Test
+    void theDriverDownloadsOwnContractAsPdfAndNobodyElse() throws Exception {
+        asDriver("/api/v1/driver/documents/contract", token).andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType("application/pdf"));
+        mvc.perform(get("/api/v1/driver/documents/contract").header("Authorization", bearer(manager))).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/driver/documents/contract")).andExpect(status().isUnauthorized());
     }
 
     @Test

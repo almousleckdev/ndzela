@@ -17,24 +17,24 @@ class SectionCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
           child: Row(
             children: [
               Container(
                 width: 4,
-                height: 18,
+                height: 14,
                 decoration: BoxDecoration(
                   color: context.brand.primary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(width: 8),
-              Text(title, style: AppTextStyles.display(18)),
+              Text(title, style: AppTextStyles.heading),
             ],
           ),
         ),
         AppCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
           child: child,
         ),
       ],

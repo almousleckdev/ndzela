@@ -19,6 +19,7 @@ import { formatFcfa } from "@/lib/money";
 import { RequirePermission } from "@/features/access/components/require-permission";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
+import { VehicleGallery } from "@/features/vehicles/components/vehicle-gallery";
 import { STATUS_ACTIONS, STATUS_LABELS, STATUS_VARIANTS } from "@/features/vehicles/lib/vehicle-status";
 import { vehiclesService } from "@/features/vehicles/services/vehicles.service";
 
@@ -109,6 +110,8 @@ function VehicleDetailContent({ id }: { id: string }) {
           )}
         </Card>
       </div>
+
+      <VehicleGallery vehicleId={id} />
 
       {pending && (
         <ReasonDialog title={pending.title} description={`${v.fleetNumber} · ${v.plate}`} confirmText="Confirmer" onClose={() => setPending(null)}

@@ -26,6 +26,15 @@ class AuthRepository {
     data: {'identifier': identifier},
   );
 
+  // Checks the code without using it, so the next screen can ask for the new password.
+  Future<void> verifyResetCode({
+    required String identifier,
+    required String code,
+  }) => _dio.post<void>(
+    '/auth/verify-reset-code',
+    data: {'identifier': identifier, 'code': code},
+  );
+
   Future<void> resetPassword({
     required String identifier,
     required String code,

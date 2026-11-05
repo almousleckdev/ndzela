@@ -36,7 +36,7 @@ describe("driverSchema", () => {
     expect(failures({ ...validDriverValues, contract: { deposit: "250 000" } })).toContain("contract.deposit");
   });
 
-  it("needs a training centre", () => {
-    expect(failures({ ...validDriverValues, training: { ...validDriverValues.training, trainingCenterId: "" } })).toContain("training.trainingCenterId");
+  it("does not need a training centre", () => {
+    expect(failures({ ...validDriverValues, training: { ...validDriverValues.training, trainingCenterId: "" } })).not.toContain("training.trainingCenterId");
   });
 });

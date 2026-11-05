@@ -18,33 +18,26 @@ class VehicleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Row(
         children: [
           const CircleBadge(
             color: AppColors.canvas,
-            size: 44,
-            child: PlatformIcon(AppIcons.car, size: 22, color: AppColors.ink),
+            size: 38,
+            child: PlatformIcon(AppIcons.car, size: 20, color: AppColors.ink),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Mon véhicule',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const Text('Mon véhicule', style: AppTextStyles.caption),
                 const SizedBox(height: 2),
                 Text(
                   vehicle.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.display(18),
+                  style: AppTextStyles.heading,
                 ),
               ],
             ),

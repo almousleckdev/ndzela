@@ -26,7 +26,7 @@ class ErrorBanner extends StatelessWidget {
               message,
               style: const TextStyle(
                 color: AppColors.danger,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),

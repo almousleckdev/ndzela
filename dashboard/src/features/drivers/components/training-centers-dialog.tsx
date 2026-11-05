@@ -46,9 +46,9 @@ export function TrainingCentersDialog({ onClose }: { onClose: () => void }) {
     <Dialog isOpen onClose={onClose} title="Centres de formation" description="La liste proposée lors de la création d'un chauffeur.">
       <div className="space-y-4">
         <div className="flex gap-2">
-          <Input aria-label="Nom du nouveau centre" placeholder="Nom du centre" value={newName} onChange={(event) => setNewName(event.target.value)}
+          <Input className="min-w-0 flex-1" aria-label="Nom du nouveau centre" placeholder="Nom du centre" value={newName} onChange={(event) => setNewName(event.target.value)}
             onKeyDown={(event) => { if (event.key === "Enter") add(); }} />
-          <Button onClick={add}><Plus className="mr-2 h-4 w-4" /> Ajouter</Button>
+          <Button className="shrink-0" onClick={add}><Plus className="mr-2 h-4 w-4" /> Ajouter</Button>
         </div>
         {!centers.data ? <Skeleton className="h-24 w-full" /> : centers.data.length === 0 ? (
           <p className="text-sm text-slate-500">Aucun centre pour l&apos;instant.</p>
@@ -57,10 +57,10 @@ export function TrainingCentersDialog({ onClose }: { onClose: () => void }) {
             {centers.data.map((center) => (
               <li key={center.id} className="flex items-center justify-between gap-3 px-3 py-2">
                 {editing?.id === center.id ? (
-                  <Input aria-label="Nouveau nom" autoFocus value={editing.name} onChange={(event) => setEditing({ id: center.id, name: event.target.value })}
+                  <Input className="min-w-0 flex-1" aria-label="Nouveau nom" autoFocus value={editing.name} onChange={(event) => setEditing({ id: center.id, name: event.target.value })}
                     onKeyDown={(event) => { if (event.key === "Enter") rename(); if (event.key === "Escape") setEditing(null); }} onBlur={rename} />
                 ) : (
-                  <span className="text-sm text-slate-800">{center.name}</span>
+                  <span className="min-w-0 flex-1 break-words text-sm text-slate-800">{center.name}</span>
                 )}
                 <div className="flex shrink-0 gap-1">
                   <Button variant="ghost" size="icon" aria-label={`Renommer ${center.name}`} onClick={() => setEditing({ id: center.id, name: center.name })}><Pencil className="h-4 w-4" /></Button>
