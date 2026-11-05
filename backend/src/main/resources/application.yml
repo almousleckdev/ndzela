@@ -120,6 +120,7 @@ app:
   ocpp:
     base-url: ${OCPP_BASE_URL:https://zella-ocpp.com}
     api-key: ${OCPP_FLEET_API_KEY:${OCPP_API_KEY:}}  # the Fleet API key (X-API-Key); never in a frontend or the app. Empty: no sync
+    signing-secret: ${OCPP_SIGNING_SECRET:}          # the HMAC secret of our Fleet account (not the API key, not the webhook secret); empty: calls are sent unsigned
     webhook-secret: ${OCPP_WEBHOOK_SECRET:}         # the HMAC-SHA256 signing secret of their webhooks; empty: every webhook is refused
     webhook-header: ${OCPP_WEBHOOK_HEADER:X-Webhook-Signature}   # the header carrying the signature
     country-code: ${OCPP_COUNTRY:GA}                # the country the platform's stations and sessions belong to

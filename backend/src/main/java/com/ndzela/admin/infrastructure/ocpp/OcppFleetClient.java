@@ -9,11 +9,16 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-// Reads the OCPP platform's Fleet API (read-only, X-API-Key). The key is never logged.
+// Reads the OCPP platform's Fleet API (read-only, X-API-Key, signed when a signing secret is set). The key is never logged.
 public class OcppFleetClient {
     private static final Duration DEFAULT_RETRY_AFTER = Duration.ofMinutes(1);
 
@@ -30,14 +35,8 @@ public class OcppFleetClient {
     /** One page of the incremental sync. A null cursor starts from the beginning of what the key may see. */
     public FleetPage sync(String cursor, int limit) {
         try {
-            String body = client.get().uri(uri -> {
-                uri.path("/api/v1/sessions/sync").queryParam("limit", limit);
-                if (cursor != null) {
-                    uri.queryParam("cursor", cursor);
-                }
-                return uri.build();
-            }).header("X-API-Key", props.apiKey()).retrieve().body(String.class);
-            return page(mapper.readTree(body));
+            String query = "limit=" + limit + (cursor == null ? "" : "&cursor=" + URLEncoder.encode(cursor, StandardCharsets.UTF_8));
+            return page(mapper.readTree(get("/api/v1/sessions/sync", query)));
         } catch (JacksonException e) {
             throw new FleetException("The Fleet API answered something unreadable.", e);
         } catch (RestClientResponseException e) {
@@ -50,8 +49,8 @@ public class OcppFleetClient {
     /** The session's latest reading, or null when the platform has none. */
     public FleetMetering metering(String transactionId) {
         try {
-            String body = client.get().uri("/api/v1/sessions/{id}/metering", transactionId).header("X-API-Key", props.apiKey()).retrieve().body(String.class);
-            return FleetMetering.from(mapper.readTree(body));
+            String path = "/api/v1/sessions/" + URLEncoder.encode(transactionId, StandardCharsets.UTF_8).replace("+", "%20") + "/metering";
+            return FleetMetering.from(mapper.readTree(get(path, "")));
         } catch (JacksonException e) {
             throw new FleetException("The Fleet API answered something unreadable.", e);
         } catch (RestClientResponseException e) {
@@ -62,6 +61,16 @@ public class OcppFleetClient {
         } catch (RestClientException e) {
             throw new FleetException("The Fleet API could not be reached.", e);
         }
+    }
+
+    // One signed GET; the query is signed exactly as it is sent
+    private String get(String path, String query) {
+        URI uri = URI.create(props.baseUrl().replaceAll("/+$", "") + path + (query.isEmpty() ? "" : "?" + query));
+        var request = client.get().uri(uri).header("X-API-Key", props.apiKey());
+        if (props.signingConfigured()) {
+            OcppSigner.headers(props.signingSecret(), "GET", uri.getRawPath(), query, "", Instant.now().getEpochSecond(), UUID.randomUUID().toString()).forEach(request::header);
+        }
+        return request.retrieve().body(String.class);
     }
 
     private static FleetException failure(RestClientResponseException e) {
