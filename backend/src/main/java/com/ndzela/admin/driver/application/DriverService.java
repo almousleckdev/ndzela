@@ -36,6 +36,7 @@ public class DriverService {
     private final TrainingCenterRepository trainingCenters;
     private final DriverAssignmentService assignmentService;
     private final DriverStatusService statusService;
+    private final org.springframework.context.ApplicationEventPublisher events;
     private final DriverLeaveService leaveService;
     private final ContractService contractService;
     private final DriverQueryService queries;
@@ -60,6 +61,7 @@ public class DriverService {
             Driver saved = records.saveChecked(driver);
             audit.record("DRIVER_CREATED", "DRIVER", saved.getId().toString(), label(saved), saved.getCountryId(), null);
             assignmentService.assign(saved, request.vehicleId(), request.contract().deposit());
+            events.publishEvent(new com.ndzela.admin.driver.domain.DriverCreatedEvent(saved.getId(), saved.getCountryId()));
             return queries.response(saved);
         } catch (RuntimeException e) {
             fileService.discard(written);

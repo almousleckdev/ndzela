@@ -3,6 +3,7 @@ package com.ndzela.admin;
 import com.ndzela.admin.config.properties.JwtProperties;
 import com.ndzela.admin.config.properties.AuthProperties;
 import com.ndzela.admin.config.properties.RefreshCookieProperties;
+import com.ndzela.admin.config.properties.ZellaProperties;
 import com.ndzela.admin.config.properties.OtpProperties;
 import com.ndzela.admin.config.properties.BruteForceProperties;
 import com.ndzela.admin.config.properties.MfaProperties;
@@ -42,6 +43,7 @@ public final class TestProperties {
                 new DriverAppProperties(3),
                 new PublicSiteProperties("GA", 5, List.of("https://ndzela.test")),
                 new OcppProperties("https://ocpp.test", "test-key", "whsecret", "X-Webhook-Signature", "GA", false, Duration.ofMinutes(1), 500, Duration.ofSeconds(5)),
+                new ZellaProperties("https://zella.test", "zella-test-key", "GA", false, Duration.ofMinutes(15), Duration.ofSeconds(5)),
                 new RateLimitProperties(10, 3, 120, 20));
     }
 }

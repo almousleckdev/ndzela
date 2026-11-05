@@ -40,6 +40,8 @@ public class ChargingSessionService {
     private final ExportBranding branding;
     private final AuditService audit;
     private final CountryService countries;
+    private final SessionHolders holders;
+    private final SessionPayments walletPayments;
 
     @Transactional(readOnly = true)
     public PageResponse<SessionRow> list(String status, String q, LocalDate from, LocalDate to, int page, int size) {
@@ -48,7 +50,7 @@ public class ChargingSessionService {
         if (!found.items().isEmpty()) {
             entries.activeRechargesOfSessions(found.items().stream().map(SessionRow::id).toList()).forEach(row -> paid.put((UUID) row[0], (UUID) row[1]));
         }
-        List<SessionRow> marked = found.items().stream().map(row -> paid.containsKey(row.id()) ? row.withRecharge(paid.get(row.id())) : row).toList();
+        List<SessionRow> marked = walletPayments.mark(holders.mark(found.items().stream().map(row -> paid.containsKey(row.id()) ? row.withRecharge(paid.get(row.id())) : row).toList()));
         return new PageResponse<>(marked, found.page(), found.size(), found.total());
     }
 
@@ -79,16 +81,27 @@ public class ChargingSessionService {
         for (SessionRow r : rows) {
             energy = r.energyKwh() == null ? energy : energy.add(r.energyKwh());
             amount = r.amount() == null ? amount : amount.add(r.amount());
-            lines.add(Arrays.<Object>asList(branding.dateTime(r.startedAt()), branding.dateTime(r.endedAt()), r.chargePointId(), r.connectorId(), r.idTag(), r.energyKwh(), duration(r),
-                    r.amount(), r.socBefore(), r.socAfter(), SessionLabels.status(r.status()), SessionLabels.reason(r.stopReason()), payment(r), r.transactionId()));
+            lines.add(Arrays.<Object>asList(branding.dateTime(r.startedAt()), branding.dateTime(r.endedAt()), r.chargePointId(), r.connectorId(), r.idTag(), r.holder() == null ? "Public" : r.holder().driverName(), r.holder() == null ? null : r.holder().vehicle(), r.energyKwh(), duration(r),
+                    r.amount(), r.payment() == null ? null : r.payment().total(), r.payment() == null ? null : stateLabel(r.payment().state()), r.socBefore(), r.socAfter(), SessionLabels.status(r.status()), SessionLabels.reason(r.stopReason()), payment(r), r.transactionId()));
         }
-        List<Object> totals = Arrays.<Object>asList("TOTAL (" + rows.size() + (rows.size() > 1 ? " sessions)" : " session)"), null, null, null, null, energy, null, amount, null, null, null, null, null, null);
+        List<Object> totals = Arrays.<Object>asList("TOTAL (" + rows.size() + (rows.size() > 1 ? " sessions)" : " session)"), null, null, null, null, null, null, energy, null, amount, null, null, null, null, null, null, null, null);
         audit.record("CHARGING_EXPORTED", "CHARGING", null, "Export des sessions du réseau", TenantHolder.current().countryId(), "sessions, " + rows.size() + " lignes");
         ExportTable table = new ExportTable("Sessions du réseau", branding.header(from, to), List.of(ExportColumn.text("Début", 16), ExportColumn.text("Fin", 16), ExportColumn.text("Borne", 16), ExportColumn.text("Connecteur", 11),
-                ExportColumn.text("Identifiant", 14), ExportColumn.of("Énergie (kWh)", ExportKind.DECIMAL, 11), ExportColumn.text("Durée", 9), ExportColumn.of("Montant calculé (FCFA)", ExportKind.MONEY, 14),
+                ExportColumn.text("Identifiant", 14), ExportColumn.text("Chauffeur", 20), ExportColumn.text("Véhicule", 18), ExportColumn.of("Énergie (kWh)", ExportKind.DECIMAL, 11), ExportColumn.text("Durée", 9), ExportColumn.of("Montant calculé (FCFA)", ExportKind.MONEY, 14), ExportColumn.of("Total payé (FCFA)", ExportKind.MONEY, 14), ExportColumn.text("État du paiement Zella", 18),
                 ExportColumn.of("Batterie avant", ExportKind.PERCENT, 11), ExportColumn.of("Batterie après", ExportKind.PERCENT, 11), ExportColumn.text("Statut", 13), ExportColumn.text("Motif d'arrêt", 18),
                 ExportColumn.text("Paiement", 14), ExportColumn.text("Référence", 12)), lines, totals);
         return ExportFile.of(table, format, "sessions-reseau" + (from == null ? "" : "-" + from) + (to == null || to.equals(from) ? "" : "_" + to));
+    }
+
+    private static String stateLabel(String state) {
+        return state == null ? "" : switch (state) {
+            case "CHARGED" -> "Payé";
+            case "PENDING" -> "En attente";
+            case "NOT_CHARGED" -> "Non débité";
+            case "UNDER_REVIEW" -> "En vérification";
+            case "REFUNDED" -> "Remboursé";
+            default -> state;
+        };
     }
 
     private static String duration(SessionRow r) {

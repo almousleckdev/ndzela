@@ -30,5 +30,6 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0023](0023-multi-country-staff.md) | Staff may belong to one or more countries, or be global, independent of role | Accepted |
 | [0024](0024-explicit-deployment-environment.md) | The deployment environment is explicit (`APP_ENVIRONMENT`): staging may use the PVit sandbox, production may not | Accepted |
 | [0025](0025-dashboard-tests-vitest-and-playwright.md) | Dashboard tests: Vitest and Testing Library for logic, Playwright with a mocked API for flows | Accepted |
+| [0026](0026-charging-accounts-linked-to-drivers.md) | Charging accounts (idTags) are linked to drivers by e-mail and phone, looked up in the Zella app | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

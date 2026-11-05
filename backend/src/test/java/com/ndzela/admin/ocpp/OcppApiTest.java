@@ -3,6 +3,7 @@ package com.ndzela.admin.ocpp;
 import com.ndzela.admin.infrastructure.ocpp.FleetPage;
 import com.ndzela.admin.ocpp.application.OcppSyncService;
 import com.ndzela.admin.support.AbstractIntegrationTest;
+import com.ndzela.admin.support.ExportSheets;
 import com.ndzela.admin.user.domain.User;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -99,8 +100,8 @@ class OcppApiTest extends AbstractIntegrationTest {
         oneCompletedSession();
         User accountant = staff("ga.accountant@ndzela.test", "GA", "COMPTABLE");
 
-        var sheet = com.ndzela.admin.support.ExportSheets.rows(mvc.perform(get("/api/v1/charging/sessions/export?from=2026-10-01&to=2026-10-31").header("Authorization", bearer(accountant))).andExpect(status().isOk()));
-        var data = com.ndzela.admin.support.ExportSheets.data(sheet);
+        var sheet = ExportSheets.rows(mvc.perform(get("/api/v1/charging/sessions/export?from=2026-10-01&to=2026-10-31").header("Authorization", bearer(accountant))).andExpect(status().isOk()));
+        var data = ExportSheets.data(sheet);
         assertEquals("NDZELA", sheet.get(0).get(1));
         assertEquals("Sessions du réseau", sheet.get(1).get(1));
         assertTrue(sheet.get(2).get(1).startsWith("Période : du 01/10/2026 au 31/10/2026 · Exporté le "), sheet.get(2).get(1));
@@ -108,7 +109,7 @@ class OcppApiTest extends AbstractIntegrationTest {
         assertTrue(data.get(0).contains("DY202609110007") && data.get(0).contains("Terminée") && data.get(0).contains("Non enregistrée") && data.get(0).contains("7,350"), data.get(0).toString());
         assertTrue(data.get(1).get(0).startsWith("TOTAL (1 session)") && data.get(1).contains("21.0"), data.get(1).toString());
 
-        assertTrue(com.ndzela.admin.support.ExportSheets.isPdf(mvc.perform(get("/api/v1/charging/sessions/export?format=PDF").header("Authorization", bearer(accountant))).andExpect(status().isOk())));
+        assertTrue(ExportSheets.isPdf(mvc.perform(get("/api/v1/charging/sessions/export?format=PDF").header("Authorization", bearer(accountant))).andExpect(status().isOk())));
         mvc.perform(get("/api/v1/charging/sessions/export").header("Authorization", bearer(viewer))).andExpect(status().isForbidden());
     }
 

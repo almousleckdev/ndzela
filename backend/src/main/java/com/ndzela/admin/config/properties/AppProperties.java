@@ -27,6 +27,7 @@ public record AppProperties(
         DriverAppProperties driverApp,
         PublicSiteProperties publicSite,
         OcppProperties ocpp,
+        ZellaProperties zella,
         RateLimitProperties rateLimit
 ) {
 }

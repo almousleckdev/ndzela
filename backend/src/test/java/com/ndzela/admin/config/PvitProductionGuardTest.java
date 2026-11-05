@@ -23,7 +23,7 @@ class PvitProductionGuardTest {
         PvitProperties pvit = new PvitProperties(p.baseUrl(), operationAccount, operationAccount, p.secretPassword(), p.codeUrlSecret(), p.codeUrlPayment(), p.codeUrlStatus(), p.codeUrlFees(),
                 p.codeUrlKyc(), callbackCode, p.agent(), p.product(), p.ownerCharge(), sandboxAmount, Duration.ofSeconds(5), Duration.ofMinutes(3), Duration.ofMinutes(30), false);
         return new AppProperties(base.frontendUrl(), base.corsAllowedOrigins(), base.jwt(), base.auth(), base.otp(), base.bruteForce(), base.mfa(), base.bootstrap(),
-                base.storage(), pvit, base.driverApp(), base.publicSite(), base.ocpp(), base.rateLimit());
+                base.storage(), pvit, base.driverApp(), base.publicSite(), base.ocpp(), base.zella(), base.rateLimit());
     }
 
     @Test

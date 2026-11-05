@@ -48,6 +48,7 @@ export const PERMISSIONS = {
   CHARGING_REVERSE: "charging:reverse",
   CHARGING_EXPORT: "charging:export",
   CHARGING_MANAGE: "charging:manage",
+  CHARGING_LINK: "charging:link",
   CONTRACTS_READ: "contracts:read",
   CONTRACTS_PRINT: "contracts:print",
   CONTRACTS_UPDATE: "contracts:update",

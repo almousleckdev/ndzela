@@ -31,3 +31,11 @@ export function batteryLabel(row: ChargingSessionRow): { primary: string; second
   if (before === null) return { primary: `${after} %`, secondary: isRunning(row) ? "niveau actuel" : "niveau final" };
   return { primary: `${before} % → ${after} %`, secondary: after > before ? `+${after - before} %` : undefined };
 }
+
+export const PAYMENT_STATE: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info" | "neutral" }> = {
+  CHARGED: { label: "Payé", variant: "success" },
+  PENDING: { label: "En attente", variant: "info" },
+  NOT_CHARGED: { label: "Non débité", variant: "danger" },
+  UNDER_REVIEW: { label: "En vérification", variant: "warning" },
+  REFUNDED: { label: "Remboursé", variant: "neutral" },
+};
