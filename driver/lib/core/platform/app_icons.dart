@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'app_icon.dart';
 
@@ -110,11 +111,22 @@ abstract final class AppIcons {
     Icons.insert_drive_file_outlined,
     CupertinoIcons.doc,
   );
-  static const call = AppIcon(Icons.call_outlined, CupertinoIcons.phone);
+  static const call = AppIcon(Icons.call_rounded, CupertinoIcons.phone_fill);
+  // WhatsApp's own logo, the same on both platforms.
+  static final whatsapp = AppIcon(
+    FontAwesomeIcons.whatsapp.data,
+    FontAwesomeIcons.whatsapp.data,
+  );
   static const chat = AppIcon(
     Icons.chat_bubble_outline_rounded,
     CupertinoIcons.chat_bubble_text,
   );
+  static const mail = AppIcon(Icons.mail_rounded, CupertinoIcons.mail_solid);
+  static const download = AppIcon(
+    Icons.file_download_outlined,
+    CupertinoIcons.cloud_download,
+  );
+  static const open = AppIcon(Icons.open_in_new_rounded, CupertinoIcons.eye);
   static const send = AppIcon(Icons.send_rounded, CupertinoIcons.paperplane);
   static const support = AppIcon(
     Icons.headset_mic_outlined,

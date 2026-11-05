@@ -44,18 +44,19 @@ export interface TrainingCenter {
 }
 
 export interface TrainingView {
-  trainingCenter: TrainingCenter;
+  trainingCenter: TrainingCenter | null;
   trainingDate: string;
   certificateNumber: string | null;
 }
 
-export type DriverFileKind = "photo" | "licence" | "id" | "address-proof";
+export type DriverFileKind = "photo" | "licence" | "id" | "address-proof" | "residence-certificate";
 
 export interface DriverFiles {
   photo: boolean;
   licence: boolean;
   id: boolean;
   addressProof: boolean;
+  residenceCertificate: boolean;
 }
 
 export interface Driver {

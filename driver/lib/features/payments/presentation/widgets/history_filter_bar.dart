@@ -49,7 +49,7 @@ class HistoryFilterBar extends StatelessWidget {
                   child: Text(
                     filter.label,
                     style: TextStyle(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w500,
                       color: filter == selected ? Colors.white : AppColors.ink,
                     ),
                   ),

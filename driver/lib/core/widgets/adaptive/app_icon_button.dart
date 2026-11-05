@@ -14,12 +14,14 @@ class AppIconButton extends StatelessWidget {
     required this.onPressed,
     required this.tooltip,
     this.outlined = true,
+    this.size = 40,
   });
 
   final AppIcon icon;
   final VoidCallback? onPressed;
   final String tooltip;
   final bool outlined;
+  final double size;
 
   static const _foreground = AppColors.ink;
 
@@ -33,18 +35,18 @@ class AppIconButton extends StatelessWidget {
         label: tooltip,
         child: CupertinoButton(
           padding: EdgeInsets.zero,
-          minimumSize: const Size(44, 44),
+          minimumSize: Size(size, size),
           onPressed: onPressed,
           child: Container(
-            width: 42,
-            height: 42,
+            width: size,
+            height: size,
             decoration: outlined
                 ? BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: _border),
                   )
                 : null,
-            child: PlatformIcon(icon, size: 22, color: _foreground),
+            child: PlatformIcon(icon, size: size * 0.5, color: _foreground),
           ),
         ),
       );
@@ -56,13 +58,19 @@ class AppIconButton extends StatelessWidget {
             style: IconButton.styleFrom(
               side: BorderSide(color: _border),
               foregroundColor: _foreground,
+              fixedSize: Size(size, size),
+              iconSize: size * 0.5,
             ),
             icon: glyph,
             onPressed: onPressed,
           )
         : IconButton(
             tooltip: tooltip,
-            style: IconButton.styleFrom(foregroundColor: _foreground),
+            style: IconButton.styleFrom(
+              foregroundColor: _foreground,
+              fixedSize: Size(size, size),
+              iconSize: size * 0.5,
+            ),
             icon: glyph,
             onPressed: onPressed,
           );

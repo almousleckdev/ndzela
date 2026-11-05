@@ -15,6 +15,7 @@ const FILES: { kind: DriverFileKind; label: string; has: (driver: Driver) => boo
   { kind: "licence", label: "Permis de conduire", has: (d) => d.files.licence, image: false },
   { kind: "id", label: "Pièce d'identité", has: (d) => d.files.id, image: false },
   { kind: "address-proof", label: "Casier judiciaire", has: (d) => d.files.addressProof, image: false },
+  { kind: "residence-certificate", label: "Certificat de résidence", has: (d) => d.files.residenceCertificate, image: false },
 ];
 
 // The photo and documents of a driver

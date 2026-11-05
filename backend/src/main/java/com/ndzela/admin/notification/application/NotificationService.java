@@ -42,6 +42,13 @@ public class NotificationService {
         return new NotificationListResponse(notifications.countByUserIdAndReadFalse(userId), items);
     }
 
+    // Only the recipient can open a notification; another user's id is simply not found.
+    @Transactional(readOnly = true)
+    public NotificationResponse get(String email, UUID id) {
+        Notification n = notifications.findByIdAndUserId(id, userId(email)).orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
+        return new NotificationResponse(n.getId(), n.getType(), n.getTitle(), n.getMessage(), n.isRead(), n.getCreatedAt());
+    }
+
     @Transactional
     public void markRead(String email, UUID id) {
         notifications.markRead(userId(email), id);

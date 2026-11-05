@@ -39,16 +39,17 @@ export const vehiclesService = {
 
   remove: (id: string) => apiClient(`/vehicles/${id}`, { method: "DELETE" }),
 
-  images: (id: string) => apiClient<VehicleImage[]>(`/vehicles/${id}/images`),
-
   uploadImages: (id: string, files: File[]) => {
     const body = new FormData();
     files.forEach((file) => body.append("files", file));
     return apiClient<VehicleImage[]>(`/vehicles/${id}/images`, { method: "POST", body });
   },
 
-  // The photo as a blob; the caller turns it into an object URL.
-  imageBlob: (id: string, imageId: string) => apiBlob(`/vehicles/${id}/images/${imageId}`),
+  // The photos with a displayable object URL each (the files are private, so they are fetched with the session).
+  imagesWithUrls: async (id: string): Promise<(VehicleImage & { url: string })[]> => {
+    const list = await apiClient<VehicleImage[]>(`/vehicles/${id}/images`);
+    return Promise.all(list.map(async (image) => ({ ...image, url: URL.createObjectURL(await apiBlob(`/vehicles/${id}/images/${image.id}`)) })));
+  },
 
   deleteImage: (id: string, imageId: string) => apiClient(`/vehicles/${id}/images/${imageId}`, { method: "DELETE" }),
 };

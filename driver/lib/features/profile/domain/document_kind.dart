@@ -2,7 +2,8 @@ enum DocumentKind {
   contract('CONTRACT'),
   licence('LICENCE'),
   idCard('ID'),
-  addressProof('ADDRESS_PROOF');
+  addressProof('ADDRESS_PROOF'),
+  residenceCertificate('RESIDENCE_CERTIFICATE');
 
   const DocumentKind(this.code);
 

@@ -35,7 +35,7 @@ export function TrainingStep({ form, centers, vehicles, uploads }: TrainingStepP
         />
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <SelectField label="Centre de formation *" placeholder={centers.length === 0 ? "Ajoutez d'abord un centre (page Chauffeurs)" : "Choisir"}
+        <SelectField label="Centre de formation" placeholder={centers.length === 0 ? "Aucun centre (facultatif)" : "Choisir (facultatif)"}
           options={centers.map((center) => ({ value: center.id, label: center.name }))} error={errors?.trainingCenterId?.message} {...register("training.trainingCenterId")} />
         <FormField label="Date de formation *" type="date" max={new Date().toISOString().slice(0, 10)} error={errors?.trainingDate?.message} {...register("training.trainingDate")} />
       </div>
@@ -46,6 +46,7 @@ export function TrainingStep({ form, centers, vehicles, uploads }: TrainingStepP
           <FileField label="Permis de conduire" accepted={DOCUMENT_TYPES} file={uploads.files.licence} error={uploads.errors.licence} onChange={(file, error) => uploads.onPick("licence", file, error)} />
           <FileField label="Pièce d'identité" accepted={DOCUMENT_TYPES} file={uploads.files.id} error={uploads.errors.id} onChange={(file, error) => uploads.onPick("id", file, error)} />
           <FileField label="Casier judiciaire" accepted={DOCUMENT_TYPES} file={uploads.files.addressProof} error={uploads.errors.addressProof} onChange={(file, error) => uploads.onPick("addressProof", file, error)} />
+          <FileField label="Certificat de résidence" accepted={DOCUMENT_TYPES} file={uploads.files.residenceCertificate} error={uploads.errors.residenceCertificate} onChange={(file, error) => uploads.onPick("residenceCertificate", file, error)} />
         </fieldset>
       )}
     </div>

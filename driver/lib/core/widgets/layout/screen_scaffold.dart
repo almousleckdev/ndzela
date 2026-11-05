@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import 'header_band.dart';
 
@@ -34,16 +33,10 @@ class ScreenScaffold extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: AppTextStyles.display(26)),
+                      Text(title, style: AppTextStyles.title),
                       if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle!,
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 14,
-                          ),
-                        ),
+                        const SizedBox(height: 2),
+                        Text(subtitle!, style: AppTextStyles.label),
                       ],
                     ],
                   ),

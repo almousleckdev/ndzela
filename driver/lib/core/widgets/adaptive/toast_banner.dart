@@ -24,7 +24,7 @@ class ToastBanner extends StatelessWidget {
             child: DefaultTextStyle(
               style: const TextStyle(
                 color: Color(0xFFFFFFFF),
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
               child: Text(message),

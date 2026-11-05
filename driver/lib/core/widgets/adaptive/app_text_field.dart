@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app/theme/app_text_styles.dart';
 import '../../platform/app_icon.dart';
 import '../../platform/platform.dart';
 import 'cupertino_form_text_field.dart';
+import 'field_label.dart';
 import 'platform_icon.dart';
 
 // A labelled form field
@@ -70,7 +72,7 @@ class AppTextField extends StatelessWidget {
         maxLength: maxLength,
       );
     }
-    return TextFormField(
+    final field = TextFormField(
       controller: controller,
       enabled: enabled,
       obscureText: obscureText,
@@ -84,12 +86,18 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       onChanged: onChanged,
       onFieldSubmitted: onSubmitted,
+      style: AppTextStyles.body,
       decoration: InputDecoration(
-        labelText: label,
         hintText: hint,
-        prefixIcon: prefixIcon == null ? null : PlatformIcon(prefixIcon!),
+        prefixIcon: prefixIcon == null
+            ? null
+            : PlatformIcon(prefixIcon!, size: 20),
         suffixIcon: suffix,
       ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [FieldLabel(label), field],
     );
   }
 }

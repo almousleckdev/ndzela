@@ -50,12 +50,12 @@ public class DriverService {
         PersonalInfo personal = request.personal();
         records.assertAdult(personal.birthDate(), countryId);
         records.assertUnique(countryId, null, personal);
-        TrainingCenter center = trainingCenter(request.training().trainingCenterId());
+        TrainingCenter center = trainingCenter(request.training().trainingCenterId(), countryId);
 
         Driver driver = Driver.builder().status(DriverStatus.ACTIVE).mustChangePassword(true).build();
         records.apply(driver, personal, request.emergency(), request.training(), center);
         driver.setPasswordHash(passwordEncoder.encode(request.password()));
-        List<String> written = fileService.attach(driver, countryId, uploads.photo(), uploads.licence(), uploads.id(), uploads.addressProof());
+        List<String> written = fileService.attach(driver, countryId, uploads.photo(), uploads.licence(), uploads.id(), uploads.addressProof(), uploads.residenceCertificate());
         try {
             Driver saved = records.saveChecked(driver);
             audit.record("DRIVER_CREATED", "DRIVER", saved.getId().toString(), label(saved), saved.getCountryId(), null);
@@ -72,10 +72,7 @@ public class DriverService {
         Driver driver = load(id);
         records.assertAdult(request.personal().birthDate(), driver.getCountryId());
         records.assertUnique(driver.getCountryId(), id, request.personal());
-        TrainingCenter center = trainingCenter(request.training().trainingCenterId());
-        if (!center.getCountryId().equals(driver.getCountryId())) {
-            throw new ResourceNotFoundException("Training centre not found.");
-        }
+        TrainingCenter center = trainingCenter(request.training().trainingCenterId(), driver.getCountryId());
         records.apply(driver, request.personal(), request.emergency(), request.training(), center);
         Driver saved = records.saveChecked(driver);
         audit.record("DRIVER_UPDATED", "DRIVER", id.toString(), label(saved), saved.getCountryId(), null);
@@ -144,7 +141,15 @@ public class DriverService {
         return drivers.findById(id).orElseThrow(() -> new ResourceNotFoundException("Driver not found."));
     }
 
-    private TrainingCenter trainingCenter(UUID id) {
-        return trainingCenters.findById(id).orElseThrow(() -> new ResourceNotFoundException("Training centre not found."));
+    // Optional: null when no centre was chosen; a centre of another country is treated as missing.
+    private TrainingCenter trainingCenter(UUID id, UUID countryId) {
+        if (id == null) {
+            return null;
+        }
+        TrainingCenter center = trainingCenters.findById(id).orElseThrow(() -> new ResourceNotFoundException("Training centre not found."));
+        if (!center.getCountryId().equals(countryId)) {
+            throw new ResourceNotFoundException("Training centre not found.");
+        }
+        return center;
     }
 }

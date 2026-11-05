@@ -8,7 +8,8 @@ public enum DriverFileKind {
     PHOTO("photo", true, Driver::getPhotoFile, Driver::setPhotoFile),
     LICENCE("licence", false, Driver::getLicenceFile, Driver::setLicenceFile),
     ID("id", false, Driver::getIdFile, Driver::setIdFile),
-    ADDRESS_PROOF("address-proof", false, Driver::getAddressProofFile, Driver::setAddressProofFile);
+    ADDRESS_PROOF("address-proof", false, Driver::getAddressProofFile, Driver::setAddressProofFile),
+    RESIDENCE_CERTIFICATE("residence-certificate", false, Driver::getResidenceCertificateFile, Driver::setResidenceCertificateFile);
 
     private final String slug;
     private final boolean imageOnly;

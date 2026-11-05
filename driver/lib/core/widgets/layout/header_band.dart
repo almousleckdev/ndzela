@@ -8,8 +8,8 @@ class HeaderBand extends StatelessWidget {
   const HeaderBand({
     super.key,
     required this.child,
-    this.bottomPadding = 16,
-    this.radius = 26,
+    this.bottomPadding = 12,
+    this.radius = 20,
   });
 
   final Widget child;
@@ -37,9 +37,9 @@ class HeaderBand extends StatelessWidget {
           const Positioned.fill(child: RoadBackdrop()),
           Padding(
             padding: EdgeInsets.fromLTRB(
-              20,
-              MediaQuery.paddingOf(context).top + 12,
-              20,
+              16,
+              MediaQuery.paddingOf(context).top + 8,
+              16,
               bottomPadding,
             ),
             child: child,

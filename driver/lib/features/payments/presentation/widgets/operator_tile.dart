@@ -46,7 +46,7 @@ class OperatorTile extends StatelessWidget {
             children: [
               CircleBadge(
                 color: operatorBrandColor(operator.code, context.brand.primary),
-                size: 40,
+                size: 36,
                 child: const PlatformIcon(
                   AppIcons.mobile,
                   size: 20,
@@ -57,7 +57,7 @@ class OperatorTile extends StatelessWidget {
               Text(
                 operator.label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 6),
               PlatformIcon(

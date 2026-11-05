@@ -13,14 +13,18 @@ class AppPasswordField extends StatefulWidget {
     this.textInputAction,
     this.validator,
     this.onSubmitted,
+    this.hint = _defaultHint,
     this.enabled = true,
   });
+
+  static const _defaultHint = '••••••••';
 
   final String label;
   final TextEditingController? controller;
   final TextInputAction? textInputAction;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onSubmitted;
+  final String hint;
   final bool enabled;
 
   @override
@@ -34,6 +38,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
   Widget build(BuildContext context) {
     return AppTextField(
       label: widget.label,
+      hint: widget.hint,
       controller: widget.controller,
       prefixIcon: AppIcons.lock,
       obscureText: _hidden,

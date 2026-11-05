@@ -1,40 +1,94 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../core/widgets/layout/screen_scaffold.dart';
-import 'widgets/request_code_form.dart';
-import 'widgets/reset_password_form.dart';
+import '../../../app/router.dart';
+import '../../../app/theme/app_text_styles.dart';
+import '../../../core/error/error_messages.dart';
+import '../../../core/platform/app_icons.dart';
+import '../../../core/widgets/adaptive/app_button.dart';
+import '../../../core/widgets/adaptive/app_text_field.dart';
+import '../../../core/widgets/feedback/error_banner.dart';
+import 'forgot_password_controller.dart';
+import 'widgets/auth_step_scaffold.dart';
+import 'widgets/back_to_login_button.dart';
 
-// A forgotten password in two steps: ask for a code by e-mail, then choose a new password.
-class ForgotPasswordScreen extends StatefulWidget {
+// Step 1 of a forgotten password: the phone or e-mail that gets the code.
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  // Set once the code is sent: the identifier it was sent for.
-  String? _identifier;
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _identifier = TextEditingController();
+
+  @override
+  void dispose() {
+    _identifier.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendCode() async {
+    if (!_formKey.currentState!.validate()) return;
+    final identifier = _identifier.text.trim();
+    final sent = await ref
+        .read(forgotPasswordControllerProvider.notifier)
+        .requestCode(identifier);
+    if (sent && mounted) context.push(Routes.verifyCode, extra: identifier);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final identifier = _identifier;
-    return ScreenScaffold(
+    final state = ref.watch(forgotPasswordControllerProvider);
+    return AuthStepScaffold(
       title: 'Mot de passe oublié',
-      subtitle: identifier == null
-          ? 'Recevez un code par e-mail.'
-          : 'Saisissez le code reçu par e-mail.',
-      body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(24),
-          child: identifier == null
-              ? RequestCodeForm(
-                  onSent: (value) => setState(() => _identifier = value),
-                )
-              : ResetPasswordForm(identifier: identifier),
+      subtitle: 'Recevez un code par e-mail.',
+      showBack: false,
+      children: [
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Saisissez votre téléphone ou votre e-mail. Si un compte existe, '
+                'nous envoyons un code à l’adresse e-mail liée à votre compte.',
+                style: AppTextStyles.label,
+              ),
+              const SizedBox(height: 20),
+              AppTextField(
+                label: 'Téléphone ou e-mail',
+                hint: 'example@google.com',
+                controller: _identifier,
+                prefixIcon: AppIcons.person,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.done,
+                enabled: !state.isLoading,
+                onSubmitted: (_) => _sendCode(),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Saisissez votre téléphone ou votre e-mail.'
+                    : null,
+              ),
+              if (state.hasError) ...[
+                const SizedBox(height: 12),
+                ErrorBanner(message: messageFor(state.error!)),
+              ],
+              const SizedBox(height: 20),
+              AppButton(
+                label: 'Envoyer le code',
+                loading: state.isLoading,
+                onPressed: _sendCode,
+              ),
+              const SizedBox(height: 10),
+              BackToLoginButton(busy: state.isLoading),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

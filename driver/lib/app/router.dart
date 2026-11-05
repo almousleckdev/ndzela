@@ -6,7 +6,10 @@ import '../core/widgets/feedback/splash_screen.dart';
 import '../features/auth/domain/session.dart';
 import '../features/auth/presentation/change_password_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
+import '../features/auth/domain/reset_credentials.dart';
 import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/new_password_screen.dart';
+import '../features/auth/presentation/verify_code_screen.dart';
 import '../features/auth/presentation/session_controller.dart';
 import '../features/contract/presentation/home_screen.dart';
 import '../features/payments/domain/driver_access.dart';
@@ -23,6 +26,8 @@ abstract final class Routes {
   static const login = '/login';
   static const changePassword = '/change-password';
   static const forgotPassword = '/forgot-password';
+  static const verifyCode = '/forgot-password/code';
+  static const newPassword = '/forgot-password/new';
   static const home = '/home';
   static const pay = '/pay';
   static const history = '/history';
@@ -49,7 +54,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return switch (ref.read(sessionControllerProvider)) {
         SessionLoading() => at == Routes.splash ? null : Routes.splash,
         SignedOut() =>
-          (at == Routes.login || at == Routes.forgotPassword)
+          (at == Routes.login || at.startsWith(Routes.forgotPassword))
               ? null
               : Routes.login,
         PasswordChangeRequired() =>
@@ -77,6 +82,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.forgotPassword,
         builder: (_, _) => const ForgotPasswordScreen(),
+        routes: [
+          GoRoute(
+            path: 'code',
+            builder: (_, state) =>
+                VerifyCodeScreen(identifier: state.extra! as String),
+          ),
+          GoRoute(
+            path: 'new',
+            builder: (_, state) => NewPasswordScreen(
+              credentials: state.extra! as ResetCredentials,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.changePassword,

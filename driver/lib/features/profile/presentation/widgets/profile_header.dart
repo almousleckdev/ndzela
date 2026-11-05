@@ -1,13 +1,12 @@
-import '../../../../app/theme/brand_colors.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../../../../app/theme/brand_colors.dart';
 import '../../../../core/widgets/display/app_avatar.dart';
 import '../../../../core/widgets/layout/header_band.dart';
 import '../../domain/driver_profile.dart';
 
-// The profile band
+// The driver's picture, name and phone
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key, required this.profile, this.photo});
 
@@ -17,36 +16,37 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return HeaderBand(
-      bottomPadding: 20,
-      child: SizedBox(
-        width: double.infinity,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: context.brand.primary,
-              ),
-              child: AppAvatar(
-                initials: profile?.initials ?? '',
-                photo: photo,
-                radius: 38,
-              ),
+      bottomPadding: 16,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: context.brand.primary,
             ),
-            const SizedBox(height: 10),
-            Text(
-              profile?.fullName ?? ' ',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.display(24),
+            child: AppAvatar(
+              initials: profile?.initials ?? '',
+              photo: photo,
+              radius: 28,
             ),
-            const SizedBox(height: 4),
-            Text(
-              profile?.phone ?? ' ',
-              style: const TextStyle(color: AppColors.muted, fontSize: 15),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile?.fullName ?? ' ',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.title,
+                ),
+                Text(profile?.phone ?? ' ', style: AppTextStyles.label),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

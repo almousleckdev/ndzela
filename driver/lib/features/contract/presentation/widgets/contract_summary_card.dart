@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/formatting/date_format.dart';
 import '../../../../core/widgets/display/app_card.dart';
@@ -18,26 +17,19 @@ class ContractSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final progress = contract.progress;
     return AppCard(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: Text('Mon contrat', style: AppTextStyles.display(18)),
+                child: Text('Mon contrat', style: AppTextStyles.heading),
               ),
-              Text(
-                contract.number,
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
+              Text(contract.number, style: AppTextStyles.caption),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _pair(
             FigureTile(
               label: 'Loyer par jour',
@@ -48,7 +40,7 @@ class ContractSummaryCard extends StatelessWidget {
               value: formatDateShort(contract.endDate),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _pair(
             FigureTile(
               label: 'Jours payés',
@@ -68,7 +60,7 @@ class ContractSummaryCard extends StatelessWidget {
           Text(
             'Jour ${progress.elapsedDays} sur ${progress.totalDays} · '
             'reste à régler ${progress.remainingAmount}',
-            style: const TextStyle(color: AppColors.muted, fontSize: 12.5),
+            style: AppTextStyles.caption,
           ),
         ],
       ),
@@ -80,7 +72,7 @@ class ContractSummaryCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(child: left),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(child: right),
       ],
     ),

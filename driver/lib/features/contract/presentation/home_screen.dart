@@ -13,6 +13,7 @@ import 'widgets/balance_card.dart';
 import 'widgets/contract_summary_card.dart';
 import 'widgets/home_greeting.dart';
 import 'widgets/vehicle_card.dart';
+import 'widgets/weekly_history_card.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,7 @@ class HomeScreen extends ConsumerWidget {
       ..invalidate(driverPhotoProvider)
       ..invalidate(vehicleProvider)
       ..invalidate(contractDetailsProvider)
+      ..invalidate(paymentHistoryProvider)
       ..invalidate(arrearsProvider);
     await ref.read(arrearsProvider.future);
   }
@@ -37,7 +39,7 @@ class HomeScreen extends ConsumerWidget {
           Expanded(
             child: RefreshableList(
               onRefresh: () => _refresh(ref),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
               children: [
                 AsyncView(
                   value: ref.watch(arrearsProvider),
@@ -47,16 +49,18 @@ class HomeScreen extends ConsumerWidget {
                     onRegularise: () => context.go(Routes.pay),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 AsyncView(
                   value: ref.watch(vehicleProvider),
                   onRetry: () => ref.invalidate(vehicleProvider),
                   data: (vehicle) => VehicleCard(vehicle: vehicle),
                 ),
                 if (contract != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   ContractSummaryCard(contract: contract),
                 ],
+                const SizedBox(height: 12),
+                const WeeklyHistoryCard(),
               ],
             ),
           ),

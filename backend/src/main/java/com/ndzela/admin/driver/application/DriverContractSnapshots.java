@@ -21,7 +21,7 @@ final class DriverContractSnapshots {
                 new SnapshotLicence(d.getLicenceNumber(), d.getLicenceCategory().name(), d.getLicenceIssueDate()),
                 new SnapshotEmergency(d.getEmergencyLastName(), d.getEmergencyFirstName(), d.getEmergencyPhone(), d.getEmergencyRelationship().name(), d.getEmergencyAddress()),
                 new SnapshotVehicle(v.brand(), v.model(), v.fleetNumber(), v.plate(), v.color(), v.vin(), v.year()),
-                new SnapshotTraining(d.getTrainingCenter().getName(), d.getTrainingDate(), d.getCertificateNumber()),
-                new SnapshotDocuments(d.getLicenceFile() != null, d.getIdFile() != null, d.getAddressProofFile() != null));
+                new SnapshotTraining(d.getTrainingCenter() == null ? null : d.getTrainingCenter().getName(), d.getTrainingDate(), d.getCertificateNumber()),
+                new SnapshotDocuments(d.getLicenceFile() != null, d.getIdFile() != null, d.getAddressProofFile() != null, d.getResidenceCertificateFile() != null));
     }
 }

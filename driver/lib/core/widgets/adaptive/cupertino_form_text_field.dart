@@ -2,8 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../platform/app_icon.dart';
+import 'field_label.dart';
 import 'platform_icon.dart';
 
 // The iOS rendering of AppTextField
@@ -57,15 +59,7 @@ class CupertinoFormTextField extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.muted,
-              ),
-            ),
-            const SizedBox(height: 6),
+            FieldLabel(label),
             CupertinoTextField(
               controller: controller,
               enabled: enabled,
@@ -78,12 +72,20 @@ class CupertinoFormTextField extends StatelessWidget {
               autofillHints: autofillHints,
               inputFormatters: inputFormatters,
               placeholder: hint,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              style: AppTextStyles.body,
+              placeholderStyle: AppTextStyles.body.copyWith(
+                color: AppColors.muted,
+              ),
               prefix: prefixIcon == null
                   ? null
                   : Padding(
                       padding: const EdgeInsets.only(left: 12),
-                      child: PlatformIcon(prefixIcon!, color: AppColors.muted),
+                      child: PlatformIcon(
+                        prefixIcon!,
+                        size: 20,
+                        color: AppColors.muted,
+                      ),
                     ),
               suffix: suffix,
               decoration: BoxDecoration(
@@ -104,7 +106,9 @@ class CupertinoFormTextField extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 6, left: 4),
                 child: Text(
                   state.errorText!,
-                  style: const TextStyle(fontSize: 12, color: AppColors.danger),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.danger,
+                  ),
                 ),
               ),
           ],

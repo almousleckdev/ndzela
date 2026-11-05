@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'app_text_styles.dart';
 import 'brand_colors.dart';
 
 abstract final class AppTheme {
-  static const radius = 14.0;
+  static const radius = 12.0;
+  // Height of buttons and inputs
+  static const controlHeight = 44.0;
   static const bodyFamily = 'IBMPlexSans';
 
   static ThemeData light([BrandColors brand = BrandColors.ndzela]) =>
@@ -35,20 +38,27 @@ abstract final class AppTheme {
     );
     return base.copyWith(
       scaffoldBackgroundColor: AppColors.canvas,
-      textTheme: base.textTheme.apply(
-        bodyColor: AppColors.ink,
-        displayColor: AppColors.ink,
-      ),
+      textTheme: base.textTheme
+          .apply(bodyColor: AppColors.ink, displayColor: AppColors.ink)
+          .copyWith(
+            headlineSmall: AppTextStyles.title,
+            titleLarge: AppTextStyles.title,
+            titleMedium: AppTextStyles.heading,
+            bodyLarge: AppTextStyles.body,
+            bodyMedium: AppTextStyles.body,
+            bodySmall: AppTextStyles.caption,
+            labelLarge: AppTextStyles.action,
+          ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        labelStyle: const TextStyle(color: AppColors.muted),
-        hintStyle: const TextStyle(color: AppColors.muted),
+        hintStyle: AppTextStyles.body.copyWith(color: AppColors.muted),
         prefixIconColor: AppColors.muted,
         suffixIconColor: AppColors.muted,
         fillColor: Colors.white,
+        isDense: true,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
+          horizontal: 14,
+          vertical: 12,
         ),
         border: _border(AppColors.line),
         enabledBorder: _border(AppColors.line),
@@ -58,13 +68,9 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(54),
+          minimumSize: const Size.fromHeight(controlHeight),
           shape: shape,
-          textStyle: const TextStyle(
-            fontFamily: bodyFamily,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppTextStyles.action,
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -72,10 +78,8 @@ abstract final class AppTheme {
         indicatorColor: brand.primarySoft,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
-            fontSize: 12,
-            fontWeight: states.contains(WidgetState.selected)
-                ? FontWeight.w700
-                : FontWeight.w500,
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
             color: states.contains(WidgetState.selected)
                 ? brand.primaryInk
                 : AppColors.muted,

@@ -25,15 +25,15 @@ class PaymentAmountCard extends StatelessWidget {
                 : 'Montant à régler',
             style: TextStyle(
               color: AppColors.muted,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             (selected?.amount ?? arrears.total).toString(),
             style: const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
               color: AppColors.danger,
             ),
           ),

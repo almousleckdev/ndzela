@@ -33,7 +33,7 @@ class LicensePlate extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -43,8 +43,8 @@ class LicensePlate extends StatelessWidget {
                 number,
                 style: const TextStyle(
                   color: AppColors.ink,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                   letterSpacing: 1.6,
                 ),
               ),

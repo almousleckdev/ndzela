@@ -25,7 +25,6 @@ export function ForgotPasswordStep({ onSubmit, onBack }: ForgotPasswordStepProps
       <FormField
         label="Adresse Email"
         icon={Mail}
-        variant="glass"
         type="email"
         autoComplete="username"
         placeholder="admin@ndzela.com"

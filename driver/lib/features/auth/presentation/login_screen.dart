@@ -5,13 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
-import '../../../app/theme/app_colors.dart';
-import '../../../app/theme/brand_colors.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../core/error/error_messages.dart';
 import '../../../core/platform/app_icons.dart';
 import '../../../core/widgets/adaptive/app_button.dart';
 import '../../../core/widgets/adaptive/app_password_field.dart';
-import '../../../core/widgets/adaptive/app_tappable.dart';
+import '../../../core/widgets/adaptive/app_link_button.dart';
 import '../../../core/widgets/adaptive/app_text_field.dart';
 import '../../../core/widgets/feedback/error_banner.dart';
 import '../domain/session.dart';
@@ -70,26 +69,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             const LoginHeader(),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               child: AutofillGroup(
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'Connexion',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
+                      Text('Connexion', style: AppTextStyles.title),
                       const SizedBox(height: 4),
                       const Text(
                         'Connectez-vous avec les accès remis par Ndzela.',
-                        style: TextStyle(color: AppColors.muted),
+                        style: AppTextStyles.label,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       AppTextField(
                         label: 'Téléphone ou e-mail',
+                        hint: 'example@google.com',
                         controller: _identifier,
                         prefixIcon: AppIcons.person,
                         keyboardType: TextInputType.emailAddress,
@@ -101,7 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Saisissez votre téléphone ou votre e-mail.',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       AppPasswordField(
                         label: 'Mot de passe',
                         controller: _password,
@@ -122,38 +118,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const SizedBox(height: 16),
                         ErrorBanner(message: messageFor(login.error!)),
                       ],
-                      const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
-                        child: AppTappable(
+                        child: AppLinkButton(
+                          label: 'Mot de passe oublié ?',
                           onTap: () => context.push(Routes.forgotPassword),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 8,
-                            ),
-                            child: Text(
-                              'Mot de passe oublié ?',
-                              style: TextStyle(
-                                color: context.brand.primaryInk,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       AppButton(
                         label: 'Se connecter',
                         loading: login.isLoading,
                         onPressed: _submit,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       const Text(
                         'Pas de compte ? Votre compte est créé par Ndzela avec votre contrat.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.muted, fontSize: 13),
+                        style: AppTextStyles.caption,
                       ),
                     ],
                   ),

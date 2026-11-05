@@ -30,9 +30,9 @@ public record DriverResponse(
 ) {
     public static DriverResponse from(Driver d, VehicleResponse vehicle, boolean onLeave, ContractResponse contract) {
         return new DriverResponse(d.getId(), PersonalInfo.from(d), EmergencyContact.from(d),
-                new DriverTrainingView(TrainingCenterResponse.from(d.getTrainingCenter()), d.getTrainingDate(), d.getCertificateNumber()),
+                new DriverTrainingView(d.getTrainingCenter() == null ? null : TrainingCenterResponse.from(d.getTrainingCenter()), d.getTrainingDate(), d.getCertificateNumber()),
                 d.getStatus(), onLeave, d.getStatusReason(),
-                new DriverFilesView(d.getPhotoFile() != null, d.getLicenceFile() != null, d.getIdFile() != null, d.getAddressProofFile() != null),
+                new DriverFilesView(d.getPhotoFile() != null, d.getLicenceFile() != null, d.getIdFile() != null, d.getAddressProofFile() != null, d.getResidenceCertificateFile() != null),
                 d.isMustChangePassword(), vehicle, contract,
                 new DriverArrearsView(d.getArrearsLevel(), d.getOverdueAmount().setScale(0, java.math.RoundingMode.HALF_UP), d.getOverdueSince(), d.getUnpaidDays(), d.getPaidDays(), daysLeft(d, contract)),
                 d.getCountry() == null ? null : CountryResponse.from(d.getCountry()),

@@ -30,37 +30,36 @@ class PaymentResultView extends ConsumerWidget {
     final paid = attempt.status == PaymentStatus.success;
     final flow = ref.read(paymentFlowControllerProvider.notifier);
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       children: [
-        const SizedBox(height: 8),
         Center(
           child: CircleBadge(
             color: paid ? AppColors.successSoft : AppColors.dangerSoft,
-            size: 84,
+            size: 56,
             child: PlatformIcon(
               paid ? AppIcons.done : AppIcons.error,
-              size: 44,
+              size: 28,
               color: paid ? AppColors.success : AppColors.danger,
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         Text(
           paid ? 'Paiement confirmé' : "Le paiement n'a pas abouti",
           textAlign: TextAlign.center,
-          style: AppTextStyles.display(26),
+          style: AppTextStyles.title,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         Text(
           _message(),
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: AppColors.muted,
-            fontSize: 15,
+            fontSize: 14,
             height: 1.4,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         PaymentReceipt(
           attempt: attempt,
           operatorName: operatorLabel(
@@ -69,10 +68,10 @@ class PaymentResultView extends ConsumerWidget {
           ),
           payerName: ref.watch(driverProfileProvider).asData?.value.fullName,
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 16),
         if (paid) ...[
           ShareReceiptButton(attempt: attempt),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
         ],
         AppButton(
           label: paid ? "Retour à l'accueil" : 'Réessayer',
@@ -82,7 +81,7 @@ class PaymentResultView extends ConsumerWidget {
           },
         ),
         if (!paid) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           ContactSupportButton(reference: attempt.reference),
         ],
       ],

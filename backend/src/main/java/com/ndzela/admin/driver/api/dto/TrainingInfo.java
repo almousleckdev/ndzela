@@ -9,7 +9,7 @@ import java.util.UUID;
 
 // Step 3 of the wizard (the vehicle is chosen separately)
 public record TrainingInfo(
-        @NotNull UUID trainingCenterId,
+        UUID trainingCenterId,
         @NotNull @PastOrPresent LocalDate trainingDate,
         @Size(max = 50) String certificateNumber
 ) {}

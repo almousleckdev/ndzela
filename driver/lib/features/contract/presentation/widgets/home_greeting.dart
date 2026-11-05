@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
-import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/platform/app_icons.dart';
 import '../../../../core/widgets/adaptive/app_icon_button.dart';
@@ -25,20 +24,12 @@ class HomeGreeting extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Bonjour,',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 2),
+              const Text('Bonjour,', style: AppTextStyles.caption),
               Text(
                 profile?.fullName ?? ' ',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.display(24),
+                style: AppTextStyles.heading,
               ),
             ],
           ),
@@ -63,7 +54,7 @@ class HomeGreeting extends ConsumerWidget {
               child: AppAvatar(
                 initials: profile?.initials ?? '',
                 photo: photo == null ? null : MemoryImage(photo),
-                radius: 21,
+                radius: 18,
               ),
             ),
           ),

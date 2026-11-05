@@ -4,6 +4,7 @@ import com.ndzela.admin.driverapp.api.dto.ChangePasswordRequest;
 import com.ndzela.admin.driverapp.api.dto.DriverLoginRequest;
 import com.ndzela.admin.driverapp.api.dto.ForgotPasswordRequest;
 import com.ndzela.admin.driverapp.api.dto.ResetPasswordRequest;
+import com.ndzela.admin.driverapp.api.dto.VerifyResetCodeRequest;
 import com.ndzela.admin.driverapp.application.DriverPasswordResetService;
 import com.ndzela.admin.driverapp.api.dto.DriverLogoutRequest;
 import com.ndzela.admin.driverapp.api.dto.DriverRefreshRequest;
@@ -40,6 +41,12 @@ public class DriverAuthController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest http) {
         passwordReset.requestCode(request.identifier(), http.getRemoteAddr());
+    }
+
+    @PostMapping("/auth/verify-reset-code")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void verifyResetCode(@Valid @RequestBody VerifyResetCodeRequest request) {
+        passwordReset.verifyCode(request.identifier(), request.code());
     }
 
     @PostMapping("/auth/reset-password")

@@ -28,7 +28,6 @@ export function ForgotPasswordCodeStep({ onSubmit, onBack }: ForgotPasswordCodeS
       <FormField
         label="Nouveau mot de passe"
         icon={KeyRound}
-        variant="glass"
         type="password"
         autoComplete="new-password"
         placeholder="••••••••"
@@ -39,7 +38,6 @@ export function ForgotPasswordCodeStep({ onSubmit, onBack }: ForgotPasswordCodeS
       <FormField
         label="Confirmer le mot de passe"
         icon={KeyRound}
-        variant="glass"
         type="password"
         autoComplete="new-password"
         placeholder="••••••••"

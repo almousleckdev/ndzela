@@ -30,12 +30,12 @@ class PaymentDetailView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final look = PaymentStatusLook.of(attempt.status, context.brand);
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       children: [
         Center(
           child: CircleBadge(
             color: look.soft,
-            size: 72,
+            size: 56,
             child: PlatformIcon(look.icon, size: 36, color: look.color),
           ),
         ),
@@ -43,7 +43,7 @@ class PaymentDetailView extends ConsumerWidget {
         Text(
           attempt.amount.toString(),
           textAlign: TextAlign.center,
-          style: AppTextStyles.display(32),
+          style: AppTextStyles.title,
         ),
         const SizedBox(height: 10),
         Center(
@@ -59,7 +59,7 @@ class PaymentDetailView extends ConsumerWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(color: AppColors.muted, height: 1.4),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         PaymentReceipt(
           attempt: attempt,
           operatorName: operatorName,

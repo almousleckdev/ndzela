@@ -33,8 +33,8 @@ class HistoryMonthGroup extends StatelessWidget {
             title[0].toUpperCase() + title.substring(1),
             style: const TextStyle(
               color: AppColors.muted,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              fontSize: 13,
             ),
           ),
         ),

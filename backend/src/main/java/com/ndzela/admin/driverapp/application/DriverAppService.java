@@ -2,6 +2,7 @@ package com.ndzela.admin.driverapp.application;
 
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.contract.api.dto.ContractResponse;
+import com.ndzela.admin.contract.application.ContractPdfService;
 import com.ndzela.admin.contract.application.ContractService;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.config.properties.AppProperties;
@@ -33,6 +34,7 @@ import java.util.UUID;
 public class DriverAppService {
     private final DriverRepository drivers;
     private final ContractService contracts;
+    private final ContractPdfService contractPdfs;
     private final VehicleService vehicles;
     private final AccountQueryService accounts;
     private final DriverFileService files;
@@ -71,7 +73,19 @@ public class DriverAppService {
                 new DriverDocumentResponse("CONTRACT", !contracts.ofDriver(driverId).isEmpty()),
                 available("LICENCE", DriverFileKind.LICENCE, driver),
                 available("ID", DriverFileKind.ID, driver),
-                available("ADDRESS_PROOF", DriverFileKind.ADDRESS_PROOF, driver));
+                available("ADDRESS_PROOF", DriverFileKind.ADDRESS_PROOF, driver),
+                available("RESIDENCE_CERTIFICATE", DriverFileKind.RESIDENCE_CERTIFICATE, driver));
+    }
+
+    // The driver's own contract (the active one, else the latest) as a PDF.
+    @Transactional
+    public byte[] contractPdf(UUID driverId) {
+        var own = contracts.ofDriver(driverId);
+        if (own.isEmpty()) {
+            throw new BusinessRuleViolationException("NO_CONTRACT", "This driver has no contract.");
+        }
+        var chosen = own.stream().filter(c -> "ACTIVE".equals(c.status().name())).findFirst().orElse(own.get(0));
+        return contractPdfs.pdf(chosen.id());
     }
 
     @Transactional(readOnly = true)

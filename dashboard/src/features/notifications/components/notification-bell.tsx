@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dropdown } from "@/components/ui/dropdown";
@@ -13,6 +14,7 @@ import type { NotificationItem } from "@/features/notifications/types";
 const POLL_INTERVAL_MS = 30_000;
 
 export function NotificationBell() {
+  const router = useRouter();
   const { data, reload } = useFetch(notificationsService.list);
 
   useEffect(() => {
@@ -24,6 +26,7 @@ export function NotificationBell() {
   const items = data?.items ?? [];
 
   const open = async (item: NotificationItem) => {
+    router.push(`/notifications/${item.id}`);
     if (!item.read) {
       await notificationsService.markRead(item.id).catch(() => undefined);
       reload();

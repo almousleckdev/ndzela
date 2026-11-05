@@ -20,10 +20,10 @@ class ProgressBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         child: Stack(
           children: [
-            Container(height: 8, color: AppColors.canvas),
+            Container(height: 6, color: AppColors.canvas),
             FractionallySizedBox(
               widthFactor: value.clamp(0, 1).toDouble(),
-              child: Container(height: 8, color: context.brand.primary),
+              child: Container(height: 6, color: context.brand.primary),
             ),
           ],
         ),

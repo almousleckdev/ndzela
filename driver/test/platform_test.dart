@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fakes.dart';
+import 'support/open_message.dart';
 import 'support/phone_view.dart';
 
 void main() {
@@ -51,12 +52,7 @@ void main() {
       usePhone(tester, height: 7000);
       await tester.pumpWidget(appWith(FakeBackend(signedIn: true)));
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(NavItem).at(3));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.widgetWithText(CupertinoButton, 'Envoyer un message'),
-      );
-      await tester.pumpAndSettle();
+      await openMessageScreen(tester);
 
       expect(find.byType(CupertinoTextField), findsOneWidget);
       expect(find.widgetWithText(CupertinoButton, 'Envoyer'), findsOneWidget);

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'support/fakes.dart';
+import 'support/open_message.dart';
 import 'support/phone_view.dart';
 
 void main() {
@@ -35,7 +36,7 @@ void main() {
     (tester) async {
       await openProfile(tester);
 
-      expect(find.text('Mon contrat'), findsWidgets);
+      expect(find.text('Détails du contrat'), findsOneWidget);
       expect(find.text('NDZ-77836447'), findsWidgets);
       expect(find.text('1 octobre 2026'), findsOneWidget);
       expect(find.text('36 mois'), findsOneWidget);
@@ -48,7 +49,7 @@ void main() {
 
     expect(find.text('Contrat de location'), findsOneWidget);
     expect(find.text('Casier judiciaire'), findsOneWidget);
-    expect(find.text('Disponible'), findsNWidgets(3));
+    expect(find.text('Disponible'), findsNWidgets(2));
     expect(find.text('Manquant'), findsOneWidget);
   });
 
@@ -69,6 +70,22 @@ void main() {
     },
   );
 
+  testWidgets('the contract can be opened and downloaded from the documents', (
+    tester,
+  ) async {
+    final backend = await openProfile(tester);
+
+    await tester.tap(find.byTooltip('Ouvrir le contrat'));
+    await tester.pumpAndSettle();
+    verify(() => backend.profile.fetchContractPdf()).called(1);
+    expect(backend.opened.single.filename, 'contrat-ndzela.pdf');
+
+    await tester.tap(find.byTooltip('Télécharger le contrat'));
+    await tester.pumpAndSettle();
+    expect(backend.shared.single.filename, 'contrat-ndzela.pdf');
+    expect(backend.shared.single.mimeType, 'application/pdf');
+  });
+
   testWidgets('the support section offers the channels the country has set', (
     tester,
   ) async {
@@ -77,6 +94,7 @@ void main() {
     expect(find.text('Appeler'), findsOneWidget);
     expect(find.text('WhatsApp'), findsOneWidget);
     expect(find.text('E-mail'), findsWidgets);
+    expect(find.text('Envoyer un message'), findsNothing);
   });
 
   testWidgets('a channel the country has not set is not offered', (
@@ -101,9 +119,7 @@ void main() {
     (tester) async {
       final backend = await openProfile(tester);
 
-      await tester.tap(find.text('Envoyer un message'));
-      await tester.pumpAndSettle();
-      expect(find.byType(SupportMessageScreen), findsOneWidget);
+      await openMessageScreen(tester);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Envoyer'));
       await tester.pumpAndSettle();
@@ -121,7 +137,6 @@ void main() {
         () => backend.support.sendMessage('Ma voiture fait un bruit.'),
       ).called(1);
       expect(find.byType(SupportMessageScreen), findsNothing);
-      expect(find.text('Informations personnelles'), findsOneWidget);
     },
   );
 
@@ -133,8 +148,7 @@ void main() {
       () => backend.support.sendMessage(any()),
     ).thenThrow(apiError(422, 'TOO_MANY_MESSAGES'));
 
-    await tester.tap(find.text('Envoyer un message'));
-    await tester.pumpAndSettle();
+    await openMessageScreen(tester);
     await tester.enterText(find.byType(TextFormField), 'Bonjour');
     await tester.tap(find.widgetWithText(FilledButton, 'Envoyer'));
     await tester.pumpAndSettle();

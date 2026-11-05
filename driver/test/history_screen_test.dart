@@ -28,11 +28,13 @@ void main() {
       expect(find.text('paiement'), findsOneWidget);
       expect(find.byType(PaymentHistoryTile), findsOneWidget);
 
+      await tester.ensureVisible(find.text('Échoués ou expirés'));
       await tester.tap(find.text('Échoués ou expirés'));
       await tester.pumpAndSettle();
       expect(find.byType(PaymentHistoryTile), findsNothing);
       expect(find.text('Aucun paiement dans cette catégorie'), findsOneWidget);
 
+      await tester.ensureVisible(find.text('Confirmés'));
       await tester.tap(find.text('Confirmés'));
       await tester.pumpAndSettle();
       expect(find.byType(PaymentHistoryTile), findsOneWidget);

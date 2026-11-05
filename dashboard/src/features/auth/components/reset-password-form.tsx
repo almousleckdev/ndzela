@@ -60,7 +60,6 @@ export function ResetPasswordForm() {
       <FormField
         label="Nouveau mot de passe"
         icon={KeyRound}
-        variant="glass"
         type="password"
         autoComplete="new-password"
         placeholder="••••••••"
@@ -71,7 +70,6 @@ export function ResetPasswordForm() {
       <FormField
         label="Confirmer le mot de passe"
         icon={KeyRound}
-        variant="glass"
         type="password"
         autoComplete="new-password"
         placeholder="••••••••"

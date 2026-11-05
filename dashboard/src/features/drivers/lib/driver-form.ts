@@ -11,7 +11,7 @@ export interface PhoneCodes {
 }
 
 // The files picked in the wizard
-export type UploadKey = "photo" | "licence" | "id" | "addressProof";
+export type UploadKey = "photo" | "licence" | "id" | "addressProof" | "residenceCertificate";
 export type Uploads = Record<UploadKey, File | null>;
 export interface PhotoPick {
   file: File | null;
@@ -19,7 +19,7 @@ export interface PhotoPick {
   onChange: (file: File | null, error?: string) => void;
 }
 
-export const NO_UPLOADS: Uploads = { photo: null, licence: null, id: null, addressProof: null };
+export const NO_UPLOADS: Uploads = { photo: null, licence: null, id: null, addressProof: null, residenceCertificate: null };
 
 export const EMPTY_DRIVER: DriverFormValues = {
   personal: {
@@ -50,7 +50,7 @@ export function valuesFromDriver(driver: Driver, knownCodes: string[]): { values
       personal: { ...driver.personal, phonePrimary: primary.number, phoneSecondary: secondary.number },
       emergency: { ...driver.emergency, phone: emergency.number },
       training: {
-        trainingCenterId: driver.training.trainingCenter.id,
+        trainingCenterId: driver.training.trainingCenter?.id ?? "",
         trainingDate: driver.training.trainingDate,
         certificateNumber: driver.training.certificateNumber ?? "",
       },
@@ -71,7 +71,7 @@ export function toRequestBody(values: DriverFormValues, codes: PhoneCodes, extra
       phoneSecondary: secondary || null,
     },
     emergency: { ...values.emergency, phone: joinPhone(codes.emergency, values.emergency.phone) },
-    training: { ...values.training, certificateNumber: values.training.certificateNumber.trim() || null },
+    training: { ...values.training, trainingCenterId: values.training.trainingCenterId || null, certificateNumber: values.training.certificateNumber.trim() || null },
     ...(extra ? { vehicleId: extra.vehicleId, contract: { deposit: Number(values.contract.deposit) }, password: extra.password } : {}),
   };
 }
