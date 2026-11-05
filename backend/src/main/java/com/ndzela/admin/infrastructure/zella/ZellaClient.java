@@ -93,7 +93,9 @@ public class ZellaClient {
             }
             items.add(new ZellaFeedItem(transactionId, customerId, text(i, "idTag"), text(i, "sessionState"), text(i, "paymentState"), text(i, "paymentMethod"),
                     number(i, "energyCostMinor"), number(i, "vatMinor"), number(i, "serviceFeeMinor"), number(i, "totalChargedMinor"), text(i, "currency"),
-                    number(i, "currencyDecimals") == null ? null : number(i, "currencyDecimals").intValue(), i.path("breakdownEstimated").asBoolean(false), time(i, "updatedAt")));
+                    number(i, "currencyDecimals") == null ? null : number(i, "currencyDecimals").intValue(), i.path("breakdownEstimated").asBoolean(false), time(i, "updatedAt"),
+                    text(i, "stationId"), number(i, "connectorId") == null ? null : number(i, "connectorId").intValue(), time(i, "startedAt"), time(i, "stoppedAt"),
+                    decimal(i, "energyKwh"), decimal(i, "batteryStartPercent"), decimal(i, "batteryPercent"), decimal(i, "powerKw"), number(i, "pricePerKwhMinor"), i.toString()));
         }
         return new ZellaFeedPage(items, text(json, "nextCursor"), json.path("hasMore").asBoolean(false));
     }
@@ -107,6 +109,15 @@ public class ZellaClient {
         String value = text(node, field);
         try {
             return value == null ? null : new java.math.BigDecimal(value).longValue();
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static java.math.BigDecimal decimal(JsonNode node, String field) {
+        String value = text(node, field);
+        try {
+            return value == null ? null : new java.math.BigDecimal(value);
         } catch (NumberFormatException e) {
             return null;
         }

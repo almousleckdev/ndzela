@@ -124,7 +124,7 @@ app:
     webhook-secret: ${OCPP_WEBHOOK_SECRET:}         # the HMAC-SHA256 signing secret of their webhooks; empty: every webhook is refused
     webhook-header: ${OCPP_WEBHOOK_HEADER:X-Webhook-Signature}   # the header carrying the signature
     country-code: ${OCPP_COUNTRY:GA}                # the country the platform's stations and sessions belong to
-    sync-enabled: ${OCPP_SYNC_ENABLED:true}
+    sync-enabled: ${OCPP_SYNC_ENABLED:false}        # off: the sessions come from the Zella app's feed; NDZela does not call the OCPP platform
     sync-interval: ${OCPP_SYNC_INTERVAL:PT10S}       # between two syncs when no webhook asked for one (6 of the 60 requests a minute)
     sync-page-size: 500                             # 1 to 1000
     request-timeout: 15s

@@ -120,7 +120,17 @@ public class FakeZellaClient extends ZellaClient {
     }
 
     public static ZellaFeedItem paid(String transactionId, String customerId, String state, long total, String updatedAt) {
-        return new ZellaFeedItem(transactionId, customerId, "Z-ABC", "COMPLETED", state, "WALLET", total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt));
+        return new ZellaFeedItem(transactionId, customerId, "Z-ABC", "COMPLETED", state, "WALLET", total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
+                null, null, null, null, null, null, null, null, null, null);
+    }
+
+    public static ZellaFeedItem charged(String transactionId, String customerId, String sessionState, String stationId, String startedAt, String stoppedAt,
+                                        String energyKwh, String batteryStart, String batteryEnd, String powerKw, String updatedAt) {
+        return new ZellaFeedItem(transactionId, customerId, "Z-ABC", sessionState, "COMPLETED".equals(sessionState) ? "CHARGED" : "PENDING", "WALLET",
+                "COMPLETED".equals(sessionState) ? 3500L : null, 0L, 500L, "COMPLETED".equals(sessionState) ? 4000L : null, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
+                stationId, 1, startedAt == null ? null : OffsetDateTime.parse(startedAt), stoppedAt == null ? null : OffsetDateTime.parse(stoppedAt),
+                energyKwh == null ? null : new java.math.BigDecimal(energyKwh), batteryStart == null ? null : new java.math.BigDecimal(batteryStart),
+                batteryEnd == null ? null : new java.math.BigDecimal(batteryEnd), powerKw == null ? null : new java.math.BigDecimal(powerKw), 350L, "{}");
     }
 
     public void goDown() {
