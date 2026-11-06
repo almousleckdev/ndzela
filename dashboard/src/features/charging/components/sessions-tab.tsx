@@ -7,6 +7,8 @@ import { ExportMenu } from "@/components/export-menu";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tabs } from "@/components/ui/tabs";
+import { ReasonDialog } from "@/components/ui/reason-dialog";
+import { useToast } from "@/hooks/use-toast";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { None, Stack } from "@/components/data-table/cells";
 import { DataTable } from "@/components/data-table/data-table";
@@ -44,7 +46,9 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
   const [kind, setKind] = useState<SessionKind>("ALL");
   const list = useAsync(() => chargingService.sessions({ q: query.q, from: range.from, to: range.to, kind }, query.page, query.size), [query.q, range.from, range.to, kind, query.page, query.size]);
 
+  const { addToast } = useToast();
   const [detail, setDetail] = useState<ChargingSessionRow | null>(null);
+  const [deleting, setDeleting] = useState<ChargingSessionRow | null>(null);
   const summary = useAsync(() => chargingService.sessionSummary(kind), [kind]);
   usePolling(() => { list.reload(); summary.reload(); }, 5000);
   const s = summary.data;
@@ -80,7 +84,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
       if (holderKindOf(row) === "PUBLIC") return <Badge>Sans objet (public)</Badge>;
       return can(PERMISSIONS.CHARGING_CREATE) ? <Button size="sm" variant="outline" onClick={() => onRecord(row)}>Enregistrer le paiement</Button> : <Badge variant="warning">À enregistrer</Badge>;
     } }),
-    col.display({ id: "detail", header: () => <span className="sr-only">Détail</span>, enableHiding: false, cell: (c) => <Button size="sm" variant="ghost" onClick={() => setDetail(c.row.original)}>Détail</Button> }),
+    col.display({ id: "detail", header: () => <span className="sr-only">Détail</span>, enableHiding: false, cell: (c) => <div className="flex justify-end gap-1"><Button size="sm" variant="ghost" onClick={() => setDetail(c.row.original)}>Détail</Button>{can(PERMISSIONS.CHARGING_DELETE) && !isRunning(c.row.original) && <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-50" onClick={() => setDeleting(c.row.original)}>Supprimer</Button>}</div> }),
   ]), [can, onRecord]);
 
 
@@ -107,6 +111,17 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
         server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: [], onSortingChange: () => {} }}
         empty={<EmptyState title="Aucune session" description="Aucune session de recharge reçue sur cette période." />} />
       </Panel>
+      {deleting && (
+        <ReasonDialog title="Supprimer cette session ?" description={`Session ${deleting.transactionId}. Elle sera supprimée définitivement et ne reviendra pas à la prochaine synchronisation ; la suppression est enregistrée dans le journal d'audit.`}
+          confirmText="Supprimer la session" destructive onClose={() => setDeleting(null)}
+          onConfirm={async (reason) => {
+            await chargingService.deleteSession(deleting.id, reason);
+            setDeleting(null);
+            addToast({ title: "Succès", description: "Session supprimée.", type: "success" });
+            list.reload();
+            summary.reload();
+          }} />
+      )}
       {detail && <SessionDetailDialog session={detail} onClose={() => setDetail(null)} />}
     </>
   );

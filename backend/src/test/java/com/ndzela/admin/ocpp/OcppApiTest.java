@@ -104,9 +104,9 @@ class OcppApiTest extends AbstractIntegrationTest {
         var data = ExportSheets.data(sheet);
         assertEquals("NDZELA", sheet.get(0).get(1));
         assertEquals("Sessions du réseau", sheet.get(1).get(1));
-        assertTrue(sheet.get(2).get(1).startsWith("Période : du 01/10/2026 au 31/10/2026 · Exporté le "), sheet.get(2).get(1));
+        assertTrue(sheet.get(2).get(1).startsWith("Période : du 01/10/2026 au 31/10/2026 · Type : chauffeurs NDZela et public · Exporté le "), sheet.get(2).get(1));
         assertEquals(2, data.size(), "the session and the totals row");
-        assertTrue(data.get(0).contains("DY202609110007") && data.get(0).contains("Terminée") && data.get(0).contains("Non enregistrée") && data.get(0).contains("7,350"), data.get(0).toString());
+        assertTrue(data.get(0).contains("DY202609110007") && data.get(0).contains("Terminée") && data.get(0).contains("Sans objet (public)") && data.get(0).contains("7,350"), data.get(0).toString());
         assertTrue(data.get(1).get(0).startsWith("TOTAL (1 session)") && data.get(1).contains("21.0"), data.get(1).toString());
 
         assertTrue(ExportSheets.isPdf(mvc.perform(get("/api/v1/charging/sessions/export?format=PDF").header("Authorization", bearer(accountant))).andExpect(status().isOk())));

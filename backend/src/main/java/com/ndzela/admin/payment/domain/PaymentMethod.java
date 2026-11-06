@@ -5,7 +5,8 @@ public enum PaymentMethod {
     AIRTEL_MONEY("Airtel Money"),
     MOOV_MONEY("Moov Money"),
     ORANGE_MONEY("Orange Money"),
-    OTHER("Autre");
+    OTHER("Autre"),
+    ZELLA_WALLET("Zella Wallet");
 
     private final String label;
 

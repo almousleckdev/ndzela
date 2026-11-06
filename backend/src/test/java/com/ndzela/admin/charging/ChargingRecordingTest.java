@@ -14,6 +14,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,6 +28,13 @@ class ChargingRecordingTest extends AbstractChargingApiTest {
                 .andExpect(jsonPath("$.recordedBy").value(manager.getEmail())).andExpect(jsonPath("$.critical").value(false)).andExpect(jsonPath("$.amount").value(5000));
         assertEquals(1, auditRows("CHARGING_RECORDED"));
         send(get("/api/v1/charging/recharges"), viewer).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].vehicle").exists());
+    }
+
+    @Test
+    void everyRechargeIsPaidFromTheZellaWalletWhateverMethodIsSent() throws Exception {
+        charge(manager, 30, 90).andExpect(status().isCreated()).andExpect(jsonPath("$.method").value("ZELLA_WALLET"));
+        postJson("/api/v1/charging/recharges", recharge(own(), 1000, "CASH", "R9", 10, 60, UUID.randomUUID()), manager).andExpect(status().isCreated()).andExpect(jsonPath("$.method").value("ZELLA_WALLET"));
+        assertEquals(2, rows("select count(*) from charging_entries where method = 'ZELLA_WALLET'"));
     }
 
     @Test
@@ -54,10 +62,6 @@ class ChargingRecordingTest extends AbstractChargingApiTest {
         postJson("/api/v1/charging/recharges", recharge(own(), 0, "AIRTEL_MONEY", "R1", 10, 60, UUID.randomUUID()), manager).andExpect(status().isBadRequest());
         postJson("/api/v1/charging/recharges", recharge(own(), 1000, "MOOV_MONEY", null, 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("PAYMENT_REFERENCE_REQUIRED"));
-        for (String method : new String[] {"CASH", "OTHER", "ORANGE_MONEY"}) {
-            postJson("/api/v1/charging/recharges", recharge(own(), 1000, method, "R1", 10, 60, UUID.randomUUID()), manager).andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.code").value("PAYMENT_METHOD_NOT_ALLOWED"));
-        }
         postJson("/api/v1/charging/recharges", recharge(own(), 1000, "BITCOIN", null, 10, 60, UUID.randomUUID()), manager).andExpect(status().isBadRequest());
         postJson("/api/v1/charging/recharges", "{}", manager).andExpect(status().isBadRequest());
         assertEquals(0, rows("select count(*) from charging_entries"));
@@ -113,5 +117,30 @@ class ChargingRecordingTest extends AbstractChargingApiTest {
         assertThrows(DataAccessException.class, () -> jdbc.update("delete from charging_entries"));
         assertThrows(DataAccessException.class, () -> jdbc.update("insert into charging_entries (id, country_id, entry_type, station_id, amount, recorded_by, created_at, battery_before, battery_after) "
                 + "select gen_random_uuid(), country_id, 'RECHARGE', id, 1, 'x', now(), 0, 0 from stations limit 1"), "a record needs a vehicle or a public car");
+    }
+
+    @Test
+    void onlyAnAdministratorDeletesARechargeWithAReasonAndItsCancellationGoesWithIt() throws Exception {
+        String id = entryId(charge(manager, 20, 80).andExpect(status().isCreated()));
+        postJson("/api/v1/charging/recharges/" + id + "/reverse", REASON, admin).andExpect(status().isOk());
+
+        mvc.perform(delete("/api/v1/charging/recharges/" + id).header("Authorization", bearer(manager)).contentType("application/json").content(REASON)).andExpect(status().isForbidden());
+        mvc.perform(delete("/api/v1/charging/recharges/" + id).header("Authorization", bearer(admin)).contentType("application/json").content("{}")).andExpect(status().isBadRequest());
+        assertEquals(2, rows("select count(*) from charging_entries"));
+
+        mvc.perform(delete("/api/v1/charging/recharges/" + id).header("Authorization", bearer(admin)).contentType("application/json").content(REASON)).andExpect(status().isNoContent());
+
+        assertEquals(0, rows("select count(*) from charging_entries"));
+        assertEquals(1, auditRows("CHARGING_RECHARGE_DELETED"));
+    }
+
+    @Test
+    void theCancellationOfARechargeCannotBeDeletedOnItsOwn() throws Exception {
+        String id = entryId(charge(manager, 20, 80).andExpect(status().isCreated()));
+        String reversal = entryId(postJson("/api/v1/charging/recharges/" + id + "/reverse", REASON, admin).andExpect(status().isOk()));
+
+        mvc.perform(delete("/api/v1/charging/recharges/" + reversal).header("Authorization", bearer(admin)).contentType("application/json").content(REASON))
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("ENTRY_NOT_A_RECHARGE"));
+        assertEquals(2, rows("select count(*) from charging_entries"));
     }
 }

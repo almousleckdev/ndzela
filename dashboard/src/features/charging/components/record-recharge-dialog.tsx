@@ -9,9 +9,7 @@ import { useFetch } from "@/hooks/use-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { chargingService } from "@/features/charging/services/charging.service";
-import { useRentMethods } from "@/features/payments/hooks/use-rent-methods";
 import type { ChargingSessionRow } from "@/features/charging/types";
-import type { PaymentMethod } from "@/features/payments/types";
 import { useBrand } from "@/features/tenancy/hooks/use-brand";
 
 // Records a recharge paid at the station, or the payment of a network session (its figures are proposed, staff correct them).
@@ -26,9 +24,6 @@ export function RecordRechargeDialog({ session, onClose, onSaved }: { session?: 
   const [stationId, setStationId] = useState("");
   const [amount, setAmount] = useState(session?.amount != null ? String(Math.round(session.amount)) : "");
   const brand = useBrand();
-  const methods = useRentMethods();
-  const [chosenMethod, setMethod] = useState<PaymentMethod | "">("");
-  const method = (chosenMethod || methods[0]?.value || "") as PaymentMethod;
   const [reference, setReference] = useState("");
   const [before, setBefore] = useState(session?.socBefore != null ? String(session.socBefore) : "");
   const [after, setAfter] = useState(session?.socAfter != null ? String(session.socAfter) : "");
@@ -45,7 +40,6 @@ export function RecordRechargeDialog({ session, onClose, onSaved }: { session?: 
     if (kind === "PUBLIC" && !publicLabel.trim()) return setError("Saisissez la plaque ou la description de la voiture.");
     if (!stationId) return setError("Choisissez la station.");
     if (!/^\d{1,14}$/.test(amount) || Number(amount) < 1) return setError("Saisissez un montant entier supérieur à 0.");
-    if (!method) return setError("Aucun moyen de paiement disponible pour ce pays.");
     if (!reference.trim()) return setError("La référence de la transaction est obligatoire.");
     if (!/^\d{1,3}$/.test(before) || !/^\d{1,3}$/.test(after) || b > 100 || a > 100) return setError("Les niveaux de batterie sont des pourcentages entre 0 et 100.");
     if (a < b) return setError("Le niveau après la recharge ne peut pas être inférieur au niveau avant.");
@@ -53,7 +47,7 @@ export function RecordRechargeDialog({ session, onClose, onSaved }: { session?: 
     setIsSaving(true);
     try {
       await chargingService.record({
-        vehicleId: kind === "OWN" ? vehicleId : undefined, publicLabel: kind === "PUBLIC" ? publicLabel.trim() : undefined, stationId, amount: Number(amount), method,
+        vehicleId: kind === "OWN" ? vehicleId : undefined, publicLabel: kind === "PUBLIC" ? publicLabel.trim() : undefined, stationId, amount: Number(amount), method: "ZELLA_WALLET",
         reference: reference.trim(), batteryBefore: b, batteryAfter: a, kwh: kwh ? Number(kwh) : undefined, sessionId: session?.id, requestId: requestId.current,
       });
       addToast({ title: session ? "Paiement enregistré" : "Recharge enregistrée", description: `Batterie ${b} % → ${a} %.`, type: "success" });
@@ -85,8 +79,7 @@ export function RecordRechargeDialog({ session, onClose, onSaved }: { session?: 
           <FormField label="Solde après (%) *" inputMode="numeric" value={after} maxLength={3} onChange={(event) => touch(setAfter)(event.target.value)} />
           <FormField label="Montant payé (FCFA) *" inputMode="numeric" value={amount} onChange={(event) => touch(setAmount)(event.target.value)} />
           <FormField label="Énergie délivrée (kWh)" inputMode="decimal" value={kwh} hint="Facultatif." onChange={(event) => touch(setKwh)(event.target.value)} />
-          <SelectField label="Moyen de paiement *" options={methods} value={method}
-            onChange={(event) => touch(setMethod)(event.target.value as PaymentMethod)} />
+          <FormField label="Moyen de paiement" value="Zella Wallet" readOnly disabled hint="Toutes les recharges sont payées depuis le portefeuille Zella." />
           <FormField label="Référence de la transaction *" value={reference} maxLength={100} onChange={(event) => touch(setReference)(event.target.value)} />
         </div>
         {error && <p role="alert" className="text-xs font-medium text-red-600">{error}</p>}

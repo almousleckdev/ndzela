@@ -9,6 +9,7 @@ import com.ndzela.admin.charging.api.dto.ChargingSummary;
 import com.ndzela.admin.charging.application.ChargingExportService;
 import com.ndzela.admin.charging.application.ChargingQueryService;
 import com.ndzela.admin.charging.application.ChargingService;
+import com.ndzela.admin.charging.application.SessionDeletionService;
 import com.ndzela.admin.charging.application.StationService;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.dto.ReasonRequest;
@@ -33,6 +34,7 @@ public class ChargingController {
     private final ChargingQueryService queries;
     private final ChargingExportService exports;
     private final StationService stations;
+    private final SessionDeletionService deletion;
 
     @GetMapping("/recharges")
     @PreAuthorize("hasAuthority('charging:read')")
@@ -65,6 +67,13 @@ public class ChargingController {
     @PreAuthorize("hasAuthority('charging:reverse')")
     public RechargeResponse reverse(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {
         return charging.reverse(id, request.reason());
+    }
+
+    @DeleteMapping("/recharges/{id}")
+    @PreAuthorize("hasAuthority('charging:delete')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {
+        deletion.deleteRecharge(id, request.reason());
     }
 
     @GetMapping("/export")

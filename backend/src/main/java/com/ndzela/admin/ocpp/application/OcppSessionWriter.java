@@ -25,6 +25,7 @@ public class OcppSessionWriter {
 
     private final ChargingSessionRepository sessions;
     private final OcppSyncState state;
+    private final com.ndzela.admin.charging.application.DeletedSessions deleted;
     private final TransactionTemplate transaction;
 
     /** Returns how many sessions were created or updated. */
@@ -38,7 +39,8 @@ public class OcppSessionWriter {
         }));
     }
 
-    private int store(List<FleetSession> items) {
+    private int store(List<FleetSession> received) {
+        List<FleetSession> items = deleted.withoutDeleted(TenantHolder.requireCountry(), received, FleetSession::transactionId);
         Map<String, ChargingSession> known = new HashMap<>();
         sessions.findAllByTransactionIdIn(items.stream().map(FleetSession::transactionId).toList()).forEach(s -> known.put(s.getTransactionId(), s));
         int changed = 0;

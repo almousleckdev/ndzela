@@ -87,7 +87,7 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void resetData() {
-        jdbc.execute("TRUNCATE TABLE tenant_test_items, session_payments, zella_sync_state, charging_sessions, ocpp_sync_state, driver_applications, contact_messages, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
+        jdbc.execute("TRUNCATE TABLE tenant_test_items, deleted_sessions, session_payments, zella_sync_state, charging_sessions, ocpp_sync_state, driver_applications, contact_messages, charging_entries, stations, arrears_events, ledger_entries, contracts, contract_counters, driver_leaves, vehicle_assignments, drivers, training_centers, vehicles, notifications, audit_logs, user_roles, users CASCADE");
         jdbc.update("UPDATE countries SET active = TRUE, late_penalty = 0, charging_critical_percent = 20");
         cloud.clear();
         fleet.clear();

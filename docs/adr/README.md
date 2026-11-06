@@ -35,5 +35,6 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0028](0028-public-sessions-from-the-zella-feed.md) | Sessions of other Zella customers reach NDZela as "Public", without identity | Accepted |
 | [0029](0029-rent-is-due-the-same-day-at-noon.md) | Rent is due the same day at noon and can be paid from midnight | Accepted |
 | [0030](0030-receipt-qr-opens-a-public-payment-page.md) | The QR code of a receipt opens a public payment page on the website | Accepted |
+| [0031](0031-deleting-sessions-and-recharges-and-the-zella-wallet.md) | Admins can delete sessions and recharges; recharges are paid from the Zella Wallet | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

@@ -12,6 +12,7 @@ import com.ndzela.admin.infrastructure.zella.ZellaFeedItem;
 import com.ndzela.admin.infrastructure.zella.ZellaFeedPage;
 import com.ndzela.admin.infrastructure.zella.ZellaRateLimitedException;
 
+import com.ndzela.admin.tenant.TenantHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -42,6 +43,7 @@ public class ZellaFeedService {
     private final ZellaClient zella;
     private final SessionPaymentRepository payments;
     private final ZellaSessionWriter sessionWriter;
+    private final DeletedSessions deleted;
     private final IdTagRepository tags;
     private final ZellaFeedState state;
     private final TransactionTemplate transaction;
@@ -144,7 +146,8 @@ public class ZellaFeedService {
         return changed;
     }
 
-    private int store(List<ZellaFeedItem> items) {
+    private int store(List<ZellaFeedItem> received) {
+        List<ZellaFeedItem> items = deleted.withoutDeleted(TenantHolder.requireCountry(), received, ZellaFeedItem::transactionId);
         sessionWriter.store(items);
         Map<String, SessionPayment> known = new HashMap<>();
         payments.findAllByTransactionIdIn(items.stream().map(ZellaFeedItem::transactionId).toList()).forEach(p -> known.put(p.getTransactionId(), p));

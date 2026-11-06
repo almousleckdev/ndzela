@@ -1,6 +1,6 @@
 export type ArrearsLevel = "NONE" | "LATE" | "YELLOW" | "DARK_YELLOW" | "RED";
 export type EntryType = "PAYMENT" | "REVERSAL" | "WAIVER" | "PENALTY" | "FEE";
-export type PaymentMethod = "CASH" | "AIRTEL_MONEY" | "MOOV_MONEY" | "ORANGE_MONEY" | "OTHER";
+export type PaymentMethod = "CASH" | "AIRTEL_MONEY" | "MOOV_MONEY" | "ORANGE_MONEY" | "OTHER" | "ZELLA_WALLET";
 export type DayStatus = "PAID_ON_TIME" | "PAID_LATE" | "UNPAID";
 
 // A rent day (or penalty) a payment settled

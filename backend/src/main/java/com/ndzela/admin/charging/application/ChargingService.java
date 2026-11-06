@@ -13,7 +13,7 @@ import com.ndzela.admin.driver.api.dto.DriverResponse;
 import com.ndzela.admin.driver.application.DriverQueryService;
 import com.ndzela.admin.ocpp.api.SessionRow;
 import com.ndzela.admin.ocpp.application.OcppSessionQueryService;
-import com.ndzela.admin.payment.application.PaymentOperatorService;
+import com.ndzela.admin.payment.domain.PaymentMethod;
 import com.ndzela.admin.tenant.TenantHolder;
 
 import jakarta.persistence.EntityManager;
@@ -35,7 +35,6 @@ public class ChargingService {
     private final DriverQueryService driverQueries;
     private final ChargingQueryService queries;
     private final AuditService audit;
-    private final PaymentOperatorService operators;
     private final OcppSessionQueryService ocppSessions;
 
     @PersistenceContext
@@ -57,9 +56,6 @@ public class ChargingService {
             throw new BusinessRuleViolationException("BATTERY_LEVELS_INVALID", "The battery level after charging cannot be lower than before.");
         }
         stations.get(request.stationId());
-        if (operators.listActive().stream().noneMatch(operator -> operator.code().equals(request.method().name()))) {
-            throw new BusinessRuleViolationException("PAYMENT_METHOD_NOT_ALLOWED", "Recharges are paid with one of the mobile-money operators of the country.");
-        }
         if (request.reference() == null || request.reference().isBlank()) {
             throw new BusinessRuleViolationException("PAYMENT_REFERENCE_REQUIRED", "The transaction reference is required.");
         }
@@ -71,12 +67,12 @@ public class ChargingService {
             driverId = driver.id();
         }
         ChargingEntry saved = entries.saveAndFlush(ChargingEntry.builder().type(ChargingEntryType.RECHARGE).vehicleId(request.vehicleId()).driverId(driverId)
-                .publicLabel(hasPublic ? request.publicLabel().trim() : null).stationId(request.stationId()).amount(request.amount()).method(request.method())
+                .publicLabel(hasPublic ? request.publicLabel().trim() : null).stationId(request.stationId()).amount(request.amount()).method(PaymentMethod.ZELLA_WALLET)
                 .reference(request.reference() == null || request.reference().isBlank() ? null : request.reference().trim())
                 .batteryBefore(request.batteryBefore()).batteryAfter(request.batteryAfter()).kwh(request.kwh()).sessionId(request.sessionId()).requestId(request.requestId())
                 .recordedBy(Actor.name()).createdAt(OffsetDateTime.now()).build());
         audit.record("CHARGING_RECORDED", "CHARGING", saved.getId().toString(), label(saved), saved.getCountryId(),
-                request.amount().toPlainString() + " " + request.method() + ", " + request.batteryBefore() + "% -> " + request.batteryAfter() + "%" + sessionNote);
+                request.amount().toPlainString() + " " + PaymentMethod.ZELLA_WALLET + ", " + request.batteryBefore() + "% -> " + request.batteryAfter() + "%" + sessionNote);
         return queries.respond(saved);
     }
 

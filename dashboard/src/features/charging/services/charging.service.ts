@@ -24,6 +24,8 @@ export const chargingService = {
 
   record: (input: RecordRechargeInput) => apiClient<Recharge>("/charging/recharges", { method: "POST", body: input }),
 
+  deleteRecharge: (id: string, reason: string) => apiClient(`/charging/recharges/${id}`, { method: "DELETE", body: { reason } }),
+  deleteSession: (id: string, reason: string) => apiClient(`/charging/sessions/${id}`, { method: "DELETE", body: { reason } }),
   reverse: (id: string, reason: string) => apiClient<Recharge>(`/charging/recharges/${id}/reverse`, { method: "POST", body: { reason } }),
 
   vehicles: (q = "") => apiClient<VehicleOption[]>(`/charging/vehicles${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`),

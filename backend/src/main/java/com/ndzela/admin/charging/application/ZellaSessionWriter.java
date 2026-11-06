@@ -4,6 +4,7 @@ import com.ndzela.admin.infrastructure.zella.ZellaFeedItem;
 import com.ndzela.admin.ocpp.domain.ChargingSession;
 import com.ndzela.admin.ocpp.domain.ChargingSessionRepository;
 
+import com.ndzela.admin.tenant.TenantHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -24,9 +25,10 @@ public class ZellaSessionWriter {
     private static final Set<String> ABANDONED = Set.of("ABANDONED", "FAILED");
 
     private final ChargingSessionRepository sessions;
+    private final DeletedSessions deleted;
 
     public void store(List<ZellaFeedItem> items) {
-        List<ZellaFeedItem> withStation = items.stream().filter(item -> item.stationId() != null).toList();
+        List<ZellaFeedItem> withStation = deleted.withoutDeleted(TenantHolder.requireCountry(), items.stream().filter(item -> item.stationId() != null).toList(), ZellaFeedItem::transactionId);
         if (withStation.isEmpty()) {
             return;
         }

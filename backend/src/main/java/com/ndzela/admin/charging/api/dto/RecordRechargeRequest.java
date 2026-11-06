@@ -18,7 +18,7 @@ public record RecordRechargeRequest(
         @NotNull UUID stationId,
         @NotNull @DecimalMin("1")
         @Digits(integer = 14, fraction = 0) BigDecimal amount,
-        @NotNull PaymentMethod method,
+        PaymentMethod method,
         @Size(max = 100) String reference,
         @NotNull @Min(0) @Max(100) Integer batteryBefore,
         @NotNull @Min(0) @Max(100) Integer batteryAfter,

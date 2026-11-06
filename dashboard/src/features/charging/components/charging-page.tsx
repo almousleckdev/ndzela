@@ -49,8 +49,9 @@ function ChargingContent() {
   const [recordingSession, setRecordingSession] = useState<ChargingSessionRow | null>(null);
   const [stationsOpen, setStationsOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
-  const [tab, setTab] = useState<"recharges" | "sessions">("recharges");
+  const [tab, setTab] = useState<"recharges" | "sessions">("sessions");
   const [cancelling, setCancelling] = useState<Recharge | null>(null);
+  const [deleting, setDeleting] = useState<Recharge | null>(null);
   const refresh = () => { list.reload(); summary.reload(); };
   usePolling(refresh, 10000);
   const s = summary.data;
@@ -68,8 +69,12 @@ function ChargingContent() {
     col.accessor("recordedBy", { id: "recordedBy", header: "Gestionnaire", enableSorting: false }),
     col.accessor("station", { id: "station", header: "Station", enableSorting: false, cell: (c) => c.getValue() ?? <None /> }),
     col.display({ id: "reference", header: "Référence", cell: (c) => { const r = c.row.original; return <span className="block max-w-[12rem] truncate" title={r.reference ?? undefined}>{r.method ? METHOD_LABELS[r.method] : ""}{r.reference ? ` · ${r.reference}` : ""}</span>; } }),
-    col.display({ id: "actions", header: () => <span className="sr-only">Actions</span>, enableHiding: false, cell: (c) => can(PERMISSIONS.CHARGING_REVERSE) && !c.row.original.reversed
-      ? <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => setCancelling(c.row.original)}>Annuler</Button> : null }),
+    col.display({ id: "actions", header: () => <span className="sr-only">Actions</span>, enableHiding: false, cell: (c) => (
+      <div className="flex justify-end gap-1">
+        {can(PERMISSIONS.CHARGING_REVERSE) && !c.row.original.reversed && <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => setCancelling(c.row.original)}>Annuler</Button>}
+        {can(PERMISSIONS.CHARGING_DELETE) && c.row.original.type === "RECHARGE" && <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => setDeleting(c.row.original)}>Supprimer</Button>}
+      </div>
+    ) }),
   ]), [can, multiDay]);
 
   const kpis: Kpi[] = [
@@ -101,7 +106,7 @@ function ChargingContent() {
           </>
         )}
       />
-      <Tabs tabs={[{ value: "recharges" as const, label: "Recharges" }, { value: "sessions" as const, label: "Sessions du réseau" }]} value={tab} onChange={setTab} label="Recharge énergie" />
+      <Tabs tabs={[{ value: "sessions" as const, label: "Sessions du réseau" }, { value: "recharges" as const, label: "Recharges" }]} value={tab} onChange={setTab} label="Recharge énergie" />
       {tab === "sessions" ? <SessionsTab onRecord={setRecordingSession} /> : <>
       <KpiBand items={kpis} />
       <Panel>
@@ -122,6 +127,16 @@ function ChargingContent() {
       {recordingSession && <RecordRechargeDialog session={recordingSession} onClose={() => setRecordingSession(null)} onSaved={() => { setRecordingSession(null); summary.reload(); list.reload(); }} />}
       {tagsOpen && <IdTagsDialog onClose={() => setTagsOpen(false)} />}
       {stationsOpen && <StationsDialog onClose={() => setStationsOpen(false)} />}
+      {deleting && (
+        <ReasonDialog title="Supprimer cette recharge ?" description={`${deleting.vehicle} · ${formatFcfa(deleting.amount)}. La recharge et son éventuelle annulation seront supprimées définitivement ; la suppression est enregistrée dans le journal d'audit.`}
+          confirmText="Supprimer la recharge" destructive onClose={() => setDeleting(null)}
+          onConfirm={async (reason) => {
+            await chargingService.deleteRecharge(deleting.id, reason);
+            setDeleting(null);
+            addToast({ title: "Succès", description: "Recharge supprimée.", type: "success" });
+            refresh();
+          }} />
+      )}
       {cancelling && (
         <ReasonDialog title="Annuler cette recharge ?" description={`${cancelling.vehicle} · ${formatFcfa(cancelling.amount)}. Une écriture d'annulation sera ajoutée : l'originale reste visible.`}
           confirmText="Annuler la recharge" destructive onClose={() => setCancelling(null)}

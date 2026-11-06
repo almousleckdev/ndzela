@@ -7,6 +7,7 @@ export const METHOD_LABELS: Record<PaymentMethod, string> = {
   MOOV_MONEY: "Moov Money",
   ORANGE_MONEY: "Orange Money",
   OTHER: "Autre",
+  ZELLA_WALLET: "Zella Wallet",
 };
 
 export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
