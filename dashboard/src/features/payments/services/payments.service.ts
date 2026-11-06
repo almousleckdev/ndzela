@@ -38,7 +38,7 @@ export const paymentsService = {
   exportPath: (query: HistoryQuery, format: ExportFormat) => `/payments/export?${queryString({ ...historyParams(query), format })}`,
 
   transactions: (query: TransactionQuery, page: number, size: number) =>
-    apiClient<Page<TransactionRow>>(`/payments/transactions?${queryString({ status: query.status === "ALL" ? undefined : query.status, method: query.method === "ALL" ? undefined : query.method, q: query.q.trim(), scope: query.scope, from: query.from, to: query.to, page, size })}`),
+    apiClient<Page<TransactionRow>>(`/payments/transactions?${queryString({ status: query.status === "ALL" ? undefined : query.status, method: query.method === "ALL" ? undefined : query.method, q: query.q.trim(), scope: query.scope, driverId: query.driverId, from: query.from, to: query.to, page, size })}`),
 
   // The ticket receipt (PDF) of a recorded payment
   receiptPath: (id: string) => `/payments/${id}/receipt`,

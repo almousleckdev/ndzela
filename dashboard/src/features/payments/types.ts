@@ -154,6 +154,7 @@ export type RiderScope = "CURRENT" | "FORMER";
 
 export interface TransactionQuery {
   status: TransactionStatus | "ALL";
+  driverId?: string;
   method: PaymentMethod | "ALL";
   scope?: RiderScope;
   q: string;

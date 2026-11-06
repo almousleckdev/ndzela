@@ -70,7 +70,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
           <div>
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-900">Dernières écritures</h3>
-              <Link href={`/finance/history`} className="text-xs text-primary hover:underline">Tout l&apos;historique</Link>
+              <Link href={`/finance/history/${driverId}`} className="text-xs text-primary hover:underline">Tout l&apos;historique</Link>
             </div>
             {a.entries.length === 0 ? <p className="text-sm text-slate-500">Aucune écriture.</p> : (
               <ul className="divide-y divide-slate-100 text-sm">

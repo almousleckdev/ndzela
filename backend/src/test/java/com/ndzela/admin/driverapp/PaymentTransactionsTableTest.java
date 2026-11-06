@@ -58,6 +58,14 @@ class PaymentTransactionsTableTest extends AbstractPvitFlowTest {
     }
 
     @Test
+    void theTransactionsOfOneDriverAreListedByHisId() throws Exception {
+        startOk();
+
+        send(get("/api/v1/payments/transactions?driverId=" + driverId), manager).andExpect(jsonPath("$.total").value(1));
+        send(get("/api/v1/payments/transactions?driverId=" + UUID.randomUUID()), manager).andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
     void theTransactionsCanBeFoundByDriverAndByDay() throws Exception {
         startOk();
         String lastName = String.valueOf(body.personalValue("lastName"));

@@ -22,10 +22,10 @@ public class PaymentTransactionController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('payments:read')")
-    public PageResponse<TransactionRow> list(@RequestParam(required = false) String status, @RequestParam(required = false) String method, @RequestParam(required = false) String q, @RequestParam(required = false) String scope,
+    public PageResponse<TransactionRow> list(@RequestParam(required = false) String status, @RequestParam(required = false) String method, @RequestParam(required = false) String q, @RequestParam(required = false) String scope, @RequestParam(required = false) java.util.UUID driverId,
                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                              @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        return transactions.list(status, method, q, scope, from, to, Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        return transactions.list(status, method, q, scope, driverId, from, to, Math.max(page, 0), Math.min(Math.max(size, 1), 100));
     }
 }

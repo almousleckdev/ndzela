@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PaidDays } from "@/features/payments/components/paid-days";
 import { None, Stack, Status } from "@/components/data-table/cells";
@@ -12,10 +13,10 @@ import type { TransactionRow } from "@/features/payments/types";
 const col = columnsFor<TransactionRow>();
 
 // The Transactions tab
-export function transactionColumns(onReverse?: (row: TransactionRow) => void, onReceipt?: (row: TransactionRow) => void) {
-  return col.columns([
+export function transactionColumns(onReverse?: (row: TransactionRow) => void, onReceipt?: (row: TransactionRow) => void, hideDriver = false) {
+  const all = col.columns([
     col.accessor("createdAt", { id: "createdAt", header: "Date et heure", enableSorting: false, cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatDateTime(c.getValue())}</span> }),
-    col.accessor("driverName", { id: "driverName", header: "Chauffeur", enableSorting: false, cell: (c) => <Stack primary={c.getValue()} secondary={c.row.original.phone ?? undefined} /> }),
+    col.accessor("driverName", { id: "driverName", header: "Chauffeur", enableSorting: false, cell: (c) => <Stack primary={<Link href={`/finance/history/${c.row.original.driverId}`} className="hover:text-primary-ink">{c.getValue()}</Link>} secondary={c.row.original.phone ?? undefined} /> }),
     col.accessor("amount", { id: "amount", header: "Montant", enableSorting: false, cell: (c) => <span className={c.row.original.status === "SUCCESS" ? "font-medium" : "text-muted"}>{formatFcfa(c.getValue())}</span> }),
     col.accessor("method", { id: "method", header: "Méthode", enableSorting: false, cell: (c) => METHOD_LABELS[c.getValue()] }),
     col.display({ id: "days", header: "Jours réglés", enableSorting: false, cell: (c) => <PaidDays days={c.row.original.days} paidAt={c.row.original.paidAt} /> }),
@@ -32,4 +33,5 @@ export function transactionColumns(onReverse?: (row: TransactionRow) => void, on
       );
     } }),
   ]);
+  return hideDriver ? all.filter((column) => column.id !== "driverName") : all;
 }

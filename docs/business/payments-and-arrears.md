@@ -84,3 +84,5 @@ Yesterday's rent is *awaiting* until its deadline (12:00). It is shown in "À r�
 - Each escalation step is **idempotent** (never send the same warning twice), produces a notification (push + email) and an **audit record**.
 - Sign-in of a suspended driver returns a **restricted session** limited to the payment flow, not a generic rejection.
 - Money: exact decimals/minor units with the country's currency; a payment or reversal is always a new ledger row.
+
+**Historique (dashboard).** The Transactions tab lists the **successful** payments by default; the failed and pending attempts are counted above the table ("5 tentatives échouées") and shown with the Statut filter (Réussis, Échoués, En attente, Annulés, Tous). Each driver name opens his own history page (`/finance/history/{driverId}`: level, amount due, credit, on-time / late / unpaid counts, then his payments, with the same filter); `GET /payments/transactions` takes an optional `driverId` for it.

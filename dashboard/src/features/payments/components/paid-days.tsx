@@ -9,11 +9,12 @@ const day = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("fr-
 export function PaidDays({ days, paidAt }: { days: PaidDay[]; paidAt: string | null }) {
   if (days.length === 0) return <None />;
   return (
-    <div className="space-y-0.5 text-sm">
+    <div className="space-y-1 text-sm">
       {days.map((d) => (
-        <p key={`${d.day}-${d.kind}`} className="whitespace-nowrap">
+        <p key={`${d.day}-${d.kind}`} className="flex items-center gap-2 whitespace-nowrap">
           <span className="font-medium">{d.kind === "PENALTY" ? "Pénalité " : ""}{day(d.day)}</span>
-          <span className={d.onTime ? "ml-2 text-xs text-emerald-700" : "ml-2 text-xs text-amber-700"}>{d.onTime ? "à temps" : "en retard"} · {formatFcfa(d.amount)}</span>
+          <span className={d.onTime ? "rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700" : "rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700"}>{d.onTime ? "à temps" : "en retard"}</span>
+          <span className="text-xs text-muted">{formatFcfa(d.amount)}</span>
         </p>
       ))}
       {paidAt && <p className="text-xs text-muted">payé le {formatDateTime(paidAt)}</p>}

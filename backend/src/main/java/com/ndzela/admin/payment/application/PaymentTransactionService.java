@@ -56,7 +56,7 @@ public class PaymentTransactionService {
     private final LedgerEntryDayRepository entryDays;
 
     @Transactional(readOnly = true)
-    public PageResponse<TransactionRow> list(String status, String method, String q, String scope, LocalDate from, LocalDate to, int page, int size) {
+    public PageResponse<TransactionRow> list(String status, String method, String q, String scope, UUID driverId, LocalDate from, LocalDate to, int page, int size) {
         TenantContext tenant = TenantHolder.current();
         if (tenant.mode() == TenantMode.NONE) {
             return new PageResponse<>(List.of(), page, size, 0);
@@ -74,6 +74,10 @@ public class PaymentTransactionService {
         if (notBlank(method)) {
             where.add("t.method = :method");
             params.addValue("method", method);
+        }
+        if (driverId != null) {
+            where.add("t.driver_id = :driver");
+            params.addValue("driver", driverId);
         }
         if (notBlank(q)) {
             List<UUID> ids = driverArrears.idsMatching(q);
