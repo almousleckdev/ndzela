@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExportMenu } from "@/components/export-menu";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Tabs } from "@/components/ui/tabs";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { None, Stack } from "@/components/data-table/cells";
 import { DataTable } from "@/components/data-table/data-table";
@@ -23,20 +24,28 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { batteryLabel, durationLabel, isRunning, PAYMENT_STATE, powerLabel, reasonLabel, statusLabel } from "@/features/charging/components/session-format";
 import { SessionDetailDialog } from "@/features/charging/components/session-detail-dialog";
+import { HolderKindBadge, holderKindOf } from "@/features/charging/components/holder-kind";
 import { chargingService } from "@/features/charging/services/charging.service";
-import type { ChargingSessionRow } from "@/features/charging/types";
+import type { ChargingSessionRow, SessionKind } from "@/features/charging/types";
 
 const col = columnsFor<ChargingSessionRow>();
+
+const KIND_TABS: { value: SessionKind; label: string }[] = [
+  { value: "ALL", label: "Toutes" },
+  { value: "DRIVER", label: "Chauffeurs NDZela" },
+  { value: "PUBLIC", label: "Public" },
+];
 
 // The network's sessions as the OCPP platform reports them; the amount is its calculation (energy times tariff), not a payment.
 export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionRow) => void }) {
   const { can } = usePermissions();
   const query = useTableQuery({ range: NO_RANGE });
   const { range } = query;
-  const list = useAsync(() => chargingService.sessions({ q: query.q, from: range.from, to: range.to }, query.page, query.size), [query.q, range.from, range.to, query.page, query.size]);
+  const [kind, setKind] = useState<SessionKind>("ALL");
+  const list = useAsync(() => chargingService.sessions({ q: query.q, from: range.from, to: range.to, kind }, query.page, query.size), [query.q, range.from, range.to, kind, query.page, query.size]);
 
   const [detail, setDetail] = useState<ChargingSessionRow | null>(null);
-  const summary = useAsync(chargingService.sessionSummary, []);
+  const summary = useAsync(() => chargingService.sessionSummary(kind), [kind]);
   usePolling(() => { list.reload(); summary.reload(); }, 5000);
   const s = summary.data;
   const kpis: Kpi[] = [
@@ -48,8 +57,9 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
 
   const columns = useMemo(() => col.columns([
     col.accessor("startedAt", { id: "startedAt", header: "Début", enableSorting: false, cell: (c) => (c.getValue() ? <span className="whitespace-nowrap tabular-nums">{formatDateTime(c.getValue() as string)}</span> : <None />) }),
+    col.display({ id: "type", header: "Type", enableHiding: false, cell: (c) => <HolderKindBadge kind={holderKindOf(c.row.original)} /> }),
     col.display({ id: "station", header: "Borne", cell: (c) => <Stack primary={c.row.original.chargePointId ?? <None />} secondary={c.row.original.connectorId ? `Connecteur ${c.row.original.connectorId}` : undefined} /> }),
-    col.display({ id: "driver", header: "Chauffeur", cell: (c) => { const h = c.row.original.holder; return h ? <Link href={`/drivers/${h.driverId}`} className="text-primary hover:underline">{h.driverName}</Link> : <Stack primary="Public" secondary={c.row.original.idTag ?? undefined} />; } }),
+    col.display({ id: "driver", header: "Chauffeur", cell: (c) => { const h = c.row.original.holder; return h ? <Link href={`/drivers/${h.driverId}`} className="text-primary hover:underline">{h.driverName}</Link> : c.row.original.idTag ? <span className="font-mono text-xs">{c.row.original.idTag}</span> : <None />; } }),
     col.display({ id: "vehicle", header: "Véhicule", cell: (c) => { const h = c.row.original.holder; return h?.vehicle && h.vehicleId ? <Link href={`/vehicles/${h.vehicleId}`} className="text-primary hover:underline">{h.vehicle}</Link> : <None />; } }),
     col.accessor("energyKwh", { id: "energyKwh", header: "Énergie", enableSorting: false, cell: (c) => (c.getValue() === null ? <None /> : <Stack primary={<span className="whitespace-nowrap tabular-nums">{c.getValue()} kWh</span>} secondary={powerLabel(c.row.original) ?? undefined} />) }),
     col.display({ id: "duration", header: "Durée", cell: (c) => <Stack primary={durationLabel(c.row.original) ?? <None />} secondary={isRunning(c.row.original) ? "en cours" : undefined} /> }),
@@ -80,6 +90,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
 
   return (
     <>
+      <Tabs tabs={KIND_TABS} value={kind} onChange={(next) => { setKind(next); query.setPage(0); }} label="Type de sessions" />
       <KpiBand items={kpis} />
       <Panel>
       <Toolbar start={(
@@ -88,7 +99,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
           <DateRangePicker value={range} onChange={query.setRange} />
         </>
       )} end={can(PERMISSIONS.CHARGING_EXPORT) && (
-        <ExportMenu path={(format) => chargingService.exportSessionsPath({ q: query.q, from: range.from, to: range.to }, format)} filename="sessions-reseau" failure="Impossible d'exporter les sessions." />
+        <ExportMenu path={(format) => chargingService.exportSessionsPath({ q: query.q, from: range.from, to: range.to, kind }, format)} filename="sessions-reseau" failure="Impossible d'exporter les sessions." />
       )} />
       <ActiveFilters filters={active} onClear={query.reset} />
       <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} numeric={["energyKwh", "amount"]}

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/error/error_messages.dart';
 import '../../../../core/platform/app_icons.dart';
 import '../../../../core/widgets/adaptive/app_button.dart';
 import '../../../../core/widgets/adaptive/app_message.dart';
 import '../../../../core/widgets/adaptive/app_text_field.dart';
 import '../../../../core/widgets/display/section_title.dart';
+import '../../../../core/widgets/layout/dismiss_keyboard.dart';
 import '../../../../core/widgets/feedback/async_view.dart';
 import '../../../profile/presentation/profile_providers.dart';
 import '../../domain/arrears_summary.dart';
@@ -81,67 +83,89 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
     final days = stale
         ? null
         : form.days ?? (options.isEmpty ? null : options.last.days);
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        PaymentAmountCard(
-          arrears: widget.arrears,
-          selected: options.where((option) => option.days == days).firstOrNull,
-        ),
-        if (options.length > 1) ...[
+    final missing = _missing(form);
+    return DismissKeyboard(
+      child: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.all(16),
+        children: [
+          PaymentAmountCard(
+            arrears: widget.arrears,
+            selected: options
+                .where((option) => option.days == days)
+                .firstOrNull,
+          ),
+          if (options.length > 1) ...[
+            const SizedBox(height: 16),
+            const SectionTitle('Jours à régler'),
+            DayCountSelector(
+              options: options,
+              selected: days ?? options.last.days,
+              onSelected: controller.selectDays,
+            ),
+          ],
           const SizedBox(height: 16),
-          const SectionTitle('Jours à régler'),
-          DayCountSelector(
-            options: options,
-            selected: days ?? options.last.days,
-            onSelected: controller.selectDays,
+          const SectionTitle('Numéro Mobile Money'),
+          AppTextField(
+            label: 'Numéro',
+            controller: _phone,
+            prefixIcon: AppIcons.phone,
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.done,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(15),
+            ],
+            enabled: !form.submitting,
+            onChanged: controller.changePhone,
+            validator: (v) =>
+                isValidMobileMoneyNumber(v ?? '') ? null : 'Numéro invalide',
+          ),
+          const SizedBox(height: 16),
+          const SectionTitle('Opérateur'),
+          AsyncView(
+            value: operators,
+            onRetry: () => ref.invalidate(operatorsProvider),
+            data: (list) => OperatorSelector(
+              operators: list,
+              selected: form.operator,
+              onSelected: controller.selectOperator,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const SectionTitle('Récapitulatif'),
+          PaymentSummaryCard(
+            arrears: widget.arrears,
+            form: form,
+            quote: quote,
+            operatorName: form.operator == null
+                ? null
+                : operatorLabel(form.operator!.code, operators.asData?.value),
+            onRetry: key == null
+                ? null
+                : () => ref.invalidate(paymentQuoteProvider(key)),
+          ),
+          const SizedBox(height: 16),
+          if (missing != null) ...[
+            Text(missing, style: AppTextStyles.caption),
+            const SizedBox(height: 8),
+          ],
+          AppButton(
+            label: quoted == null ? 'Payer' : 'Payer ${quoted.total}',
+            loading: form.submitting,
+            onPressed: form.canSubmit && quoted != null ? _pay : null,
           ),
         ],
-        const SizedBox(height: 16),
-        const SectionTitle('Numéro Mobile Money'),
-        AppTextField(
-          label: 'Numéro',
-          controller: _phone,
-          prefixIcon: AppIcons.phone,
-          keyboardType: TextInputType.phone,
-          textInputAction: TextInputAction.done,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(15),
-          ],
-          enabled: !form.submitting,
-          onChanged: controller.changePhone,
-          validator: (v) =>
-              isValidMobileMoneyNumber(v ?? '') ? null : 'Numéro invalide',
-        ),
-        const SizedBox(height: 16),
-        const SectionTitle('Opérateur'),
-        AsyncView(
-          value: operators,
-          onRetry: () => ref.invalidate(operatorsProvider),
-          data: (list) => OperatorSelector(
-            operators: list,
-            selected: form.operator,
-            onSelected: controller.selectOperator,
-          ),
-        ),
-        const SizedBox(height: 16),
-        const SectionTitle('Récapitulatif'),
-        PaymentSummaryCard(
-          arrears: widget.arrears,
-          form: form,
-          quote: quote,
-          operatorName: form.operator == null
-              ? null
-              : operatorLabel(form.operator!.code, operators.asData?.value),
-        ),
-        const SizedBox(height: 16),
-        AppButton(
-          label: quoted == null ? 'Payer' : 'Payer ${quoted.total}',
-          loading: form.submitting,
-          onPressed: form.canSubmit && quoted != null ? _pay : null,
-        ),
-      ],
+      ),
     );
+  }
+
+  // What the driver still has to give before paying, in the order the form asks for it
+  String? _missing(PaymentFormState form) {
+    if (form.operator == null) return 'Choisissez un opérateur pour continuer.';
+    if (!isValidMobileMoneyNumber(form.phone)) {
+      return 'Saisissez un numéro valide (8 à 15 chiffres).';
+    }
+    return null;
   }
 }

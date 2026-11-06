@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 // Keeps what drivers paid in step with the Zella app's feed: it resumes from a saved cursor, reads a customer's history once after linking,
 // and applies items by version, so replaying a page is harmless. One run at a time across all instances.
@@ -55,7 +58,7 @@ public class ZellaFeedService {
         }
         try {
             state.attempted(countryId);
-            int changed = feed(countryId) + histories();
+            int changed = feed(countryId) + histories() + publicFeed(countryId);
             state.succeeded(countryId);
             return changed;
         } catch (ZellaRateLimitedException e) {
@@ -73,30 +76,41 @@ public class ZellaFeedService {
         return 0;
     }
 
-    // A cursor Zella refuses is dropped and the feed starts over
     private int feed(UUID countryId) {
-        String saved = state.cursor(countryId);
+        return readAll(state.cursor(countryId), cursor -> zella.sessions(cursor, PAGE, null), this::store, next -> state.saveCursor(countryId, next));
+    }
+
+    // The sessions of people who are not NDZela drivers only fill the charging pages: there is no payment of a driver to keep
+    private int publicFeed(UUID countryId) {
+        return readAll(state.publicCursor(countryId), cursor -> zella.publicSessions(cursor, PAGE), items -> {
+            sessionWriter.store(items);
+            return items.size();
+        }, next -> state.savePublicCursor(countryId, next));
+    }
+
+    // A cursor Zella refuses is dropped and the feed starts over
+    private int readAll(String saved, Function<String, ZellaFeedPage> fetch, ToIntFunction<List<ZellaFeedItem>> keep, Consumer<String> saveCursor) {
         try {
-            return feedFrom(countryId, saved);
+            return pages(saved, fetch, keep, saveCursor);
         } catch (ZellaCursorInvalidException e) {
             if (saved == null) {
                 throw e;
             }
             log.warn("Zella refused the saved cursor, reading the feed again from the start");
-            state.saveCursor(countryId, null);
-            return feedFrom(countryId, null);
+            saveCursor.accept(null);
+            return pages(null, fetch, keep, saveCursor);
         }
     }
 
-    private int feedFrom(UUID countryId, String cursor) {
+    private int pages(String cursor, Function<String, ZellaFeedPage> fetch, ToIntFunction<List<ZellaFeedItem>> keep, Consumer<String> saveCursor) {
         int changed = 0;
         for (int page = 0; page < MAX_PAGES; page++) {
-            ZellaFeedPage result = zella.sessions(cursor, PAGE, null);
+            ZellaFeedPage result = fetch.apply(cursor);
             String next = result.nextCursor();
             changed += transaction.execute(status -> {
-                int n = store(result.items());
+                int n = keep.applyAsInt(result.items());
                 if (next != null) {
-                    state.saveCursor(countryId, next);
+                    saveCursor.accept(next);
                 }
                 return n;
             });

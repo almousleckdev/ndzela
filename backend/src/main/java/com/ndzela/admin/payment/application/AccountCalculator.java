@@ -109,16 +109,18 @@ public final class AccountCalculator {
         // Rent that is owed but not late yet comes after everything already due: credits left over cover it first.
         int awaitingDays = 0;
         BigDecimal awaitingAmount = BigDecimal.ZERO;
+        List<AccountCharge> awaitingUnpaid = new ArrayList<>();
         BigDecimal ahead = cumulative;
         for (AccountCharge charge : awaiting) {
             ahead = ahead.add(charge.amount());
             if (settlementTime(credits, ahead) == null) {
                 awaitingDays++;
                 awaitingAmount = awaitingAmount.add(charge.amount());
+                awaitingUnpaid.add(charge);
             }
         }
         return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(unpaid), penaltyDays, onTime, late, unpaid,
-                awaitingDays, awaitingAmount, List.copyOf(unpaidCharges), creditsOf(credits, LedgerEntryType.PAYMENT), creditsOf(credits, LedgerEntryType.WAIVER));
+                awaitingDays, awaitingAmount, List.copyOf(unpaidCharges), creditsOf(credits, LedgerEntryType.PAYMENT), creditsOf(credits, LedgerEntryType.WAIVER), List.copyOf(awaitingUnpaid));
     }
 
     private static BigDecimal creditsOf(List<AccountEntry> credits, LedgerEntryType type) {

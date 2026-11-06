@@ -26,7 +26,7 @@ class ContractProgressCalculatorTest {
 
     private static AccountState state(int onTime, int late, int unpaid, String paid, String waived) {
         return new AccountState(List.of(), BigDecimal.ZERO, BigDecimal.ZERO, null, ArrearsLevel.NONE, List.of(), onTime, late, unpaid, 0, BigDecimal.ZERO, List.of(),
-                new BigDecimal(paid), new BigDecimal(waived));
+                new BigDecimal(paid), new BigDecimal(waived), List.of());
     }
 
     @Test

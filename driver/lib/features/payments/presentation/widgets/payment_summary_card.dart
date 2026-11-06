@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_text_styles.dart';
+import '../../../../core/error/error_messages.dart';
 import '../../../../core/widgets/display/app_card.dart';
 import '../../../../core/widgets/display/app_divider.dart';
 import '../../../../core/widgets/display/label_value_row.dart';
@@ -16,12 +19,16 @@ class PaymentSummaryCard extends StatelessWidget {
     required this.form,
     required this.quote,
     required this.operatorName,
+    this.onRetry,
   });
 
   final ArrearsSummary arrears;
   final PaymentFormState form;
   final AsyncValue<PaymentQuote>? quote;
   final String? operatorName;
+
+  // Asks for the fee again after a failure
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +62,15 @@ class PaymentSummaryCard extends StatelessWidget {
             quoted?.total.toString() ?? (waiting ? '…' : '—'),
             strong: true,
           ),
+          if (quote != null && quote!.hasError && !waiting) ...[
+            const SizedBox(height: 12),
+            Text(
+              messageFor(quote!.error!),
+              style: AppTextStyles.caption.copyWith(color: AppColors.danger),
+            ),
+            if (onRetry != null)
+              TextButton(onPressed: onRetry, child: const Text('Réessayer')),
+          ],
         ],
       ),
     );

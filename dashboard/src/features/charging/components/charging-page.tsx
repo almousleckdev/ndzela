@@ -27,6 +27,7 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { ExportMenu } from "@/components/export-menu";
 import { RecordRechargeDialog } from "@/features/charging/components/record-recharge-dialog";
+import { HolderKindBadge } from "@/features/charging/components/holder-kind";
 import { SessionsTab } from "@/features/charging/components/sessions-tab";
 import { IdTagsDialog } from "@/features/charging/components/id-tags-dialog";
 import { StationsDialog } from "@/features/charging/components/stations-dialog";
@@ -57,7 +58,8 @@ function ChargingContent() {
 
   const columns = useMemo(() => col.columns([
     col.accessor("createdAt", { id: "createdAt", header: "Heure", cell: (c) => <span className="whitespace-nowrap tabular-nums">{format(new Date(c.getValue()), multiDay ? "dd/MM HH:mm" : "HH:mm")}</span> }),
-    col.accessor("vehicle", { id: "vehicle", header: "Véhicule", enableSorting: false, cell: (c) => <Stack primary={c.getValue() ?? <None />} secondary={c.row.original.vehicleId ? undefined : "Voiture publique"} /> }),
+    col.display({ id: "type", header: "Type", enableHiding: false, cell: (c) => <HolderKindBadge kind={c.row.original.vehicleId ? "DRIVER" : "PUBLIC"} /> }),
+    col.accessor("vehicle", { id: "vehicle", header: "Véhicule", enableSorting: false, cell: (c) => c.getValue() ?? c.row.original.publicLabel ?? <None /> }),
     col.accessor("driverName", { id: "driver", header: "Chauffeur", enableSorting: false, cell: (c) => c.getValue() ?? <None /> }),
     col.accessor("amount", { id: "amount", header: "Montant", cell: (c) => <Stack primary={<span className={c.row.original.reversed ? "text-muted line-through" : ""}>{formatFcfa(c.getValue())}</span>} secondary={c.row.original.reversed ? <span className="text-red-700">Annulée</span> : undefined} /> }),
     col.accessor("batteryAfter", { id: "batteryAfter", header: "Solde après", cell: (c) => (

@@ -47,6 +47,10 @@ export interface ChargingSummary {
   managers: number;
 }
 
+// Whose sessions a list shows: every one, the NDZela drivers', or the public's
+export type SessionKind = "ALL" | "DRIVER" | "PUBLIC";
+export type HolderKind = Exclude<SessionKind, "ALL">;
+
 export interface SessionSummary {
   sessionsToday: number;
   fcfaToday: number;

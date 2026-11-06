@@ -15,6 +15,7 @@ import com.ndzela.admin.payment.api.dto.EntryResponse;
 import com.ndzela.admin.payment.api.dto.PaymentSummary;
 import com.ndzela.admin.payment.application.model.AccountDay;
 import com.ndzela.admin.payment.application.model.AccountState;
+import com.ndzela.admin.payment.application.model.DayHistoryEntry;
 import com.ndzela.admin.payment.application.model.PayableDays;
 import com.ndzela.admin.payment.domain.LedgerEntry;
 import com.ndzela.admin.payment.domain.LedgerEntryRepository;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -37,6 +39,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.temporal.TemporalAdjusters;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -104,6 +107,20 @@ public class AccountQueryService {
         return new AccountDetail(driverId, driver.fullName(), driver.status().name(), contract.id(), contract.contractNumber(), contract.dailyRent(), state.level(),
                 state.overdueAmount(), state.credit(), overdueSince, state.paidOnTime(), state.paidLate(), state.unpaid(), days, entries,
                 PaymentWeek.closesAt(now, zone), PaymentWeek.settled(state), ContractProgressCalculator.of(contract, state, LocalDate.ofInstant(now, zone)));
+    }
+
+    // The rent days of the last `weeks` weeks (the current one included), oldest first; empty without an active contract.
+    @Transactional(readOnly = true)
+    public List<DayHistoryEntry> weekHistory(UUID driverId, int weeks) {
+        DriverRef driver = driverArrears.get(driverId);
+        ContractResponse contract = contractService.activeOf(List.of(driverId)).get(driverId);
+        if (contract == null) {
+            return List.of();
+        }
+        ZoneId zone = accounts.zoneOf(driver.countryId());
+        Instant now = Instant.now();
+        LocalDate since = LocalDate.ofInstant(now, zone).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).minusWeeks(weeks - 1L);
+        return DayHistory.of(accounts.state(driver.countryId(), contract, now), since);
     }
 
     // Null when the driver has no active contract.

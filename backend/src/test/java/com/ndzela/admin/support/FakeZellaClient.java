@@ -30,6 +30,9 @@ public class FakeZellaClient extends ZellaClient {
     private final List<String> feedAsked = new CopyOnWriteArrayList<>();
     private final java.util.Set<String> refusedCursors = new java.util.concurrent.CopyOnWriteArraySet<>();
     private volatile RuntimeException feedFailure;
+    private final Map<String, ZellaFeedPage> publicPages = new java.util.concurrent.ConcurrentHashMap<>();
+    private final List<String> publicAsked = new CopyOnWriteArrayList<>();
+    private volatile RuntimeException publicFailure;
 
     public FakeZellaClient(ZellaProperties props) {
         super(null, props, null);
@@ -102,6 +105,35 @@ public class FakeZellaClient extends ZellaClient {
         return page != null ? page : new ZellaFeedPage(List.of(), cursor, false);
     }
 
+    @Override
+    public ZellaFeedPage publicSessions(String cursor, int limit) {
+        publicAsked.add(cursor == null ? "" : cursor);
+        if (publicFailure != null) {
+            throw publicFailure;
+        }
+        ZellaFeedPage page = publicPages.get(cursor == null ? "" : cursor);
+        return page != null ? page : new ZellaFeedPage(List.of(), cursor, false);
+    }
+
+    /** The page the public feed serves for a cursor ("" is the first request). */
+    public void servePublicFeed(String cursor, ZellaFeedPage page) {
+        publicPages.put(cursor, page);
+    }
+
+    public void failPublicFeedWith(RuntimeException failure) {
+        publicFailure = failure;
+    }
+
+    public List<String> publicFeedAsked() {
+        return publicAsked;
+    }
+
+    /** A session of someone who is not a NDZela driver: no customer, no idTag. */
+    public static ZellaFeedItem publicCharge(String transactionId, String stationId, String sessionState, String startedAt, String stoppedAt, String energyKwh, long total, String updatedAt) {
+        return new ZellaFeedItem(transactionId, null, null, sessionState, "CHARGED", "WALLET", total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
+                stationId, 1, OffsetDateTime.parse(startedAt), stoppedAt == null ? null : OffsetDateTime.parse(stoppedAt), new java.math.BigDecimal(energyKwh), null, null, null, 350L, "{}");
+    }
+
     /** The page served for a cursor ("" is the first request), for the global feed or one customer's. */
     public void serveFeed(String customerId, String cursor, ZellaFeedPage page) {
         feedPages.put((customerId == null ? "" : customerId) + "|" + cursor, page);
@@ -163,5 +195,8 @@ public class FakeZellaClient extends ZellaClient {
         feedAsked.clear();
         refusedCursors.clear();
         feedFailure = null;
+        publicPages.clear();
+        publicAsked.clear();
+        publicFailure = null;
     }
 }

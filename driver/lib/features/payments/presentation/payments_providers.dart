@@ -30,9 +30,11 @@ final paymentAttemptProvider = FutureProvider.autoDispose
     );
 
 // The fee and the amount for one operator and number; asked again when either changes.
+// A failure is shown to the driver, who retries; it is not retried behind their back.
 final paymentQuoteProvider = FutureProvider.autoDispose
     .family<PaymentQuote, ({String operator, String phone, int? days})>(
       (ref, key) => ref
           .watch(paymentsRepositoryProvider)
           .quote(operatorCode: key.operator, phone: key.phone, days: key.days),
+      retry: (_, _) => null,
     );

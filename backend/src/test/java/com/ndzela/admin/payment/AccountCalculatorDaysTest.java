@@ -59,6 +59,38 @@ class AccountCalculatorDaysTest extends AbstractAccountCalculatorTest {
     }
 
     @Test
+    void aContractStartedTodayOwesNothingTodayAndItsFirstRentDayIsTomorrow() {
+        LocalDate friday = LocalDate.of(2026, 11, 6);
+        java.util.function.Function<String, AccountState> at = now -> AccountCalculator.compute(new AccountInput(friday, friday.plusDays(2000), null, RENT, List.of(), List.of(), List.of(), ZONE, at(now)));
+
+        AccountState signedToday = at.apply("2026-11-06T20:00:00");
+        assertEquals(0, signedToday.days().size());
+        assertEquals(0, signedToday.awaitingDays());
+        assertEquals(ArrearsLevel.NONE, signedToday.level());
+
+        AccountState duringTomorrow = at.apply("2026-11-07T10:00:00");
+        assertEquals(0, duringTomorrow.unpaid());
+        assertEquals(0, duringTomorrow.awaitingDays(), "tomorrow's rent day has not ended yet");
+
+        AccountState sundayMorning = at.apply("2026-11-08T11:00:00");
+        assertEquals(0, sundayMorning.unpaid());
+        assertEquals(1, sundayMorning.awaitingDays(), "Saturday's rent, due Sunday at noon");
+
+        AccountState sundayAfterNoon = at.apply("2026-11-08T12:01:00");
+        assertEquals(1, sundayAfterNoon.unpaid());
+        assertEquals(LocalDate.of(2026, 11, 7), sundayAfterNoon.days().get(0).day());
+    }
+
+    @Test
+    void theDaysAwaitingTheirDeadlineAreListedWithTheirDate() {
+        AccountState state = stateAt("2026-10-02T11:00:00");
+
+        assertEquals(1, state.awaitingCharges().size());
+        assertEquals(LocalDate.of(2026, 10, 1), state.awaitingCharges().get(0).day());
+        assertEquals(0, state.awaitingCharges().get(0).amount().compareTo(RENT));
+    }
+
+    @Test
     void theLevelFollowsTheNumberOfUnpaidDaysLikeThePreviousPlatform() {
         assertEquals(ArrearsLevel.NONE, stateAt("2026-10-02T11:59:00").level(), "the first rent is only due at noon");
         assertEquals(ArrearsLevel.YELLOW, stateAt("2026-10-02T12:00:00").level(), "one unpaid day: reminder");

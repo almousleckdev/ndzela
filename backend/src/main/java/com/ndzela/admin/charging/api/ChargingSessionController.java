@@ -4,6 +4,7 @@ import com.ndzela.admin.charging.api.dto.SessionSummary;
 import com.ndzela.admin.charging.application.ChargingSessionService;
 import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.web.dto.PageResponse;
+import com.ndzela.admin.ocpp.api.SessionKind;
 import com.ndzela.admin.ocpp.api.SessionRow;
 
 import lombok.RequiredArgsConstructor;
@@ -26,21 +27,22 @@ public class ChargingSessionController {
     public PageResponse<SessionRow> list(@RequestParam(required = false) String status, @RequestParam(required = false) String q,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-                                         @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        return sessions.list(status, q, from, to, page, size);
+                                         @RequestParam(defaultValue = "ALL") SessionKind kind, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return sessions.list(status, q, from, to, kind, page, size);
     }
 
     @GetMapping("/api/v1/charging/sessions/summary")
     @PreAuthorize("hasAuthority('charging:read')")
-    public SessionSummary summary() {
-        return sessions.summary();
+    public SessionSummary summary(@RequestParam(defaultValue = "ALL") SessionKind kind) {
+        return sessions.summary(kind);
     }
 
     @GetMapping("/api/v1/charging/sessions/export")
     @PreAuthorize("hasAuthority('charging:export')")
     public ResponseEntity<byte[]> export(@RequestParam(required = false) String status, @RequestParam(required = false) String q,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(defaultValue = "XLSX") ExportFormat format) {
-        return sessions.export(status, q, from, to, format).response();
+                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @RequestParam(defaultValue = "ALL") SessionKind kind,
+                                         @RequestParam(defaultValue = "XLSX") ExportFormat format) {
+        return sessions.export(status, q, from, to, kind, format).response();
     }
 }

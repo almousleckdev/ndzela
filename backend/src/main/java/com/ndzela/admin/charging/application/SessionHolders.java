@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,11 @@ public class SessionHolders {
     private final IdTagRepository tags;
     private final DriverDirectory directory;
     private final VehicleService vehicles;
+
+    /** The idTags that belong to a NDZela driver. */
+    public Set<String> driverIdTags() {
+        return tags.findAllByStatusOrderByUpdatedAtDesc(IdTagStatus.LINKED).stream().map(IdTag::getIdTag).filter(Objects::nonNull).collect(Collectors.toSet());
+    }
 
     public List<SessionRow> mark(List<SessionRow> rows) {
         List<String> idTags = rows.stream().map(SessionRow::idTag).filter(Objects::nonNull).distinct().toList();

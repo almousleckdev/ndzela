@@ -57,3 +57,5 @@ So this module covers **two customer types**: drivers (contract holders) and **p
 4. How a driver's `idTag` is tied to an NDZELA driver (for example the app user's phone number matching the driver's).
 5. Whether VAT applies to what the customer pays, since the engine amount is before VAT.
 6. Whether the Mali stations will share the same API host and key.
+
+**Public sessions (2026-11-06, [ADR-0028](../adr/0028-public-sessions-from-the-zella-feed.md)).** Besides the drivers' feed, NDZela reads `GET /v1/partners/ndzela/public-sessions` from the Zella app: the sessions of customers who are not NDZela drivers, with no identity (no customer id, idTag, name, e-mail or phone), with its own cursor. They fill the sessions list but create no driver payment. The sessions list, its totals and its export are split by `kind`: "Chauffeurs NDZela" (idTag linked to a driver, with the car the driver rents) and "Public".

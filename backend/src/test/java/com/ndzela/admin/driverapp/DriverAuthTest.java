@@ -95,20 +95,22 @@ class DriverAuthTest extends AbstractDriverAppTest {
     }
 
     @Test
-    void refreshRotatesAndLogoutRevokes() throws Exception {
+    void refreshRotatesAReplayRightAfterIsToleratedAndLogoutRevokesEverything() throws Exception {
         String login = login(email, DRIVER_PASSWORD).andReturn().getResponse().getContentAsString();
         String refresh = JsonPath.read(login, "$.refreshToken");
 
         String renewed = mvc.perform(post("/api/v1/driver/auth/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\"" + refresh + "\"}"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         mvc.perform(post("/api/v1/driver/auth/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\"" + refresh + "\"}"))
-                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("SESSION_EXPIRED"));
+                .andExpect(status().isOk());
 
         String next = JsonPath.read(renewed, "$.refreshToken");
         mvc.perform(post("/api/v1/driver/auth/logout").header("Authorization", "Bearer " + JsonPath.read(renewed, "$.accessToken"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\"" + next + "\"}")).andExpect(status().isNoContent());
         mvc.perform(post("/api/v1/driver/auth/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\"" + next + "\"}"))
                 .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/driver/auth/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\"" + refresh + "\"}"))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("SESSION_EXPIRED"));
     }
 
     @Test

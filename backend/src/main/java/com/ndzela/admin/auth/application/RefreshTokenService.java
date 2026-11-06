@@ -6,16 +6,23 @@ import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.security.OpaqueTokens;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
     private static final String TOKEN_PREFIX = "auth:rt:";
     private static final String USER_INDEX_PREFIX = "auth:rt-user:";
+    private static final String GRACE_PREFIX = "auth:rt-grace:";
+    private static final String GRACE_INDEX_PREFIX = "auth:rt-grace-user:";
+    // A refresh token is single use, but its answer can be lost (a dropped connection, the app killed) or two requests can
+    // carry it at once: for this long after its rotation it can still be exchanged, so the session is not lost to a race.
+    private static final Duration REUSE_GRACE = Duration.ofSeconds(30);
     // Separates subject and session-id in the stored value; never appears in an email or a driver subject (UUIDs/colons).
     private static final String SEPARATOR = "\u0001";
 
@@ -38,12 +45,20 @@ public class RefreshTokenService {
     public TokenRotation rotate(String token) {
         String hash = OpaqueTokens.hash(token);
         String stored = redis.opsForValue().getAndDelete(TOKEN_PREFIX + hash);
+        boolean fromGrace = stored == null;
+        if (fromGrace) {
+            stored = redis.opsForValue().get(GRACE_PREFIX + hash);
+        }
         if (stored == null) {
+            log.info("Refresh refused: the token is unknown (expired, already used, revoked by a newer login, or lost from Redis)");
             throw new SessionExpiredException("Invalid or expired session.");
         }
         String subject = subjectOf(stored);
         String sessionId = sessionIdOf(stored);
         redis.opsForSet().remove(USER_INDEX_PREFIX + subject, hash);
+        if (!fromGrace) {
+            keepForGrace(hash, stored, subject);
+        }
         return new TokenRotation(subject, sessionId, issue(subject, sessionId));
     }
 
@@ -52,7 +67,9 @@ public class RefreshTokenService {
         String stored = redis.opsForValue().getAndDelete(TOKEN_PREFIX + hash);
         if (stored != null) {
             redis.opsForSet().remove(USER_INDEX_PREFIX + subjectOf(stored), hash);
+            forgetGrace(subjectOf(stored));
         }
+        redis.delete(GRACE_PREFIX + hash);
     }
 
     public void revokeAll(String subject) {
@@ -61,6 +78,21 @@ public class RefreshTokenService {
             hashes.forEach(hash -> redis.delete(TOKEN_PREFIX + hash));
         }
         redis.delete(USER_INDEX_PREFIX + subject);
+        forgetGrace(subject);
+    }
+
+    private void keepForGrace(String hash, String stored, String subject) {
+        redis.opsForValue().set(GRACE_PREFIX + hash, stored, REUSE_GRACE);
+        redis.opsForSet().add(GRACE_INDEX_PREFIX + subject, hash);
+        redis.expire(GRACE_INDEX_PREFIX + subject, REUSE_GRACE);
+    }
+
+    private void forgetGrace(String subject) {
+        var hashes = redis.opsForSet().members(GRACE_INDEX_PREFIX + subject);
+        if (hashes != null) {
+            hashes.forEach(hash -> redis.delete(GRACE_PREFIX + hash));
+        }
+        redis.delete(GRACE_INDEX_PREFIX + subject);
     }
 
     private static String encode(String subject, String sessionId) {

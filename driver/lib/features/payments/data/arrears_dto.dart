@@ -1,6 +1,7 @@
 import '../../../core/money/money.dart';
 import '../domain/arrears_summary.dart';
 import 'payment_option_dto.dart';
+import 'rent_day_dto.dart';
 
 class ArrearsDto {
   const ArrearsDto({
@@ -12,6 +13,7 @@ class ArrearsDto {
     this.options = const [],
     this.weekClosesAt,
     this.weekSettled = true,
+    this.days = const [],
   });
 
   factory ArrearsDto.fromJson(Map<String, dynamic> json) => ArrearsDto(
@@ -26,6 +28,10 @@ class ArrearsDto {
     ],
     weekClosesAt: json['weekClosesAt'] as String?,
     weekSettled: json['weekSettled'] as bool? ?? true,
+    days: [
+      for (final item in json['days'] as List<dynamic>? ?? const [])
+        RentDayDto.fromJson(item as Map<String, dynamic>),
+    ],
   );
 
   final int unpaidDays;
@@ -36,6 +42,7 @@ class ArrearsDto {
   final List<PaymentOptionDto> options;
   final String? weekClosesAt;
   final bool weekSettled;
+  final List<RentDayDto> days;
 
   ArrearsSummary toDomain() => ArrearsSummary(
     unpaidDays: unpaidDays,
@@ -47,5 +54,6 @@ class ArrearsDto {
         ? null
         : DateTime.parse(weekClosesAt!).toLocal(),
     weekSettled: weekSettled,
+    days: [for (final day in days) day.toDomain(currency)],
   );
 }

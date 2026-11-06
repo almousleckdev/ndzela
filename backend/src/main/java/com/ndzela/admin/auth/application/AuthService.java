@@ -156,6 +156,7 @@ public class AuthService {
         // only this one token (not revokeAll) avoids tearing down the new, legitimate session's tokens.
         if (!java.util.Objects.equals(user.getSessionId(), rotation.sessionId())) {
             refreshTokens.revoke(rotation.newToken());
+            log.info("Refresh refused for {}: a newer login replaced this session", rotation.subject());
             throw new SessionExpiredException("Invalid or expired session.");
         }
         return issueTokens(user, rotation.newToken());

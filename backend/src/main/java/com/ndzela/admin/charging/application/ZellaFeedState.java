@@ -18,6 +18,14 @@ class ZellaFeedState {
         return jdbc.query("select sync_cursor from zella_sync_state where country_id = ?", rs -> rs.next() ? rs.getString(1) : null, countryId);
     }
 
+    String publicCursor(UUID countryId) {
+        return jdbc.query("select public_sync_cursor from zella_sync_state where country_id = ?", rs -> rs.next() ? rs.getString(1) : null, countryId);
+    }
+
+    void savePublicCursor(UUID countryId, String cursor) {
+        jdbc.update("insert into zella_sync_state (country_id, public_sync_cursor) values (?, ?) on conflict (country_id) do update set public_sync_cursor = excluded.public_sync_cursor", countryId, cursor);
+    }
+
     // Written in the same transaction as the payments it covers
     void saveCursor(UUID countryId, String cursor) {
         jdbc.update("insert into zella_sync_state (country_id, sync_cursor) values (?, ?) on conflict (country_id) do update set sync_cursor = excluded.sync_cursor", countryId, cursor);

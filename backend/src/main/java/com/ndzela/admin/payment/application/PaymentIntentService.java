@@ -68,6 +68,7 @@ public class PaymentIntentService {
             String holder = rawPhone == null || rawPhone.isBlank() ? null : pvit.accountHolder(operatorCode, ProviderPhone.forProvider(country.getPhoneCode(), rawPhone));
             return new PaymentQuote(due.days(), due.toCollect(), fees.fees(), country.getCurrencyCode(), holder, due.options());
         } catch (PvitException e) {
+            log.warn("PVit could not quote {} for {} XAF: {}", operatorCode, due.toCollect(), e.getMessage());
             throw new ProviderUnavailableException("The payment service is not available right now. Try again in a moment.");
         }
     }

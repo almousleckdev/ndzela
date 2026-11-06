@@ -11,6 +11,7 @@ import com.ndzela.admin.infrastructure.storage.FileContent;
 import com.ndzela.admin.driver.domain.DriverFileKind;
 import com.ndzela.admin.driver.domain.DriverRepository;
 import com.ndzela.admin.driverapp.api.dto.DriverAccountResponse;
+import com.ndzela.admin.driverapp.api.dto.DriverDayResponse;
 import com.ndzela.admin.driverapp.api.dto.DriverContractResponse;
 import com.ndzela.admin.driverapp.api.dto.DriverDocumentResponse;
 import com.ndzela.admin.driverapp.api.dto.DriverMeResponse;
@@ -39,6 +40,8 @@ public class DriverAppService {
     private final AccountQueryService accounts;
     private final DriverFileService files;
     private final AppProperties props;
+    // The weekly history shows this many weeks, the current one included
+    private static final int HISTORY_WEEKS = 4;
 
     @Transactional(readOnly = true)
     public DriverMeResponse me(UUID driverId) {
@@ -93,7 +96,8 @@ public class DriverAppService {
         Driver driver = drivers.findById(driverId).orElseThrow();
         AccountDetail account = accounts.account(driverId);
         return new DriverAccountResponse(account.unpaid(), account.overdueAmount().setScale(0, RoundingMode.HALF_UP), driver.getCountry().getCurrencyCode(), props.driverApp().locks(account.unpaid()),
-                driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED, account.weekClosesAt(), account.weekSettled(), accounts.payable(driverId).options());
+                driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED, account.weekClosesAt(), account.weekSettled(), accounts.payable(driverId).options(),
+                accounts.weekHistory(driverId, HISTORY_WEEKS).stream().map(DriverDayResponse::from).toList());
     }
 
     private ContractResponse activeContract(UUID driverId) {

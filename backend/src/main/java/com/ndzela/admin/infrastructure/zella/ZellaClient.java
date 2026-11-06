@@ -47,9 +47,18 @@ public class ZellaClient {
 
     /** One page of the payment feed. No cursor reads from the beginning; `customerId` restricts it to one linked customer, with its own cursor. */
     public ZellaFeedPage sessions(String cursor, int limit, String customerId) {
+        return read("/v1/partners/ndzela/sessions", cursor, limit, customerId, true);
+    }
+
+    /** One page of the sessions of everyone who is not a NDZela driver: what was charged, never who. */
+    public ZellaFeedPage publicSessions(String cursor, int limit) {
+        return read("/v1/partners/ndzela/public-sessions", cursor, limit, null, false);
+    }
+
+    private ZellaFeedPage read(String path, String cursor, int limit, String customerId, boolean ofACustomer) {
         try {
             String body = client.get().uri(uri -> {
-                uri.path("/v1/partners/ndzela/sessions").queryParam("limit", limit);
+                uri.path(path).queryParam("limit", limit);
                 if (cursor != null) {
                     uri.queryParam("cursor", cursor);
                 }
@@ -58,7 +67,7 @@ public class ZellaClient {
                 }
                 return uri.build();
             }).header("X-Api-Key", props.apiKey()).retrieve().body(String.class);
-            return page(mapper.readTree(body));
+            return page(mapper.readTree(body), ofACustomer);
         } catch (JacksonException e) {
             throw new ZellaException("The Zella app answered something unreadable.", e);
         } catch (RestClientResponseException e) {
@@ -83,12 +92,12 @@ public class ZellaClient {
         return new ZellaException("The Zella app answered " + e.getStatusCode().value() + ".", e);
     }
 
-    private static ZellaFeedPage page(JsonNode json) {
+    private static ZellaFeedPage page(JsonNode json, boolean ofACustomer) {
         List<ZellaFeedItem> items = new ArrayList<>();
         for (JsonNode i : json.path("items")) {
             String transactionId = text(i, "transactionId");
             String customerId = text(i, "customerId");
-            if (transactionId == null || customerId == null) {
+            if (transactionId == null || (ofACustomer && customerId == null)) {
                 continue;
             }
             items.add(new ZellaFeedItem(transactionId, customerId, text(i, "idTag"), text(i, "sessionState"), text(i, "paymentState"), text(i, "paymentMethod"),

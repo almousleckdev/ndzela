@@ -24,7 +24,7 @@ MFA is **mandatory for every staff account**. Unknown/wrong credentials always r
 
 - The JWT carries **no roles or permissions**. On each request `JwtAuthenticationFilter` loads the user and builds authorities from the database, so
   role changes take effect immediately, and `DISABLED`/`LOCKED` users are rejected at once.
-- `POST /api/v1/auth/refresh` rotates the refresh token; if the user is no longer `ACTIVE` all their refresh tokens are revoked.
+- `POST /api/v1/auth/refresh` rotates the refresh token; if the user is no longer `ACTIVE` all their refresh tokens are revoked. A rotated token still works for **30 seconds** (a lost answer or two renewals at once; [ADR-0027](../adr/0027-refresh-token-reuse-window.md)); logging out, a password change or a new login close that window at once. The driver app renews its access token on a `401` and is signed out only when the refresh itself is rejected.
 - `POST /api/v1/auth/logout` revokes the refresh token and clears the cookie. Password change, MFA reset, disabling, blocking and deleting a user call `revokeAll`.
 - CSRF protection is disabled because the API is stateless; the only ambient credential (the refresh cookie) is `SameSite=Strict` and limited to the auth path.
 
