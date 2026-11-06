@@ -80,6 +80,14 @@ public class DriverAppService {
                 available("RESIDENCE_CERTIFICATE", DriverFileKind.RESIDENCE_CERTIFICATE, driver));
     }
 
+    public void addDocument(UUID driverId, String slug, org.springframework.web.multipart.MultipartFile file) {
+        DriverFileKind kind = DriverFileKind.fromSlug(slug);
+        if (kind == null) {
+            throw new BusinessRuleViolationException("DOCUMENT_NOT_ALLOWED", "Unknown document.");
+        }
+        files.addMissing(driverId, kind, file);
+    }
+
     // The driver's own contract (the active one, else the latest) as a PDF.
     @Transactional
     public byte[] contractPdf(UUID driverId) {

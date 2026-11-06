@@ -75,6 +75,37 @@ class DriverProfileApiTest extends AbstractDriverAppTest {
     }
 
     @Test
+    void aContractSignedBeforeTheResidenceCertificateStillDownloads() throws Exception {
+        jdbc.update("update contracts set snapshot = ((snapshot::jsonb) #- '{documents,residenceCertificate}')::text");
+
+        asDriver("/api/v1/driver/documents/contract", token).andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType("application/pdf"));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions upload(String kind, String bearer) throws Exception {
+        var file = new org.springframework.mock.web.MockMultipartFile("file", "document.pdf", "application/pdf", "%PDF-1.4 test".getBytes());
+        var request = org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/driver/documents/" + kind).file(file);
+        return mvc.perform(bearer == null ? request : request.header("Authorization", bearer));
+    }
+
+    @Test
+    void aDriverAddsAMissingDocumentButCannotReplaceOneOnFile() throws Exception {
+        upload("licence", "Bearer " + token).andExpect(status().isNoContent());
+        asDriver("/api/v1/driver/documents", token).andExpect(jsonPath("$[?(@.kind=='LICENCE')].available").value(true));
+        org.junit.jupiter.api.Assertions.assertEquals(1, auditRows("DRIVER_FILE_ADDED_BY_DRIVER"));
+
+        upload("licence", "Bearer " + token).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DOCUMENT_ALREADY_ON_FILE"));
+    }
+
+    @Test
+    void thePhotoAndUnknownDocumentsAreRefusedAndASignInIsRequired() throws Exception {
+        upload("photo", "Bearer " + token).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DOCUMENT_NOT_ALLOWED"));
+        upload("passport", "Bearer " + token).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DOCUMENT_NOT_ALLOWED"));
+        upload("licence", null).andExpect(status().isUnauthorized());
+        upload("licence", bearer(manager)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void theSupportContactsAreThoseOfTheDriversCountry() throws Exception {
         asDriver("/api/v1/driver/support", token).andExpect(status().isOk())
                 .andExpect(jsonPath("$.phone").value("+24162821855")).andExpect(jsonPath("$.whatsapp").value("+24102821855")).andExpect(jsonPath("$.email").value("ndzelagabon@gmail.com"));

@@ -37,7 +37,7 @@ abstract final class AppTheme {
       borderRadius: BorderRadius.circular(radius),
     );
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.canvas,
+      scaffoldBackgroundColor: Colors.white,
       textTheme: base.textTheme
           .apply(bodyColor: AppColors.ink, displayColor: AppColors.ink)
           .copyWith(

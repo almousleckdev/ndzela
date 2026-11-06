@@ -4,6 +4,7 @@ import 'mocks.dart';
 import 'package:dio/dio.dart';
 import 'package:driver/app/app.dart';
 import 'package:driver/core/money/money.dart';
+import 'package:driver/core/platform/document_picker.dart';
 import 'package:driver/core/platform/open_file.dart';
 import 'package:driver/core/platform/share_file.dart';
 import 'package:driver/core/storage/token_storage.dart';
@@ -160,6 +161,12 @@ class FakeBackend {
   // What the phone's share sheet was asked to send
   final shared = <({String filename, String mimeType, int size})>[];
 
+  // What the phone's file picker hands back (null: the driver chose nothing)
+  PickedDocument? pickedDocument = PickedDocument(
+    filename: 'permis.pdf',
+    bytes: Uint8List.fromList([1, 2, 3]),
+  );
+
   // The files shown in the phone's viewer
   final opened = <({String filename, int size})>[];
 }
@@ -185,6 +192,9 @@ Widget appWith(FakeBackend backend) {
       contractRepositoryProvider.overrideWithValue(backend.contract),
       paymentsRepositoryProvider.overrideWithValue(backend.payments),
       supportRepositoryProvider.overrideWithValue(backend.support),
+      documentPickerProvider.overrideWithValue(
+        () async => backend.pickedDocument,
+      ),
       fileOpenerProvider.overrideWithValue(({
         required bytes,
         required filename,

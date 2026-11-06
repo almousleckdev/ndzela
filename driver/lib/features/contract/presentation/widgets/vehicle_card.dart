@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/brand_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/platform/app_icons.dart';
 import '../../../../core/widgets/adaptive/platform_icon.dart';
@@ -21,10 +21,14 @@ class VehicleCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          const CircleBadge(
-            color: AppColors.canvas,
+          CircleBadge(
+            color: context.brand.primarySoft,
             size: 38,
-            child: PlatformIcon(AppIcons.car, size: 20, color: AppColors.ink),
+            child: PlatformIcon(
+              AppIcons.car,
+              size: 20,
+              color: context.brand.primaryInk,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

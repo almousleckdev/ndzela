@@ -1,6 +1,5 @@
 import '../../../core/money/money.dart';
 import 'payment_option.dart';
-import 'rent_day.dart';
 
 class ArrearsSummary {
   const ArrearsSummary({
@@ -11,7 +10,6 @@ class ArrearsSummary {
     this.options = const [],
     this.weekClosesAt,
     this.weekSettled = true,
-    this.days = const [],
   });
 
   final int unpaidDays;
@@ -29,9 +27,6 @@ class ArrearsSummary {
   // When the week's rents must be settled (Sunday noon), and whether they are
   final DateTime? weekClosesAt;
   final bool weekSettled;
-
-  // The rent days of the last weeks, oldest first
-  final List<RentDay> days;
 
   bool get isLate => unpaidDays > 0;
 

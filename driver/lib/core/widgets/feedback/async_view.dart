@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../error/error_messages.dart';
 import '../../platform/app_icons.dart';
-import '../adaptive/activity_indicator.dart';
 import '../adaptive/app_button.dart';
 import 'empty_state.dart';
+import 'screen_skeleton.dart';
 
 // Renders an AsyncValue with the app's loading and error states; `onRetry` re-runs the provider.
 class AsyncView<T> extends StatelessWidget {
@@ -24,10 +24,7 @@ class AsyncView<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return value.when(
       data: data,
-      loading: () => const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: AppActivityIndicator(size: 28)),
-      ),
+      loading: () => const ScreenSkeleton(cards: 1),
       error: (error, _) => Column(
         children: [
           EmptyState(icon: AppIcons.offline, title: messageFor(error)),

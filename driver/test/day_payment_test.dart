@@ -124,7 +124,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextFormField), '062821855');
-    await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       final pay = find.widgetWithText(FilledButton, 'Payer 71 415 FCFA');
       await tester.scrollUntilVisible(pay, 200, scrollable: _scrollable);

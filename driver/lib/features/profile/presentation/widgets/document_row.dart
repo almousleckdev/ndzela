@@ -4,6 +4,8 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../app/theme/brand_colors.dart';
 import '../../../../core/platform/app_icons.dart';
+import '../../../../core/widgets/adaptive/activity_indicator.dart';
+import '../../../../core/widgets/adaptive/app_link_button.dart';
 import '../../../../core/widgets/adaptive/platform_icon.dart';
 import '../../../../core/widgets/display/circle_badge.dart';
 import '../../../../core/widgets/display/status_chip.dart';
@@ -15,11 +17,17 @@ class DocumentRow extends StatelessWidget {
     required this.name,
     required this.available,
     this.actions,
+    this.onAdd,
+    this.adding = false,
   });
 
   final String name;
   final bool available;
   final Widget? actions;
+
+  // Adds the document when it is missing; null for one the driver cannot add
+  final VoidCallback? onAdd;
+  final bool adding;
 
   @override
   Widget build(BuildContext context) {
@@ -46,12 +54,19 @@ class DocumentRow extends StatelessWidget {
               color: AppColors.success,
               background: AppColors.successSoft,
             )
-          else
+          else ...[
             const StatusChip(
               label: 'Manquant',
               color: AppColors.danger,
               background: AppColors.dangerSoft,
             ),
+            if (onAdd != null) ...[
+              const SizedBox(width: 8),
+              adding
+                  ? const AppActivityIndicator(size: 20)
+                  : AppLinkButton(label: 'Ajouter', onTap: onAdd),
+            ],
+          ],
         ],
       ),
     );

@@ -75,7 +75,7 @@ void main() {
       );
 
       await tester.enterText(find.byType(TextFormField), '062821855');
-    await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
       expect(

@@ -27,5 +27,12 @@ A release build refuses to start without an HTTPS `API_BASE_URL` (see `AppConfig
 - Sign in on a real phone with a test driver and pay once with the sandbox (150 FCFA), then check the receipt, the Historique tab and the staff dashboard's Transactions table.
 - The launcher icon comes from `driver/assets/icon/app_icon.png` (a 1024 px file made from the 500 px logo: **replace it with the designer's 1024 px master when available** and run `dart run flutter_launcher_icons`; see the driver README).
 
+## Store listing checklist (Google Play and App Store)
+- **Privacy policy URL:** `https://www.ndzela.com/confidentialite`; **terms:** `https://www.ndzela.com/conditions`; **account deletion page** (required by Google Play): `https://www.ndzela.com/suppression-compte`. Use `www`: the bare `ndzela.com` has no DNS record yet ([ADR-0018](../adr/0018-railway-hosting-and-domains.md) addendum).
+- **Data collected** (Play Data safety, App Store privacy labels): name, e-mail, phone number, photo and identity documents (provided by the driver, linked to the account, used to run the rental contract), payment information (mobile-money number and transactions, handled by PVit; no card data), no advertising, no tracking, data encrypted in transit, deletion on request.
+- **App Review notes:** give a test driver account (phone and password) and say payments use mobile money (Airtel, Moov) for a vehicle rental, not digital goods.
+- **iOS:** add a `PrivacyInfo.xcprivacy` to the Runner target in Xcode if App Store Connect asks for it (the plugins ship their own); the photo-library text is already in `Info.plist`.
+- **Screenshots:** take them from the white screens (home, payment, historique, profil) on a 6.7" iPhone and a recent Android phone.
+
 ## 5. Going to production (payments for real)
 Follow the payment go-live checklist in [infrastructure](../infrastructure/infrastructure-and-deployment.md#payment-go-live-pvit): the production backend refuses to start with a sandbox amount or missing PVit credentials. Then build with `env/production.json`, promote the tested build in TestFlight to App Store review, and move the Play internal release to a production track (or closed testing first).

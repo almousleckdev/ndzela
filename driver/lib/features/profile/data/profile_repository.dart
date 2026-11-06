@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
+import '../domain/document_kind.dart';
 import '../domain/driver_document.dart';
 import '../domain/driver_profile.dart';
 import 'driver_document_dto.dart';
@@ -23,6 +24,20 @@ class ProfileRepository {
       for (final item in response.data!)
         ?DriverDocumentDto.fromJson(item as Map<String, dynamic>).toDomain(),
     ];
+  }
+
+  // A document that is missing on file; the server refuses to replace one already there.
+  Future<void> addDocument({
+    required DocumentKind kind,
+    required String filename,
+    required Uint8List bytes,
+  }) async {
+    await _dio.post<void>(
+      '/documents/${kind.uploadSlug}',
+      data: FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: filename),
+      }),
+    );
   }
 
   // The driver's own contract as a PDF, drawn by the server.

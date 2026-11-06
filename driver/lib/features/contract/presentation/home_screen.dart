@@ -13,7 +13,7 @@ import 'widgets/balance_card.dart';
 import 'widgets/contract_summary_card.dart';
 import 'widgets/home_greeting.dart';
 import 'widgets/vehicle_card.dart';
-import 'widgets/weekly_history_card.dart';
+import 'widgets/week_payments_card.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -60,7 +60,7 @@ class HomeScreen extends ConsumerWidget {
                   ContractSummaryCard(contract: contract),
                 ],
                 const SizedBox(height: 12),
-                const WeeklyHistoryCard(),
+                const WeekPaymentsCard(),
               ],
             ),
           ),

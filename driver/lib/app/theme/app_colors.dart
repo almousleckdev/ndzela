@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 abstract final class AppColors {
   static const ink = Color(0xFF0F172A);
   static const muted = Color(0xFF5B6B80);
-  static const canvas = Color(0xFFF4F6FA);
+  static const canvas = Colors.white;
   static const line = Color(0xFFE3E8EF);
   static const danger = Color(0xFFDC2626);
   static const dangerSoft = Color(0xFFFEE2E2);

@@ -76,6 +76,27 @@ public class DriverFileService {
         audit.record("DRIVER_FILE_UPDATED", "DRIVER", driverId.toString(), label(driver), driver.getCountryId(), kind.name());
     }
 
+    // The driver adds a document that is missing; one already on file can only be changed by staff
+    @Transactional
+    public void addMissing(UUID driverId, DriverFileKind kind, MultipartFile file) {
+        if (kind == DriverFileKind.PHOTO) {
+            throw new BusinessRuleViolationException("DOCUMENT_NOT_ALLOWED", "The profile picture is changed by the office.");
+        }
+        Driver driver = load(driverId);
+        if (kind.fileOf(driver) != null) {
+            throw new BusinessRuleViolationException("DOCUMENT_ALREADY_ON_FILE", "This document is already on file. Contact the office to change it.");
+        }
+        String stored = storage.save(file, kind.imageOnly(), countries.codeOf(driver.getCountryId()));
+        kind.set(driver, stored);
+        try {
+            drivers.saveAndFlush(driver);
+        } catch (RuntimeException e) {
+            storage.delete(stored);
+            throw e;
+        }
+        audit.record("DRIVER_FILE_ADDED_BY_DRIVER", "DRIVER", driverId.toString(), label(driver), driver.getCountryId(), kind.name());
+    }
+
     @Transactional
     public void remove(UUID driverId, DriverFileKind kind) {
         if (kind == DriverFileKind.PHOTO) {

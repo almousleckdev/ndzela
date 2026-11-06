@@ -9,7 +9,7 @@ abstract final class AppConfig {
   // The public pages of the website that the store listings and the app point to.
   static const _siteUrl = String.fromEnvironment(
     'SITE_URL',
-    defaultValue: 'https://ndzela.com',
+    defaultValue: 'https://www.ndzela.com',
   );
   static Uri get privacyUri => Uri.parse('$_siteUrl/confidentialite');
   static Uri get termsUri => Uri.parse('$_siteUrl/conditions');

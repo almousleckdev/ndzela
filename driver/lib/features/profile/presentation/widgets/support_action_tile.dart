@@ -35,8 +35,9 @@ class SupportActionTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.canvas,
+            color: Colors.white,
             borderRadius: radius,
+            border: Border.all(color: AppColors.line),
           ),
           child: Column(
             children: [

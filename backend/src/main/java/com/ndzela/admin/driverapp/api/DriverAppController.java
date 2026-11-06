@@ -24,6 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -69,6 +72,13 @@ public class DriverAppController {
     @PreAuthorize("hasAuthority('driver:self')")
     public List<DriverDocumentResponse> documents(@AuthenticationPrincipal DriverPrincipal driver) {
         return app.documents(driver.driverId());
+    }
+
+    @PostMapping(value = "/documents/{kind}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('driver:self')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void addDocument(@AuthenticationPrincipal DriverPrincipal driver, @PathVariable String kind, @RequestPart("file") MultipartFile file) {
+        app.addDocument(driver.driverId(), kind, file);
     }
 
     @GetMapping("/documents/contract")

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 // A failure from the API, identified by the server's stable `code`
@@ -21,7 +23,7 @@ class AppException implements Exception {
   factory AppException.from(Object error) {
     if (error is AppException) return error;
     if (error is DioException) {
-      final body = error.response?.data;
+      final body = _jsonBody(error.response?.data);
       if (body is Map<String, dynamic> && body['code'] is String) {
         final errors = body['errors'];
         return AppException(
@@ -37,9 +39,22 @@ class AppException implements Exception {
               : const {},
         );
       }
-      return const AppException(code: 'NETWORK_ERROR');
+      final status = error.response?.statusCode;
+      return status != null && status >= 500
+          ? AppException(code: 'SERVER_ERROR', status: status)
+          : const AppException(code: 'NETWORK_ERROR');
     }
     return const AppException(code: 'UNEXPECTED_ERROR');
+  }
+
+  // An error answer to a file download arrives as bytes: read the server's JSON out of them.
+  static Object? _jsonBody(Object? data) {
+    if (data is! List<int>) return data;
+    try {
+      return jsonDecode(utf8.decode(data));
+    } on FormatException {
+      return null;
+    }
   }
 
   @override

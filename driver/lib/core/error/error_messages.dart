@@ -21,6 +21,13 @@ String messageFor(Object error) {
       'Le service de paiement est indisponible. Réessayez dans un instant.',
     'RECEIPT_NOT_AVAILABLE' =>
       "Le reçu n'est disponible que pour un paiement confirmé.",
+    'SERVER_ERROR' =>
+      'Le service rencontre un problème. Réessayez dans un instant.',
+    'DOCUMENT_ALREADY_ON_FILE' =>
+      'Ce document est déjà enregistré. Contactez Ndzela pour le modifier.',
+    'INVALID_FILE' =>
+      'Fichier refusé : choisissez une photo (JPG, PNG) ou un PDF.',
+    'FILE_TOO_LARGE' => 'Le fichier dépasse 5 Mo.',
     'NETWORK_ERROR' => 'Connexion impossible. Vérifiez votre réseau.',
     _ => 'Une erreur est survenue. Réessayez.',
   };

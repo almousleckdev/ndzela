@@ -12,7 +12,6 @@ class LoginHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return HeaderBand(
-      radius: 28,
       bottomPadding: 22,
       child: SizedBox(
         width: double.infinity,
