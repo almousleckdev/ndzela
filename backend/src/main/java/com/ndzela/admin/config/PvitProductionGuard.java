@@ -3,6 +3,8 @@ package com.ndzela.admin.config;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.config.properties.PvitProperties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -11,6 +13,9 @@ import java.util.List;
 // Production collects the real arrears with the real PVit account: no sandbox amount, and every credential present.
 @Component
 public class PvitProductionGuard {
+    private static final Logger log = LoggerFactory.getLogger(PvitProductionGuard.class);
+    static final int CALLBACK_CODE_MAX = 12;
+
     public PvitProductionGuard(AppProperties props, DeploymentEnvironment environment) {
         if (!environment.production()) {
             return;
@@ -30,6 +35,9 @@ public class PvitProductionGuard {
         require(missing, "PVIT_CALLBACK_URL_CODE", pvit.callbackUrlCode());
         if (!missing.isEmpty()) {
             throw new IllegalStateException("Payments cannot run in production without: " + String.join(", ", missing) + ".");
+        }
+        if (pvit.callbackUrlCode().length() > CALLBACK_CODE_MAX) {
+            log.error("PVIT_CALLBACK_URL_CODE is {} characters; PVit accepts at most {} (the short code of the callback URL, not the URL itself): every payment will be refused.", pvit.callbackUrlCode().length(), CALLBACK_CODE_MAX);
         }
     }
 

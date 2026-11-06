@@ -22,24 +22,40 @@ void main() {
 
   Finder payButton(String label) => find.widgetWithText(FilledButton, label);
 
+  testWidgets('the operator appears from the number typed', (tester) async {
+    await openPay(tester);
+
+    expect(find.text('Airtel Money'), findsWidgets);
+    expect(find.text('Moov Money'), findsNothing);
+
+    await tester.enterText(find.byType(TextFormField), '062821855');
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Moov Money'), findsWidgets);
+    expect(find.text('Airtel Money'), findsNothing);
+    expect(find.byType(Image), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField), '05');
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Moov Money'), findsNothing);
+    expect(find.text('Airtel Money'), findsNothing);
+  });
+
   testWidgets('a disabled Payer button says what is missing', (tester) async {
     await openPay(tester);
 
+    await tester.enterText(find.byType(TextFormField), '07');
+    await tester.pump();
     expect(
-      find.text('Choisissez un opérateur pour continuer.'),
+      find.text('Saisissez un numéro valide (8 à 15 chiffres).'),
       findsOneWidget,
     );
 
-    await tester.tap(find.text('Moov Money'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Choisissez un opérateur pour continuer.'), findsNothing);
-
-    await tester.enterText(find.byType(TextFormField), '07');
+    await tester.enterText(find.byType(TextFormField), '05123456');
     await tester.pump();
-
     expect(
-      find.text('Saisissez un numéro valide (8 à 15 chiffres).'),
+      find.text('Ce numéro n’est ni Airtel (07) ni Moov (06).'),
       findsOneWidget,
     );
   });
@@ -58,7 +74,8 @@ void main() {
         (_) async => throw apiError(502, 'PAYMENT_PROVIDER_UNAVAILABLE'),
       );
 
-      await tester.tap(find.text('Moov Money'));
+      await tester.enterText(find.byType(TextFormField), '062821855');
+    await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
       expect(

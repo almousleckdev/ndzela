@@ -145,7 +145,8 @@ void main() {
     tester,
   ) async {
     final backend = await openApp(tester, _locked);
-    await tester.tap(find.text('Moov Money'));
+    await tester.enterText(find.byType(TextFormField), '062821855');
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Payer 71 415 FCFA'));
     await tester.pump(const Duration(milliseconds: 100));

@@ -10,7 +10,6 @@ import '../../../../core/widgets/adaptive/app_message.dart';
 import '../../../../core/widgets/adaptive/app_text_field.dart';
 import '../../../../core/widgets/display/section_title.dart';
 import '../../../../core/widgets/layout/dismiss_keyboard.dart';
-import '../../../../core/widgets/feedback/async_view.dart';
 import '../../../profile/presentation/profile_providers.dart';
 import '../../domain/arrears_summary.dart';
 import '../../domain/mobile_money_number.dart';
@@ -18,7 +17,7 @@ import '../operator_label.dart';
 import '../payment_form_controller.dart';
 import '../payments_providers.dart';
 import 'day_count_selector.dart';
-import 'operator_selector.dart';
+import 'detected_operator.dart';
 import 'payment_amount_card.dart';
 import 'payment_summary_card.dart';
 
@@ -121,17 +120,11 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
             validator: (v) =>
                 isValidMobileMoneyNumber(v ?? '') ? null : 'Numéro invalide',
           ),
-          const SizedBox(height: 16),
-          const SectionTitle('Opérateur'),
-          AsyncView(
-            value: operators,
-            onRetry: () => ref.invalidate(operatorsProvider),
-            data: (list) => OperatorSelector(
-              operators: list,
-              selected: form.operator,
-              onSelected: controller.selectOperator,
-            ),
-          ),
+          if (form.operator != null) ...[
+            const SizedBox(height: 16),
+            const SectionTitle('Opérateur'),
+            DetectedOperator(operator: form.operator!),
+          ],
           const SizedBox(height: 16),
           const SectionTitle('Récapitulatif'),
           PaymentSummaryCard(
@@ -162,9 +155,11 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
 
   // What the driver still has to give before paying, in the order the form asks for it
   String? _missing(PaymentFormState form) {
-    if (form.operator == null) return 'Choisissez un opérateur pour continuer.';
     if (!isValidMobileMoneyNumber(form.phone)) {
       return 'Saisissez un numéro valide (8 à 15 chiffres).';
+    }
+    if (form.operator == null) {
+      return 'Ce numéro n’est ni Airtel (07) ni Moov (06).';
     }
     return null;
   }

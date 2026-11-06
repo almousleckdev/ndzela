@@ -24,8 +24,7 @@ void main() {
 
   Finder payButton(String label) => find.widgetWithText(FilledButton, label);
 
-  Future<void> chooseMoovAndPay(WidgetTester tester) async {
-    await tester.tap(find.text('Moov Money'));
+  Future<void> payWithTheNumberOnFile(WidgetTester tester) async {
     await tester.pumpAndSettle();
     await tester.tap(payButton('Payer 71 415 FCFA'));
     await tester.pump();
@@ -33,12 +32,9 @@ void main() {
   }
 
   testWidgets(
-    'the summary shows the amount, the operator fee on top and the total once an operator is chosen',
+    'the summary shows the amount, the operator fee on top and the total once the number gives an operator',
     (tester) async {
       await openPay(tester);
-      expect(tester.widget<FilledButton>(payButton('Payer')).onPressed, isNull);
-
-      await tester.tap(find.text('Moov Money'));
       await tester.pumpAndSettle();
 
       expect(find.text('Frais estimés'), findsOneWidget);
@@ -58,11 +54,10 @@ void main() {
       final backend = await openPay(tester);
       expect(find.widgetWithText(TextFormField, '074111111'), findsOneWidget);
 
-      await tester.tap(find.text('Moov Money'));
       await tester.pumpAndSettle();
       verify(
         () => backend.payments.quote(
-          operatorCode: 'MOOV_MONEY',
+          operatorCode: 'AIRTEL_MONEY',
           phone: '074111111',
         ),
       ).called(1);
@@ -86,7 +81,7 @@ void main() {
       await tester.pumpAndSettle();
       verify(
         () => backend.payments.quote(
-          operatorCode: 'MOOV_MONEY',
+          operatorCode: 'AIRTEL_MONEY',
           phone: '077567157',
         ),
       ).called(1);
@@ -105,12 +100,12 @@ void main() {
     (tester) async {
       final backend = await openPay(tester);
 
-      await chooseMoovAndPay(tester);
+      await payWithTheNumberOnFile(tester);
 
       final request =
           verify(() => backend.payments.start(captureAny())).captured.single
               as PaymentRequest;
-      expect(request.operator.code, 'MOOV_MONEY');
+      expect(request.operator.code, 'AIRTEL_MONEY');
       expect(request.phone, '074111111');
       expect(find.text('Validez sur votre téléphone'), findsOneWidget);
       expect(find.text('Régulariser maintenant'), findsNothing);
@@ -121,7 +116,7 @@ void main() {
     'when the operator confirms, the driver sees the confirmation with the fee and goes home',
     (tester) async {
       await openPay(tester);
-      await chooseMoovAndPay(tester);
+      await payWithTheNumberOnFile(tester);
 
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 100));
@@ -156,7 +151,7 @@ void main() {
     tester,
   ) async {
     await openPay(tester, finalStatus: PaymentStatus.failed);
-    await chooseMoovAndPay(tester);
+    await payWithTheNumberOnFile(tester);
 
     await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(milliseconds: 100));
@@ -173,7 +168,7 @@ void main() {
     'a failed payment lists the usual causes and offers support with the reference already written',
     (tester) async {
       await openPay(tester, finalStatus: PaymentStatus.failed);
-      await chooseMoovAndPay(tester);
+      await payWithTheNumberOnFile(tester);
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -196,7 +191,7 @@ void main() {
     'an expired payment explains that a debit will still be recorded',
     (tester) async {
       await openPay(tester, finalStatus: PaymentStatus.expired);
-      await chooseMoovAndPay(tester);
+      await payWithTheNumberOnFile(tester);
 
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 100));
@@ -216,7 +211,6 @@ void main() {
         () => backend.payments.start(any()),
       ).thenThrow(apiError(422, 'PAYMENT_IN_PROGRESS'));
 
-      await tester.tap(find.text('Moov Money'));
       await tester.pumpAndSettle();
       await tester.tap(payButton('Payer 71 415 FCFA'));
       await tester.pumpAndSettle();

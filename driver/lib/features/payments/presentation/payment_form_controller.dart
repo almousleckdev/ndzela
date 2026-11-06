@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/mobile_money_number.dart';
+import '../domain/operator_detection.dart';
 import '../domain/payment_operator.dart';
 import '../domain/payment_request.dart';
+import 'operator_label.dart';
 import 'payment_flow_controller.dart';
 import 'payments_providers.dart';
 
@@ -73,26 +75,39 @@ class PaymentFormController extends Notifier<PaymentFormState> {
     return const PaymentFormState();
   }
 
-  void selectOperator(PaymentOperator operator) =>
-      state = state.copyWith(operator: operator);
-
   void selectDays(int days) => state = state.copyWith(days: days);
 
   // The chosen number of days is no longer offered by the account
   void clearDays() => state = state.withoutDays();
 
   // The driver's own number, put in the field when the form opens
-  void prefillPhone(String phone) =>
-      state = state.copyWith(phone: phone, quotedPhone: phone);
+  void prefillPhone(String phone) => state = PaymentFormState(
+    operator: _operatorOf(phone),
+    phone: phone,
+    quotedPhone: phone,
+    days: state.days,
+  );
 
   // Typing
   void changePhone(String phone) {
-    state = state.copyWith(phone: phone);
+    state = PaymentFormState(
+      operator: _operatorOf(phone),
+      phone: phone,
+      quotedPhone: state.quotedPhone,
+      days: state.days,
+    );
     _pause?.cancel();
     _pause = Timer(
       _typingPause,
       () => state = state.copyWith(quotedPhone: phone),
     );
+  }
+
+  PaymentOperator? _operatorOf(String phone) {
+    final code = detectOperatorCode(phone);
+    if (code == null) return null;
+    final known = ref.read(operatorsProvider).asData?.value;
+    return PaymentOperator(code: code, label: operatorLabel(code, known));
   }
 
   // Starts the payment on the server and hands it to the flow, which follows it to the end.

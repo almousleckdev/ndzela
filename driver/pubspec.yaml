@@ -49,6 +49,8 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/icon/airtel.png
+    - assets/icon/moov.png
   fonts:
     - family: IBMPlexSans
       fonts:

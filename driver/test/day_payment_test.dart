@@ -73,12 +73,13 @@ void main() {
 
     await tester.tap(find.text('1 jour'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Moov Money'));
+    await tester.enterText(find.byType(TextFormField), '062821855');
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
     verify(
       () => backend.payments.quote(
         operatorCode: 'MOOV_MONEY',
-        phone: '074111111',
+        phone: '062821855',
         days: 1,
       ),
     ).called(1);
@@ -122,7 +123,8 @@ void main() {
       ).invalidate(arrearsProvider);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Moov Money'));
+      await tester.enterText(find.byType(TextFormField), '062821855');
+    await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       final pay = find.widgetWithText(FilledButton, 'Payer 71 415 FCFA');
       await tester.scrollUntilVisible(pay, 200, scrollable: _scrollable);

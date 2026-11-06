@@ -21,7 +21,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Régulariser maintenant'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Moov Money'));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Payer 71 415 FCFA'));
     await tester.pump(const Duration(milliseconds: 100));
@@ -78,7 +78,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Régulariser maintenant'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Moov Money'));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Payer 71 415 FCFA'));
     await tester.pump(const Duration(milliseconds: 100));
