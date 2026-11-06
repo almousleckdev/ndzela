@@ -10,7 +10,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-// A good driver pays the day that is open since midnight; the 1-2 / 3 rule counts the unpaid days only
+// A good driver pays the day that is open since midnight; the 1-2 / 3 rule counts every day to settle: unpaid or open
 class PaymentSelectionOpenDaysTest extends AbstractAccountCalculatorTest {
     private static List<Integer> amounts(AccountState state) {
         return PaymentSelection.options(state).stream().map(o -> o.amount().intValue()).toList();
@@ -25,21 +25,28 @@ class PaymentSelectionOpenDaysTest extends AbstractAccountCalculatorTest {
     }
 
     @Test
-    void withTwoUnpaidDaysTheDriverChoosesOneTwoOrTheOpenDayToo() {
-        AccountState state = stateAt("2026-10-03T08:00:00");
+    void withTwoDaysToSettleTheDriverPaysTheFirstOrBothTogether() {
+        AccountState unpaidTwo = stateAt("2026-10-02T08:00:00");
+        assertEquals(1, unpaidTwo.unpaid());
+        assertEquals(List.of(23000, 46000), amounts(unpaidTwo));
 
-        assertEquals(2, state.unpaid());
-        assertEquals(List.of(23000, 46000, 69000), amounts(state));
+        AccountState twoUnpaid = stateAt("2026-10-02T13:00:00");
+        assertEquals(2, twoUnpaid.unpaid());
+        assertEquals(List.of(23000, 46000), amounts(twoUnpaid));
     }
 
     @Test
-    void withThreeUnpaidDaysOnlyPayingThemAllIsOffered() {
-        AccountState state = stateAt("2026-10-05T08:00:00");
+    void withThreeDaysToSettleOnlyPayingThemAllIsOffered() {
+        AccountState threeUnpaid = stateAt("2026-10-03T13:00:00");
+        assertEquals(List.of(69000), amounts(threeUnpaid));
 
-        assertEquals(3, state.unpaid());
-        List<PaymentOption> options = PaymentSelection.options(state);
+        AccountState twoUnpaidAndOneOpen = stateAt("2026-10-03T08:00:00");
+        assertEquals(2, twoUnpaidAndOneOpen.unpaid());
+        assertEquals(1, twoUnpaidAndOneOpen.awaitingDays());
+        List<PaymentOption> options = PaymentSelection.options(twoUnpaidAndOneOpen);
         assertEquals(1, options.size());
         assertEquals(69000, options.get(0).amount().intValue());
+        assertEquals(3, options.get(0).days());
     }
 
     @Test

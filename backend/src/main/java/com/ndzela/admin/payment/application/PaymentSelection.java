@@ -11,19 +11,16 @@ import java.util.List;
 
 // Which numbers of unpaid days a driver may pay, oldest first, and what each costs
 public final class PaymentSelection {
-    // From this many unpaid days the whole arrears must be paid at once
+    // From this many days to settle (unpaid, or open since midnight) everything must be paid at once
     static final int ALL_REQUIRED_FROM = 3;
 
     private PaymentSelection() {}
 
     public static List<PaymentOption> options(AccountState state) {
-        if (state.unpaid() >= ALL_REQUIRED_FROM) {
-            List<PaymentOption> all = optionsFor(state.unpaidCharges(), state.credit());
-            return List.of(all.get(all.size() - 1));
-        }
-        List<AccountCharge> payable = new ArrayList<>(state.unpaidCharges());
-        payable.addAll(state.awaitingCharges());
-        return optionsFor(payable, state.credit());
+        List<AccountCharge> toSettle = new ArrayList<>(state.unpaidCharges());
+        toSettle.addAll(state.awaitingCharges());
+        List<PaymentOption> options = optionsFor(toSettle, state.credit());
+        return options.size() >= ALL_REQUIRED_FROM ? List.of(options.get(options.size() - 1)) : options;
     }
 
     private static List<PaymentOption> optionsFor(List<AccountCharge> charges, BigDecimal credit) {
