@@ -146,7 +146,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiErrorResponse> handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
-        log.warn("Authentication failure: {}", ex.getMessage());
+        log.warn("Authentication failure: {} {} ({})", request.getMethod(), request.getRequestURI(), ex.getMessage());
         return buildResponse(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_FAILED", "Authentication failed. Please check your credentials.", request, null);
     }
 
