@@ -10,6 +10,7 @@ import com.ndzela.admin.driver.application.DriverArrearsService;
 import com.ndzela.admin.driver.application.model.DriverRef;
 import com.ndzela.admin.payment.api.dto.OperatorResponse;
 import com.ndzela.admin.payment.api.dto.PaidDayView;
+import com.ndzela.admin.payment.api.dto.PublicReceiptResponse;
 import com.ndzela.admin.payment.application.model.PaidDay;
 import com.ndzela.admin.payment.application.model.PaymentReceiptFile;
 import com.ndzela.admin.payment.application.model.ReceiptData;
@@ -23,6 +24,7 @@ import com.ndzela.admin.payment.domain.PaymentIntentStatus;
 import com.ndzela.admin.tenant.TenantHolder;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +51,9 @@ public class PaymentReceiptService {
     private final CountryRepository countries;
     private final PaymentOperatorService operators;
 
+    @Value("${app.public-site.url:https://ndzela.com}")
+    private String siteUrl;
+
     // A driver's own payment started from the app
     @Transactional(readOnly = true)
     public PaymentReceiptFile receiptOf(UUID driverId, UUID intentId) {
@@ -69,6 +74,15 @@ public class PaymentReceiptService {
         return build(entry, intent);
     }
 
+    // What the receipt's QR code shows to anyone who scans it: a payment of the caller's country, by its ledger entry id
+    @Transactional(readOnly = true)
+    public PublicReceiptResponse publicViewOf(UUID entryId) {
+        LedgerEntry entry = ledger.findById(entryId).filter(e -> e.getType() == LedgerEntryType.PAYMENT)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found."));
+        PaymentIntent intent = entry.getRequestId() == null ? null : store.find(entry.getRequestId()).orElse(null);
+        return PublicReceiptResponse.of(dataOf(entry, intent));
+    }
+
     // The days each app attempt settled, by attempt id (empty for an attempt not paid)
     @Transactional(readOnly = true)
     public Map<UUID, List<PaidDayView>> daysOfAttempts(Collection<UUID> intentIds) {
@@ -86,6 +100,11 @@ public class PaymentReceiptService {
     }
 
     private PaymentReceiptFile build(LedgerEntry entry, PaymentIntent intent) {
+        ReceiptData data = dataOf(entry, intent);
+        return new PaymentReceiptFile("recu-" + data.reference() + ".pdf", PaymentReceiptPdf.render(data));
+    }
+
+    private ReceiptData dataOf(LedgerEntry entry, PaymentIntent intent) {
         Country country = countries.findById(TenantHolder.requireCountry()).orElseThrow();
         ZoneId zone = ZoneId.of(country.getTimezone());
         DriverRef driver = driverArrears.get(entry.getDriverId());
@@ -93,7 +112,7 @@ public class PaymentReceiptService {
                 .map(d -> new PaidDay(d.getBusinessDay(), d.getKind(), d.getAmount(), d.isPaidOnTime())).toList();
         BigDecimal settled = days.stream().map(PaidDay::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
         String reference = intent != null ? intent.getReference() : entry.getReference();
-        ReceiptData data = new ReceiptData(
+        return new ReceiptData(
                 reference, intent != null ? intent.getProviderReference() : null,
                 entry.getCreatedAt().atZoneSameInstant(zone),
                 operatorLabel(intent != null ? intent.getOperatorCode() : entry.getMethod().name()),
@@ -102,8 +121,8 @@ public class PaymentReceiptService {
                 entry.getAmount(), intent != null ? intent.getFeeAmount() : null, country.getCurrencyCode(),
                 orDefault(country.getLegalName(), CountryBrand.ofCountry(country.getCode()).name()), country.getHeadOffice(),
                 country.getLegalPhone(), country.getLegalEmail(), CountryBrand.ofCountry(country.getCode()),
-                days, entry.getAmount().subtract(settled).max(BigDecimal.ZERO), ledger.existsByReversesEntryId(entry.getId()));
-        return new PaymentReceiptFile("recu-" + reference + ".pdf", PaymentReceiptPdf.render(data));
+                days, entry.getAmount().subtract(settled).max(BigDecimal.ZERO), ledger.existsByReversesEntryId(entry.getId()),
+                siteUrl.replaceAll("/+$", "") + "/recu/" + entry.getId());
     }
 
     private String operatorLabel(String code) {

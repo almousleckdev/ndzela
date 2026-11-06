@@ -10,7 +10,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-// The QR code of a receipt: only its reference, nothing personal
+// The QR code of a receipt: the address of its public page, which holds an unguessable payment id and nothing personal
 final class ReceiptQr {
     private static final int SIZE = 160;
 

@@ -161,7 +161,7 @@ final class PaymentReceiptPdf {
 
     private static Image qr(ReceiptData r) {
         try {
-            Image image = Image.getInstance(ReceiptQr.png(r.reference()));
+            Image image = Image.getInstance(ReceiptQr.png(r.verifyUrl()));
             image.scaleToFit(80, 80);
             image.setAlignment(Element.ALIGN_CENTER);
             image.setSpacingBefore(4);

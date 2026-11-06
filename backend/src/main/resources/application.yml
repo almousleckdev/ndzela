@@ -146,6 +146,7 @@ app:
   public-site:
     country-code: ${PUBLIC_SITE_COUNTRY:GA}          # the country the website's applications and messages belong to
     max-submissions-per-hour: ${PUBLIC_SITE_MAX_PER_HOUR:5}
+    url: ${PUBLIC_SITE_URL:https://ndzela.com}       # the website's address; the QR code of a receipt opens <url>/recu/<payment id>
     allowed-origins: ${PUBLIC_SITE_ORIGINS:http://localhost:3001}   # the website: may only post to /api/v1/public, never with credentials
   bootstrap:
     initial-admin-email: ${INITIAL_ADMIN_EMAIL:superadmin@ndzela.com}

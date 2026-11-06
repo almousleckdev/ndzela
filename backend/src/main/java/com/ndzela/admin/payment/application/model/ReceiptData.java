@@ -25,4 +25,5 @@ public record ReceiptData(
         CountryBrand brand,
         List<PaidDay> days,
         BigDecimal creditKept,
-        boolean cancelled) {}
+        boolean cancelled,
+        String verifyUrl) {}
