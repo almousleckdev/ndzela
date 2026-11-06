@@ -38,6 +38,7 @@ public class ZellaFeedService {
 
     private final ZellaClient zella;
     private final SessionPaymentRepository payments;
+    private final ZellaSessionWriter sessionWriter;
     private final IdTagRepository tags;
     private final ZellaFeedState state;
     private final TransactionTemplate transaction;
@@ -130,6 +131,7 @@ public class ZellaFeedService {
     }
 
     private int store(List<ZellaFeedItem> items) {
+        sessionWriter.store(items);
         Map<String, SessionPayment> known = new HashMap<>();
         payments.findAllByTransactionIdIn(items.stream().map(ZellaFeedItem::transactionId).toList()).forEach(p -> known.put(p.getTransactionId(), p));
         int changed = 0;
