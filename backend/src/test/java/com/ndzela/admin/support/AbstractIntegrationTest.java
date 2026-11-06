@@ -48,6 +48,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.flyway.locations", () -> "classpath:db/migration,classpath:db/test-migration");
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
+        registry.add("app.security.bcrypt-strength", () -> "4");
         registry.add("app.arrears.job-enabled", () -> "false");
         registry.add("app.ocpp.sync-enabled", () -> "false");
         registry.add("app.cors-allowed-origins", () -> "https://dashboard.ndzela.test");

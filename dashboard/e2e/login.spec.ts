@@ -20,6 +20,7 @@ test.describe("signing in", () => {
 
     await page.getByLabel("Code à 6 chiffres").fill("123456");
     await page.getByRole("button", { name: "Vérifier le code" }).click();
+    await expect(page.getByText("Code d'Authentification")).toBeVisible();
     await page.getByLabel("Code à 6 chiffres").fill("654321");
     await page.getByRole("button", { name: "Terminer la connexion" }).click();
 

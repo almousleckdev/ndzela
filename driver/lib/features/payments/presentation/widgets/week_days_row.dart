@@ -7,14 +7,17 @@ import '../../domain/week_days.dart';
 
 // Monday to Saturday of one week, each day paid, unpaid or waiting for its deadline.
 class WeekDaysRow extends StatelessWidget {
-  const WeekDaysRow({super.key, required this.week});
+  const WeekDaysRow({super.key, required this.week, this.today});
 
   final WeekDays week;
+  final DateTime? today;
 
   static const _names = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
   @override
   Widget build(BuildContext context) {
+    final now = today ?? DateTime.now();
+    final todayDate = DateTime(now.year, now.month, now.day);
     return Row(
       children: [
         for (var i = 0; i < WeekDays.rentDaysPerWeek; i++)
@@ -25,6 +28,9 @@ class WeekDaysRow extends StatelessWidget {
                 name: _names[i],
                 date: week.start.add(Duration(days: i)),
                 rent: week.days[i],
+                upcoming: week.start
+                    .add(Duration(days: i))
+                    .isAfter(todayDate),
               ),
             ),
           ),
@@ -70,11 +76,17 @@ const _looks = {
 };
 
 class _DayCell extends StatelessWidget {
-  const _DayCell({required this.name, required this.date, required this.rent});
+  const _DayCell({
+    required this.name,
+    required this.date,
+    required this.rent,
+    required this.upcoming,
+  });
 
   final String name;
   final DateTime date;
   final RentDay? rent;
+  final bool upcoming;
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +94,7 @@ class _DayCell extends StatelessWidget {
     return Semantics(
       container: true,
       excludeSemantics: true,
-      label: '$name ${date.day} : ${look?.label ?? 'pas de loyer'}',
+      label: '$name ${date.day} : ${look?.label ?? (upcoming ? 'à venir' : 'pas de loyer')}',
       child: Column(
         children: [
           Text(name, style: AppTextStyles.caption),
@@ -91,8 +103,10 @@ class _DayCell extends StatelessWidget {
             height: 46,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: look?.background,
-              border: look == null ? Border.all(color: AppColors.line) : null,
+              color: look?.background ?? (upcoming ? AppColors.canvas : null),
+              border: look == null && !upcoming
+                  ? Border.all(color: AppColors.line)
+                  : null,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(

@@ -17,9 +17,18 @@ public final class PaymentSelection {
     private PaymentSelection() {}
 
     public static List<PaymentOption> options(AccountState state) {
-        List<AccountCharge> charges = state.unpaidCharges();
+        if (state.unpaid() >= ALL_REQUIRED_FROM) {
+            List<PaymentOption> all = optionsFor(state.unpaidCharges(), state.credit());
+            return List.of(all.get(all.size() - 1));
+        }
+        List<AccountCharge> payable = new ArrayList<>(state.unpaidCharges());
+        payable.addAll(state.awaitingCharges());
+        return optionsFor(payable, state.credit());
+    }
+
+    private static List<PaymentOption> optionsFor(List<AccountCharge> charges, BigDecimal credit) {
         List<PaymentOption> options = new ArrayList<>();
-        BigDecimal running = state.credit().negate();
+        BigDecimal running = credit.negate();
         for (int i = 0; i < charges.size(); i++) {
             running = running.add(charges.get(i).amount());
             boolean closesADay = !charges.get(i).penalty() && !(i + 1 < charges.size() && charges.get(i + 1).penalty() && charges.get(i + 1).day().equals(charges.get(i).day()));
@@ -28,7 +37,7 @@ public final class PaymentSelection {
                 options.add(new PaymentOption(options.size() + 1, running.max(BigDecimal.ZERO)));
             }
         }
-        return options.size() >= ALL_REQUIRED_FROM ? List.of(options.get(options.size() - 1)) : options;
+        return options;
     }
 
     /** The option for `days`, or the last one (everything) when none is asked. */

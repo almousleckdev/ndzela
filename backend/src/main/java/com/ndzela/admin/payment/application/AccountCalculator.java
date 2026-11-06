@@ -55,8 +55,8 @@ public final class AccountCalculator {
             Instant due = dueAt(day, in.zone());
             if (!due.isAfter(in.now())) {
                 charges.add(new AccountCharge(day, due, rent, false));
-            } else if (day.isBefore(today)) {
-                awaiting.add(new AccountCharge(day, due, rent, false)); // the day has ended, its deadline has not come
+            } else {
+                awaiting.add(new AccountCharge(day, due, rent, false)); // the day has started, its deadline has not come
             }
         }
         for (AccountEntry e : in.entries()) {
@@ -146,7 +146,7 @@ public final class AccountCalculator {
     }
 
     static Instant dueAt(LocalDate day, ZoneId zone) {
-        return day.plusDays(1).atTime(DEADLINE).atZone(zone).toInstant();
+        return day.atTime(DEADLINE).atZone(zone).toInstant();
     }
 
     // When the credits first covered the given cumulative charges, or null when they never did.

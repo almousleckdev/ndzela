@@ -53,7 +53,7 @@ See [../multi-tenancy/multi-tenancy.md](../multi-tenancy/multi-tenancy.md).
 | Véhicule / car | Company-owned vehicle available for contracts. |
 | Contrat | Rental with ownership transfer: car + driver + start date + duration (billable days) + daily rent + deposit (caution). Ownership passes to the driver if all days are paid and the contract is respected. |
 | Jour facturé | Monday to Saturday; Sunday is a rest day, not billed. |
-| Échéance | Daily rent is due before 12:00 the next day. |
+| Échéance | Daily rent is due before 12:00 the same day. |
 | Loyer journalier | Fixed daily rent the driver owes (FCFA). |
 | Caution | Deposit (FCFA). |
 | Impayé / arrears | Unpaid daily rent. |

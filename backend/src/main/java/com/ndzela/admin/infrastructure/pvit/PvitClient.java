@@ -119,7 +119,12 @@ public class PvitClient {
     }
 
     private static PvitException failure(RestClientResponseException e) {
-        return new PvitException("PVit answered " + e.getStatusCode().value() + ".", e, e.getStatusCode().value() == 404);
+        return new PvitException("PVit answered " + e.getStatusCode().value() + reasonOf(e), e, e.getStatusCode().value() == 404);
+    }
+
+    private static String reasonOf(RestClientResponseException e) {
+        String body = e.getResponseBodyAsString().replaceAll("\\s+", " ").strip();
+        return body.isEmpty() ? "." : ": " + (body.length() > 300 ? body.substring(0, 300) : body);
     }
 
     private static BigDecimal decimal(JsonNode node) {

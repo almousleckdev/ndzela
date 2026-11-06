@@ -33,5 +33,6 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0026](0026-charging-accounts-linked-to-drivers.md) | Charging accounts (idTags) are linked to drivers by e-mail and phone, looked up in the Zella app | Accepted |
 | [0027](0027-refresh-token-reuse-window.md) | A rotated refresh token still works for 30 seconds, so a lost answer does not end a session | Accepted |
 | [0028](0028-public-sessions-from-the-zella-feed.md) | Sessions of other Zella customers reach NDZela as "Public", without identity | Accepted |
+| [0029](0029-rent-is-due-the-same-day-at-noon.md) | Rent is due the same day at noon and can be paid from midnight | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

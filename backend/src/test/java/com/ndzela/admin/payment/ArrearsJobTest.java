@@ -46,7 +46,7 @@ class ArrearsJobTest extends AbstractDriverTest {
         while (day.getDayOfWeek() == DayOfWeek.SUNDAY) {
             day = day.plusDays(1);
         }
-        firstDue = day.plusDays(1).atTime(12, 0).atZone(ZONE).toInstant();
+        firstDue = day.atTime(12, 0).atZone(ZONE).toInstant();
     }
 
     private void evaluateAt(long hoursAfterFirstDeadline) {
@@ -62,7 +62,7 @@ class ArrearsJobTest extends AbstractDriverTest {
                 counted++;
             }
         }
-        return day.plusDays(1).atTime(12, 0).atZone(ZONE).toInstant();
+        return day.atTime(12, 0).atZone(ZONE).toInstant();
     }
 
     private void evaluateWhenUnpaidDaysAre(int k) {
