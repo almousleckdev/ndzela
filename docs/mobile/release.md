@@ -25,7 +25,7 @@ A release build refuses to start without an HTTPS `API_BASE_URL` (see `AppConfig
 ## 4. Before the first test
 - Run `flutter analyze && flutter test` in `driver/`.
 - Sign in on a real phone with a test driver and pay once with the sandbox (150 FCFA), then check the receipt, the Historique tab and the staff dashboard's Transactions table.
-- The launcher icon comes from `driver/assets/icon/app_icon.png` (a 1024 px file made from the 500 px logo: **replace it with the designer's 1024 px master when available** and run `dart run flutter_launcher_icons`; see the driver README).
+- The launcher icon is the white NDZELA mark on the brand orange (`#E48102`), full bleed with no white border: `driver/assets/icon/app_icon.png` for iOS and `app_icon_foreground.png` (white mark on transparent) over the orange background for Android (a 1024 px file made from the 500 px logo: **replace it with the designer's 1024 px master when available** and run `dart run flutter_launcher_icons`; see the driver README).
 
 ## Store listing checklist (Google Play and App Store)
 - **Privacy policy URL:** `https://www.ndzela.com/confidentialite`; **terms:** `https://www.ndzela.com/conditions`; **account deletion page** (required by Google Play): `https://www.ndzela.com/suppression-compte`. Use `www`: the bare `ndzela.com` has no DNS record yet ([ADR-0018](../adr/0018-railway-hosting-and-domains.md) addendum).
