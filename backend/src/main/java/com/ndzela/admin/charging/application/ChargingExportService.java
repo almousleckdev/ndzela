@@ -38,7 +38,7 @@ public class ChargingExportService {
     private static final List<ExportColumn> COLUMNS = List.of(ExportColumn.of("Date", ExportKind.DATE, 14), ExportColumn.text("Heure", 10),
             ExportColumn.text("Type", 12), ExportColumn.text("Véhicule", 12), ExportColumn.text("Chauffeur", 24), ExportColumn.text("Station", 18),
             ExportColumn.of("Montant (FCFA)", ExportKind.MONEY, 14), ExportColumn.text("Moyen", 14), ExportColumn.text("Référence", 18),
-            ExportColumn.of("Batterie avant", ExportKind.PERCENT, 12), ExportColumn.of("Batterie après", ExportKind.PERCENT, 12),
+            ExportColumn.of("Batterie avant (%)", ExportKind.INTEGER, 12), ExportColumn.of("Batterie après (%)", ExportKind.INTEGER, 12),
             ExportColumn.of("kWh", ExportKind.DECIMAL, 8), ExportColumn.text("Motif", 22), ExportColumn.text("Statut", 10), ExportColumn.text("Saisi par", 18));
 
     private final ChargingEntryRepository entries;

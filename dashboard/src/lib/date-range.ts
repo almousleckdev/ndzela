@@ -1,6 +1,6 @@
-import { endOfMonth, format, startOfMonth, startOfYear, subDays, subMonths } from "date-fns";
+import { addDays, endOfMonth, format, startOfMonth, startOfYear, subDays, subMonths } from "date-fns";
 
-export type RangePreset = "today" | "yesterday" | "last7" | "last30" | "thisMonth" | "lastMonth" | "thisYear" | "all" | "custom";
+export type RangePreset = "today" | "yesterday" | "last7" | "last30" | "last6Months" | "last12Months" | "thisMonth" | "lastMonth" | "thisYear" | "all" | "custom";
 
 // Inclusive days as yyyy-MM-dd; an empty string leaves that side open.
 export interface DateRange {
@@ -14,6 +14,8 @@ export const PRESETS: { key: Exclude<RangePreset, "custom">; label: string }[] =
   { key: "yesterday", label: "Hier" },
   { key: "last7", label: "7 derniers jours" },
   { key: "last30", label: "30 derniers jours" },
+  { key: "last6Months", label: "6 derniers mois" },
+  { key: "last12Months", label: "12 derniers mois" },
   { key: "thisMonth", label: "Ce mois" },
   { key: "lastMonth", label: "Mois dernier" },
   { key: "thisYear", label: "Cette année" },
@@ -31,6 +33,8 @@ export function rangeOf(preset: Exclude<RangePreset, "custom">, today: Date = ne
     case "yesterday": return { from: iso(subDays(today, 1)), to: iso(subDays(today, 1)), preset };
     case "last7": return { from: iso(subDays(today, 6)), to: iso(today), preset };
     case "last30": return { from: iso(subDays(today, 29)), to: iso(today), preset };
+    case "last6Months": return { from: iso(addDays(subMonths(today, 6), 1)), to: iso(today), preset };
+    case "last12Months": return { from: iso(addDays(subMonths(today, 12), 1)), to: iso(today), preset };
     case "thisMonth": return { from: iso(startOfMonth(today)), to: iso(today), preset };
     case "lastMonth": {
       const previous = subMonths(today, 1);

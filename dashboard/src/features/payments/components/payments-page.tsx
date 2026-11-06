@@ -59,7 +59,7 @@ function PaymentsContent() {
     <Page>
       <PageHead title="Suivi paiements" description="Qui a payé son loyer, qui est en retard et depuis quand. L'échéance de chaque jour est le lendemain à 12 h."
         actions={can(PERMISSIONS.PAYMENTS_EXPORT) && (
-          <ExportMenu path={(format) => paymentsService.accountsExportPath(filter, query.q, { paidFrom: range.from, paidTo: range.to }, format)} filename="comptes-chauffeurs" failure="Impossible d'exporter les comptes." />
+          <ExportMenu range={range} path={(format, c) => paymentsService.accountsExportPath(filter, query.q, { paidFrom: c.range.from, paidTo: c.range.to }, format)} filename="comptes-chauffeurs" failure="Impossible d'exporter les comptes." />
         )} />
       <KpiBand items={kpis} />
       <Panel>

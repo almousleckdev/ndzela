@@ -59,7 +59,7 @@ function AuditContent() {
     <Page>
       <PageHead title="Journal d'audit" description="Qui a fait quoi, et quand. Les enregistrements ne peuvent ni être modifiés ni supprimés."
         actions={can(PERMISSIONS.AUDIT_EXPORT) && (
-          <ExportMenu path={(format) => auditService.exportPath({ action: filters.action ?? "", actor: query.q, targetType: filters.targetType ?? "", from: range.from, to: range.to }, format)}
+          <ExportMenu range={range} path={(format, c) => auditService.exportPath({ action: filters.action ?? "", actor: query.q, targetType: filters.targetType ?? "", from: c.range.from, to: c.range.to }, format)}
             filename="audit" failure="Impossible d'exporter le journal d'audit." />
         )} />
       <Panel>

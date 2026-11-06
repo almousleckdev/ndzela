@@ -31,6 +31,12 @@ public class ExportBranding {
         return new ExportHeader(brand.name(), brand.logo(), period(from, to), STAMP.format(LocalDateTime.now(zone())));
     }
 
+    // The same, with what else the table is limited to written next to the dates ("Chauffeurs NDZela")
+    public ExportHeader header(LocalDate from, LocalDate to, String scope) {
+        ExportHeader base = header(from, to);
+        return new ExportHeader(base.brand(), base.logo(), base.period() + " · " + scope, base.exportedAt());
+    }
+
     // The day a moment falls on in the country's time zone (a recharge at 00:30 in Libreville is not yesterday's)
     public LocalDate day(OffsetDateTime moment) {
         return moment.atZoneSameInstant(zone()).toLocalDate();

@@ -110,7 +110,7 @@ function VehiclesContent() {
         description="Les véhicules de la flotte, leur état et leur loyer journalier."
         actions={(
           <>
-            {can(PERMISSIONS.VEHICLES_EXPORT) && <ExportMenu path={(format) => vehiclesService.exportPath({ status, q: query.q, from: range.from, to: range.to }, format)} filename="vehicules" failure="Impossible d'exporter les véhicules." />}
+            {can(PERMISSIONS.VEHICLES_EXPORT) && <ExportMenu range={range} path={(format, c) => vehiclesService.exportPath({ status, q: query.q, from: c.range.from, to: c.range.to }, format)} filename="vehicules" failure="Impossible d'exporter les véhicules." />}
             {can(PERMISSIONS.VEHICLES_CREATE) && (
               <div className="text-right">
                 <Button onClick={() => setEditing("new")} disabled={mustPickCountry}><Plus className="mr-2 h-4 w-4" /> Ajouter un véhicule</Button>

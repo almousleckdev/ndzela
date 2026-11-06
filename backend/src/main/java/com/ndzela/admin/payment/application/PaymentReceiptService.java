@@ -51,7 +51,7 @@ public class PaymentReceiptService {
     private final CountryRepository countries;
     private final PaymentOperatorService operators;
 
-    @Value("${app.public-site.url:https://ndzela.com}")
+    @Value("${app.public-site.url:https://www.ndzela.com}")
     private String siteUrl;
 
     // A driver's own payment started from the app

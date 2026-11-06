@@ -96,7 +96,7 @@ function ChargingContent() {
           <>
             {can(PERMISSIONS.CHARGING_LINK) && <Button variant="outline" onClick={() => setTagsOpen(true)}><Link2 className="mr-2 h-4 w-4" /> Comptes</Button>}
             {can(PERMISSIONS.CHARGING_MANAGE) && <Button variant="outline" onClick={() => setStationsOpen(true)}><Zap className="mr-2 h-4 w-4" /> Stations</Button>}
-            {can(PERMISSIONS.CHARGING_EXPORT) && tab === "recharges" && <ExportMenu path={(f) => chargingService.exportPath({ q: query.q, from: range.from, to: range.to }, f)} filename="recharges" failure="Impossible d'exporter les recharges." />}
+            {can(PERMISSIONS.CHARGING_EXPORT) && tab === "recharges" && <ExportMenu range={range} path={(f, c) => chargingService.exportPath({ q: query.q, from: c.range.from, to: c.range.to }, f)} filename="recharges" failure="Impossible d'exporter les recharges." />}
             {can(PERMISSIONS.CHARGING_CREATE) && <Button onClick={() => setRecording(true)}><Plus className="mr-2 h-4 w-4" /> Enregistrer une recharge</Button>}
           </>
         )}

@@ -131,7 +131,7 @@ function DriversContent() {
         actions={(
           <>
             {can(PERMISSIONS.TRAINING_CENTERS_MANAGE) && <Button variant="outline" onClick={() => setCentersOpen(true)}><GraduationCap className="mr-2 h-4 w-4" /> Centres de formation</Button>}
-            {can(PERMISSIONS.DRIVERS_EXPORT) && <ExportMenu path={(format) => driversService.exportPath({ ...server, q: query.q, from: range.from, to: range.to }, format)} filename="chauffeurs" failure="Impossible d'exporter les chauffeurs." />}
+            {can(PERMISSIONS.DRIVERS_EXPORT) && <ExportMenu range={range} path={(format, c) => driversService.exportPath({ ...server, q: query.q, from: c.range.from, to: c.range.to }, format)} filename="chauffeurs" failure="Impossible d'exporter les chauffeurs." />}
             {can(PERMISSIONS.DRIVERS_CREATE) && (
               <div className="text-right">
                 {mustPickCountry ? <Button disabled><Plus className="mr-2 h-4 w-4" /> Nouveau chauffeur</Button> : <Link href="/drivers/new"><Button><Plus className="mr-2 h-4 w-4" /> Nouveau chauffeur</Button></Link>}

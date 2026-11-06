@@ -70,14 +70,15 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
       return p ? <Stack primary={p.total === null ? <None /> : <span className="whitespace-nowrap tabular-nums">{formatFcfa(p.total)}</span>} secondary={state ? <Badge variant={state.variant}>{state.label}</Badge> : undefined} /> : <None />;
     } }),
     col.display({ id: "soc", header: "Batterie", cell: (c) => { const battery = batteryLabel(c.row.original); return battery ? <Stack primary={<span className="whitespace-nowrap tabular-nums">{battery.primary}</span>} secondary={battery.secondary} /> : <None />; } }),
-    col.accessor("status", { id: "status", header: "Statut", enableSorting: false, cell: (c) => <Stack primary={statusLabel(c.getValue()) ?? <None />} secondary={reasonLabel(c.row.original.stopReason) ?? undefined} /> }),
+    col.accessor("status", { id: "status", header: "Statut", enableSorting: false, cell: (c) => <Stack primary={statusLabel(c.getValue()) ?? <None />} secondary={reasonLabel(c.row.original.stopReason, c.row.original.endedAt !== null) ?? undefined} /> }),
     col.accessor("transactionId", { id: "transactionId", header: "Référence", enableSorting: false, cell: (c) => <span className="font-mono text-xs">{c.getValue()}</span> }),
     col.display({ id: "payment", header: "Paiement", enableHiding: false, cell: (c) => {
       const row = c.row.original;
       if (row.rechargeId) return <Badge variant="success">Payée</Badge>;
       if (row.payment?.state === "CHARGED") return <Badge variant="success">Payée · Zella</Badge>;
       if (isRunning(row)) return <Badge variant="info">En cours</Badge>;
-      return can(PERMISSIONS.CHARGING_CREATE) ? <Button size="sm" variant="outline" onClick={() => onRecord(row)}>Enregistrer le paiement</Button> : <Badge>Non enregistrée</Badge>;
+      if (holderKindOf(row) === "PUBLIC") return <Badge>Sans objet (public)</Badge>;
+      return can(PERMISSIONS.CHARGING_CREATE) ? <Button size="sm" variant="outline" onClick={() => onRecord(row)}>Enregistrer le paiement</Button> : <Badge variant="warning">À enregistrer</Badge>;
     } }),
     col.display({ id: "detail", header: () => <span className="sr-only">Détail</span>, enableHiding: false, cell: (c) => <Button size="sm" variant="ghost" onClick={() => setDetail(c.row.original)}>Détail</Button> }),
   ]), [can, onRecord]);
@@ -99,7 +100,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
           <DateRangePicker value={range} onChange={query.setRange} />
         </>
       )} end={can(PERMISSIONS.CHARGING_EXPORT) && (
-        <ExportMenu path={(format) => chargingService.exportSessionsPath({ q: query.q, from: range.from, to: range.to, kind }, format)} filename="sessions-reseau" failure="Impossible d'exporter les sessions." />
+        <ExportMenu range={range} option={{ label: "Type de sessions", options: KIND_TABS, initial: kind }} path={(format, c) => chargingService.exportSessionsPath({ q: query.q, from: c.range.from, to: c.range.to, kind: (c.option as SessionKind | undefined) ?? kind }, format)} filename="sessions-reseau" failure="Impossible d'exporter les sessions." />
       )} />
       <ActiveFilters filters={active} onClear={query.reset} />
       <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} numeric={["energyKwh", "amount"]}

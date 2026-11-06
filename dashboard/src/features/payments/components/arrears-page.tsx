@@ -57,7 +57,7 @@ function ArrearsContent() {
     <Page>
       <PageHead title="Gérer impayés" description="Les chauffeurs dont le loyer n'est pas réglé, du plus ancien au plus récent. À 3 jours d'impayés le chauffeur est suspendu automatiquement."
         actions={can(PERMISSIONS.PAYMENTS_EXPORT) && (
-          <ExportMenu path={(format) => paymentsService.accountsExportPath(filter, query.q, { lateFrom: range.from, lateTo: range.to }, format)} filename="comptes-impayes" failure="Impossible d'exporter les comptes." />
+          <ExportMenu range={range} path={(format, c) => paymentsService.accountsExportPath(filter, query.q, { lateFrom: c.range.from, lateTo: c.range.to }, format)} filename="comptes-impayes" failure="Impossible d'exporter les comptes." />
         )} />
       <KpiBand items={[
         { label: "Total impayé", value: s ? formatFcfa(s.totalOverdue) : "-", tone: s && s.totalOverdue > 0 ? "bad" : undefined },

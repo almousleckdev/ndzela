@@ -27,7 +27,7 @@ Reference variables (`${{Service.NAME}}`) are filled by Railway. **Generate new 
 | `SWAGGER_ENABLED` | `false` |
 | `FORWARD_HEADERS_STRATEGY` | `native` (Railway's proxy sets `X-Forwarded-*`; the app is only reachable through it) |
 | `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS` | `https://dashboard.ndzela.com` (exact origin, no trailing slash). **Only the web admin goes here**: these origins may send the sign-in cookie |
-| `PUBLIC_SITE_URL` | `https://ndzela.com`: the QR code of a receipt opens `/recu/<payment id>` there. |
+| `PUBLIC_SITE_URL` | `https://www.ndzela.com`: the QR code of a receipt opens `/recu/<payment id>` there; use the address that resolves (see ADR-0018 addendum). |
 | `PUBLIC_SITE_ORIGINS` | `https://ndzela.com,https://www.ndzela.com`: the public website, which may only post its forms to `/api/v1/public`, never with the cookie (see [ADR-0018](../adr/0018-railway-hosting-and-domains.md)) |
 | `MAIL_PROVIDER`, `RESEND_API_KEY`, `MAIL_FROM` | `resend`, the Resend key, a sender on the verified domain (for example `no-reply@ndzela.com`). Railway's smaller plans block outgoing SMTP, so do not use `smtp`; never `log` |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | From the console. `CLOUDINARY_ROOT_FOLDER=ndzela-prod` |

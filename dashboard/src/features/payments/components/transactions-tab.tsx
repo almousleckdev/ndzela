@@ -68,7 +68,7 @@ export function TransactionsTab() {
           <DateRangePicker value={range} onChange={query.setRange} />
         </>
       )} end={can(PERMISSIONS.PAYMENTS_EXPORT) && (
-        <ExportMenu path={(format) => paymentsService.exportPath({ type: "PAYMENT", method: params.method, q: query.q, from: range.from, to: range.to }, format)} filename="paiements" failure="Impossible d'exporter les paiements." />
+        <ExportMenu range={range} path={(format, c) => paymentsService.exportPath({ type: "PAYMENT", method: params.method, q: query.q, from: c.range.from, to: c.range.to }, format)} filename="paiements" failure="Impossible d'exporter les paiements." />
       )} />
       <ActiveFilters filters={active} onClear={query.reset} />
       <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} numeric={["amount"]}

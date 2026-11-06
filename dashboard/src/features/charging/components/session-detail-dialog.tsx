@@ -46,7 +46,7 @@ export function SessionDetailDialog({ session: s, onClose }: { session: Charging
             ["Énergie", s.energyKwh === null ? null : `${s.energyKwh} kWh`],
             ["Batterie", battery?.primary],
             ["Statut", statusLabel(s.status)],
-            ["Motif d'arrêt", reasonLabel(s.stopReason)],
+            ["Motif d'arrêt", reasonLabel(s.stopReason, s.endedAt !== null)],
             ["Montant calculé (énergie × tarif)", money(s.amount)],
           ]} />
         </section>

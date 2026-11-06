@@ -15,7 +15,7 @@ Backend settings are environment variables read by `application.yml` (optionally
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | PostgreSQL | local dev values |
 | `REDIS_HOST`, `REDIS_PORT` | Redis | `localhost`, `6379` |
 | `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS` | Links in emails, CORS | `http://localhost:3000` |
-| `PUBLIC_SITE_URL` | Address of the public website (`https://ndzela.com`): the QR code of a receipt opens `<url>/recu/<payment id>`. |
+| `PUBLIC_SITE_URL` | Address of the public website (`https://www.ndzela.com`, the address that is served): the QR code of a receipt opens `<url>/recu/<payment id>`. |
 | `PUBLIC_SITE_ORIGINS` | Origins of the public website, allowed to post to `/api/v1/public/**` only and never with credentials (`CORS_ALLOWED_ORIGINS` is the web admin and may send the cookie) | `http://localhost:3001` |
 | `PORT` | Port to listen on (set by Railway and similar hosts) | `8080` |
 | `REDIS_PASSWORD` | Redis password, when it has one | empty |

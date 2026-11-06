@@ -10,6 +10,8 @@ describe("rangeOf", () => {
     expect(rangeOf("yesterday", today)).toMatchObject({ from: "2026-10-13", to: "2026-10-13" });
     expect(rangeOf("last7", today)).toMatchObject({ from: "2026-10-08", to: "2026-10-14" });
     expect(rangeOf("last30", today)).toMatchObject({ from: "2026-09-15", to: "2026-10-14" });
+    expect(rangeOf("last6Months", today)).toMatchObject({ from: "2026-04-15", to: "2026-10-14" });
+    expect(rangeOf("last12Months", today)).toMatchObject({ from: "2025-10-15", to: "2026-10-14" });
   });
 
   it("knows the month and year boundaries", () => {
