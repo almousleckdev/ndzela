@@ -5,6 +5,7 @@ import '../../../core/platform/app_icons.dart';
 import '../../../core/widgets/adaptive/app_icon_button.dart';
 import '../../../core/widgets/feedback/async_view.dart';
 import '../../../core/widgets/feedback/empty_state.dart';
+import '../../../core/widgets/feedback/screen_skeleton.dart';
 import '../../../core/widgets/layout/screen_scaffold.dart';
 import '../../auth/presentation/confirm_logout.dart';
 import '../domain/driver_access.dart';
@@ -15,8 +16,9 @@ import 'payments_providers.dart';
 import 'widgets/access_restriction_banner.dart';
 import 'widgets/payment_form.dart';
 import 'widgets/payment_result_view.dart';
+import 'widgets/payment_stalled_view.dart';
 import 'widgets/payment_tracking_view.dart';
-import 'widgets/week_banner.dart';
+import 'widgets/due_banner.dart';
 
 class PaymentScreen extends ConsumerWidget {
   const PaymentScreen({super.key});
@@ -27,9 +29,7 @@ class PaymentScreen extends ConsumerWidget {
         ref.watch(driverAccessProvider) == DriverAccess.restricted;
     return ScreenScaffold(
       title: 'Paiement',
-      subtitle: restricted
-          ? 'Accès limité au paiement'
-          : 'Régularisez vos loyers en retard',
+      subtitle: restricted ? 'Accès limité au paiement' : 'Réglez votre loyer',
       // A restricted driver has no tabs, so signing out has to be possible from here.
       trailing: restricted
           ? AppIconButton(
@@ -42,23 +42,27 @@ class PaymentScreen extends ConsumerWidget {
         PaymentFlowTracking(:final attempt) => PaymentTrackingView(
           attempt: attempt,
         ),
+        PaymentFlowStalled(:final attempt) => PaymentStalledView(
+          attempt: attempt,
+        ),
         PaymentFlowFinished(:final attempt) => PaymentResultView(
           attempt: attempt,
         ),
         PaymentFlowIdle() => AsyncView(
           value: ref.watch(arrearsProvider),
           onRetry: () => ref.invalidate(arrearsProvider),
+          skeleton: const ScreenSkeleton(),
           data: (arrears) => Column(
             children: [
               if (arrears.restricted) AccessRestrictionBanner(arrears: arrears),
-              if (arrears.showsWeekWarning(DateTime.now()))
-                WeekBanner(arrears: arrears),
+              if (arrears.canPay && arrears.settleBy != null)
+                DueBanner(arrears: arrears, now: DateTime.now()),
               Expanded(
-                child: arrears.isLate
+                child: arrears.canPay
                     ? PaymentForm(arrears: arrears)
                     : const EmptyState(
                         icon: AppIcons.done,
-                        title: 'Aucun loyer à régulariser',
+                        title: 'Aucun loyer à régler',
                         message: 'Vous êtes à jour. Merci !',
                       ),
               ),

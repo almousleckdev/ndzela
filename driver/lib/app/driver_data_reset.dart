@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/platform/temporary_files.dart';
 import '../features/auth/domain/session.dart';
 import '../features/auth/presentation/session_controller.dart';
 import '../features/contract/presentation/contract_providers.dart';
@@ -12,6 +13,7 @@ import '../features/support/presentation/support_providers.dart';
 final driverDataResetProvider = Provider<void>((ref) {
   ref.listen(sessionControllerProvider, (previous, next) {
     if (next is! SignedOut) return;
+    clearTemporaryFiles();
     ref
       ..invalidate(driverProfileProvider)
       ..invalidate(driverPhotoProvider)

@@ -1,13 +1,37 @@
 import 'package:driver/app/theme/app_theme.dart';
+import 'package:driver/features/auth/presentation/login_screen.dart';
 import 'package:driver/core/widgets/feedback/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/fakes.dart';
 import 'support/phone_view.dart';
 
 void main() {
   testWidgets(
-    'the splash screen shows the name and a skeleton on a small phone',
+    'the splash stays for its minimum time even when the app is ready',
+    (tester) async {
+      usePhone(tester);
+
+      await tester.pumpWidget(
+        appWith(
+          FakeBackend(),
+          splashMinimum: const Duration(milliseconds: 1500),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 800));
+      expect(find.byType(SplashScreen), findsOneWidget);
+      expect(find.byType(LoginScreen), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pumpAndSettle();
+      expect(find.byType(SplashScreen), findsNothing);
+      expect(find.byType(LoginScreen), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'the splash screen shows the logo and the name on a small phone',
     (tester) async {
       usePhone(tester, height: 1700);
 

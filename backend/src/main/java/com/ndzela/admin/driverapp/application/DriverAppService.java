@@ -18,6 +18,7 @@ import com.ndzela.admin.driverapp.api.dto.DriverMeResponse;
 import com.ndzela.admin.driverapp.api.dto.DriverVehicleResponse;
 import com.ndzela.admin.payment.api.dto.AccountDetail;
 import com.ndzela.admin.payment.application.AccountQueryService;
+import com.ndzela.admin.payment.application.model.PayableDays;
 import com.ndzela.admin.vehicle.application.VehicleService;
 
 import lombok.RequiredArgsConstructor;
@@ -103,8 +104,10 @@ public class DriverAppService {
     public DriverAccountResponse account(UUID driverId) {
         Driver driver = drivers.findById(driverId).orElseThrow();
         AccountDetail account = accounts.account(driverId);
+        PayableDays payable = accounts.payable(driverId);
         return new DriverAccountResponse(account.unpaid(), account.overdueAmount().setScale(0, RoundingMode.HALF_UP), driver.getCountry().getCurrencyCode(), props.driverApp().locks(account.unpaid()),
-                driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED, account.weekClosesAt(), account.weekSettled(), accounts.payable(driverId).options(),
+                driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED, account.weekClosesAt(), account.weekSettled(),
+                payable.settleBy() == null ? null : payable.settleBy().atOffset(java.time.ZoneOffset.UTC), payable.options(),
                 accounts.weekHistory(driverId, HISTORY_WEEKS).stream().map(DriverDayResponse::from).toList());
     }
 

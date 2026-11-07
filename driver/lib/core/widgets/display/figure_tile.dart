@@ -13,6 +13,7 @@ class FigureTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 60),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -21,10 +22,24 @@ class FigureTile extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: AppTextStyles.caption),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption,
+          ),
           const SizedBox(height: 2),
-          Text(value, style: AppTextStyles.figure.copyWith(fontSize: 14)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: AppTextStyles.figure.copyWith(fontSize: 14),
+            ),
+          ),
         ],
       ),
     );

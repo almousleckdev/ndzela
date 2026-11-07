@@ -15,6 +15,13 @@ void main() {
     final backend = FakeBackend(signedIn: true);
     await tester.pumpWidget(appWith(backend));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Régulariser maintenant'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('Régulariser maintenant'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Régulariser maintenant'));
     await tester.pumpAndSettle();
     return backend;

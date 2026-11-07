@@ -11,7 +11,7 @@ import '../../../core/widgets/adaptive/app_password_field.dart';
 import '../../../core/widgets/feedback/error_banner.dart';
 import '../domain/reset_credentials.dart';
 import 'forgot_password_controller.dart';
-import 'widgets/auth_step_scaffold.dart';
+import 'widgets/auth_hero_scaffold.dart';
 
 // Step 3 of a forgotten password: the new password, once the code is known to be good.
 class NewPasswordScreen extends ConsumerStatefulWidget {
@@ -55,7 +55,8 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(forgotPasswordControllerProvider);
-    return AuthStepScaffold(
+    return AuthHeroScaffold(
+      showBack: true,
       title: 'Nouveau mot de passe',
       subtitle: 'Choisissez un mot de passe personnel.',
       children: [

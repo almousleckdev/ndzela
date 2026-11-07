@@ -56,7 +56,7 @@ class PaymentIntentServiceSandboxTest {
 
         when(operators.requireActive("AIRTEL_MONEY")).thenReturn(new OperatorResponse("AIRTEL_MONEY", "Airtel Money"));
         when(countries.findById(countryId)).thenReturn(Optional.of(Country.builder().id(countryId).phoneCode("+241").currencyCode("XAF").build()));
-        when(queries.payable(driverId)).thenReturn(new PayableDays(contractId, java.util.List.of(new PaymentOption(3, new BigDecimal("69000")))));
+        when(queries.payable(driverId)).thenReturn(new PayableDays(contractId, java.util.List.of(new PaymentOption(3, new BigDecimal("69000"))), null));
         UUID intentId = UUID.randomUUID();
         when(store.createPending(eq(driverId), eq(contractId), eq("AIRTEL_MONEY"), eq("074111111"), any(), eq("XAF"), eq(3))).thenAnswer(call -> PaymentIntent.builder().id(intentId)
                 .reference("NDZREF").amount(call.getArgument(4)).status(PaymentIntentStatus.PENDING).build());

@@ -66,6 +66,17 @@ class PaymentReceiptTest extends AbstractDriverPayingTest {
     }
 
     @Test
+    void theReceiptShowsTheFleetNumberOfTheDriversCar() throws Exception {
+        payOneOfTwoDays();
+        String fleetNumber = jdbc.queryForObject("select fleet_number from vehicles limit 1", String.class);
+
+        String text = text(receipt());
+
+        assertTrue(text.contains("Véhicule"), text);
+        assertTrue(text.contains(fleetNumber), text);
+    }
+
+    @Test
     void theReceiptNamesTheDayPaidAndWhenItWasPaid() throws Exception {
         payOneOfTwoDays();
 
@@ -92,7 +103,7 @@ class PaymentReceiptTest extends AbstractDriverPayingTest {
         PdfReader reader = new PdfReader(receipt());
 
         assertEquals(226.8f, reader.getPageSize(1).getWidth(), 1.0f);
-        assertTrue(reader.getPageSize(1).getHeight() < 600f);
+        assertTrue(reader.getPageSize(1).getHeight() < 640f);
         assertEquals(1, reader.getNumberOfPages());
     }
 

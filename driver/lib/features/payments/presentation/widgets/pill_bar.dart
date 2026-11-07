@@ -3,18 +3,21 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/brand_colors.dart';
 import '../../../../core/widgets/adaptive/app_tappable.dart';
-import '../history_filter.dart';
 
-// The choice of which payments to list, as pills the driver can scroll sideways.
-class HistoryFilterBar extends StatelessWidget {
-  const HistoryFilterBar({
+// A choice among a few values, as pills the driver can scroll sideways.
+class PillBar<T> extends StatelessWidget {
+  const PillBar({
     super.key,
+    required this.values,
+    required this.labelOf,
     required this.selected,
     required this.onSelected,
   });
 
-  final HistoryFilter selected;
-  final ValueChanged<HistoryFilter> onSelected;
+  final List<T> values;
+  final String Function(T value) labelOf;
+  final T selected;
+  final ValueChanged<T> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +25,11 @@ class HistoryFilterBar extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final filter in HistoryFilter.values) ...[
+          for (final filter in values) ...[
             Semantics(
               button: true,
               selected: filter == selected,
-              label: filter.label,
+              label: labelOf(filter),
               child: AppTappable(
                 onTap: () => onSelected(filter),
                 borderRadius: BorderRadius.circular(22),
@@ -47,7 +50,7 @@ class HistoryFilterBar extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    filter.label,
+                    labelOf(filter),
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       color: filter == selected ? Colors.white : AppColors.ink,

@@ -32,6 +32,13 @@ class TokenStorage {
   }
 }
 
+// Tokens stay on this phone: never in a backup, never moved to another device.
+const secureStorage = FlutterSecureStorage(
+  iOptions: IOSOptions(
+    accessibility: KeychainAccessibility.first_unlock_this_device,
+  ),
+);
+
 final tokenStorageProvider = Provider<TokenStorage>(
-  (ref) => const TokenStorage(FlutterSecureStorage()),
+  (ref) => const TokenStorage(secureStorage),
 );

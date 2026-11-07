@@ -195,8 +195,11 @@ class ArrearsJobTest extends AbstractDriverTest {
     @Test
     void aDeclaredLeaveRemovesTheRentOfThoseDays() throws Exception {
         LocalDate tomorrow = LocalDate.now(ZONE).plusDays(1);
+        while (tomorrow.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            tomorrow = tomorrow.plusDays(1);
+        }
         postJson("/api/v1/drivers/" + driver + "/leaves", "{\"type\":\"SINGLE_DAY\",\"startDate\":\"" + tomorrow + "\",\"reason\":\"PUBLIC_HOLIDAY\"}", manager).andExpect(status().isCreated());
-        arrears.evaluateAll(tomorrow.plusDays(1).atTime(13, 0).atZone(ZONE).toInstant());
-        assertEquals(tomorrow.getDayOfWeek() == DayOfWeek.SUNDAY ? "NONE" : "NONE", level(), "the only rent due by then was the waived day");
+        arrears.evaluateAll(tomorrow.atTime(13, 0).atZone(ZONE).toInstant());
+        assertEquals("NONE", level(), "the only rent due by then was the waived day");
     }
 }

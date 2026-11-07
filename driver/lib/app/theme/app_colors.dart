@@ -13,5 +13,7 @@ abstract final class AppColors {
   static const moov = Color(0xFF0066B3);
   static const whatsapp = Color(0xFF25D366);
   static const whatsappSoft = Color(0xFFDCFCE7);
+  static const skeleton = Color(0xFFE9EDF2);
+  static const skeletonLight = Color(0xFFF7F9FB);
   static const orange = Color(0xFFFF7900);
 }

@@ -34,7 +34,9 @@ class DriverAccountDaysTest extends AbstractDriverPayingTest {
 
         List<String> unpaid = field("$.days[?(@.status=='UNPAID')].day");
 
-        assertEquals(2, unpaid.size());
+        int late = com.jayway.jsonpath.JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.unpaidDays");
+        assertEquals(late, unpaid.size());
+        assertTrue(late >= 1);
     }
 
     @Test

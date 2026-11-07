@@ -34,6 +34,9 @@ class DriverProfileApiTest extends AbstractDriverAppTest {
         mvc.perform(post("/api/v1/driver/account/deletion-request")).andExpect(status().isUnauthorized());
         org.junit.jupiter.api.Assertions.assertTrue(rows("select count(*) from notifications where type = 'DRIVER_DELETION_REQUEST'") >= 1);
         org.junit.jupiter.api.Assertions.assertEquals(1, auditRows("DRIVER_DELETION_REQUESTED"));
+        String actor = jdbc.queryForObject("select actor from audit_logs where action = 'DRIVER_DELETION_REQUESTED'", String.class);
+        org.junit.jupiter.api.Assertions.assertTrue(actor.startsWith("Chauffeur · "), actor);
+        org.junit.jupiter.api.Assertions.assertFalse(actor.contains("DriverPrincipal") || actor.contains("countryId"), actor);
         org.junit.jupiter.api.Assertions.assertEquals(1, rows("select count(*) from support_messages where body like 'Demande de suppression%'"));
     }
 

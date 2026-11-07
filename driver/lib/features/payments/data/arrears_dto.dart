@@ -10,8 +10,7 @@ class ArrearsDto {
     required this.locked,
     required this.suspended,
     this.options = const [],
-    this.weekClosesAt,
-    this.weekSettled = true,
+    this.settleBy,
   });
 
   factory ArrearsDto.fromJson(Map<String, dynamic> json) => ArrearsDto(
@@ -24,8 +23,7 @@ class ArrearsDto {
       for (final item in json['options'] as List<dynamic>? ?? const [])
         PaymentOptionDto.fromJson(item as Map<String, dynamic>),
     ],
-    weekClosesAt: json['weekClosesAt'] as String?,
-    weekSettled: json['weekSettled'] as bool? ?? true,
+    settleBy: json['settleBy'] as String?,
   );
 
   final int unpaidDays;
@@ -34,8 +32,7 @@ class ArrearsDto {
   final bool locked;
   final bool suspended;
   final List<PaymentOptionDto> options;
-  final String? weekClosesAt;
-  final bool weekSettled;
+  final String? settleBy;
 
   ArrearsSummary toDomain() => ArrearsSummary(
     unpaidDays: unpaidDays,
@@ -43,9 +40,6 @@ class ArrearsDto {
     locked: locked,
     suspended: suspended,
     options: [for (final option in options) option.toDomain(currency)],
-    weekClosesAt: weekClosesAt == null
-        ? null
-        : DateTime.parse(weekClosesAt!).toLocal(),
-    weekSettled: weekSettled,
+    settleBy: settleBy == null ? null : DateTime.parse(settleBy!).toLocal(),
   );
 }

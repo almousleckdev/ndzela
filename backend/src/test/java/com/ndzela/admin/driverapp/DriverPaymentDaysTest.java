@@ -89,7 +89,7 @@ class DriverPaymentDaysTest extends AbstractDriverPayingTest {
 
         pvitConfirms(RENT);
 
-        asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.unpaidDays").value(1));
+        asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.options.length()").value(1)).andExpect(jsonPath("$.options[0].amount").value(RENT.intValue()));
         assertTrue(jdbc.queryForObject("select count(*) from ledger_entry_days", Integer.class) == 1);
     }
 
@@ -123,6 +123,13 @@ class DriverPaymentDaysTest extends AbstractDriverPayingTest {
 
         jdbc.update("update contracts set start_date = current_date + 5");
         asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.weekSettled").value(true));
+    }
+
+    @Test
+    void theAccountSaysWhenTheOldestDayToSettleIsDue() throws Exception {
+        withUnpaidDays(2);
+
+        asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.settleBy").exists());
     }
 
     @Test

@@ -23,6 +23,12 @@ public final class PaymentSelection {
         return options.size() >= ALL_REQUIRED_FROM ? List.of(options.get(options.size() - 1)) : options;
     }
 
+    // When the oldest day still to settle is due: past for a late day, noon today for a day open since midnight
+    public static java.time.Instant settleBy(AccountState state) {
+        return java.util.stream.Stream.concat(state.unpaidCharges().stream(), state.awaitingCharges().stream())
+                .map(AccountCharge::due).min(java.util.Comparator.naturalOrder()).orElse(null);
+    }
+
     private static List<PaymentOption> optionsFor(List<AccountCharge> charges, BigDecimal credit) {
         List<PaymentOption> options = new ArrayList<>();
         BigDecimal running = credit.negate();

@@ -16,7 +16,7 @@ import '../../../core/widgets/feedback/error_banner.dart';
 import '../domain/session.dart';
 import 'login_controller.dart';
 import 'session_controller.dart';
-import 'widgets/login_header.dart';
+import 'widgets/auth_hero_scaffold.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -62,89 +62,72 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final login = ref.watch(loginControllerProvider);
-    return Scaffold(
-      body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        child: Column(
-          children: [
-            const LoginHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-              child: AutofillGroup(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('Connexion', style: AppTextStyles.title),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Connectez-vous avec les accès remis par Ndzela.',
-                        style: AppTextStyles.label,
-                      ),
-                      const SizedBox(height: 20),
-                      AppTextField(
-                        label: 'Téléphone ou e-mail',
-                        hint: 'example@google.com',
-                        controller: _identifier,
-                        prefixIcon: AppIcons.person,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.username],
-                        enabled: !login.isLoading,
-                        validator: (v) => _required(
-                          v,
-                          'Saisissez votre téléphone ou votre e-mail.',
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      AppPasswordField(
-                        label: 'Mot de passe',
-                        controller: _password,
-                        textInputAction: TextInputAction.done,
-                        enabled: !login.isLoading,
-                        onSubmitted: (_) => _submit(),
-                        validator: (v) =>
-                            _required(v, 'Saisissez votre mot de passe.'),
-                      ),
-                      if (_signedOutElsewhere) ...[
-                        const SizedBox(height: 16),
-                        const ErrorBanner(
-                          message:
-                              'Votre session a pris fin (connexion sur un autre appareil ou session expirée). Reconnectez-vous.',
-                        ),
-                      ],
-                      if (login.hasError) ...[
-                        const SizedBox(height: 16),
-                        ErrorBanner(message: messageFor(login.error!)),
-                      ],
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: AppLinkButton(
-                          label: 'Mot de passe oublié ?',
-                          onTap: () => context.push(Routes.forgotPassword),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      AppButton(
-                        label: 'Se connecter',
-                        loading: login.isLoading,
-                        onPressed: _submit,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Pas de compte ? Votre compte est créé par Ndzela avec votre contrat.',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.caption,
-                      ),
-                    ],
+    return AuthHeroScaffold(
+      title: 'Connexion',
+      subtitle: 'Connectez-vous avec les accès remis par Ndzela.',
+      children: [
+        AutofillGroup(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AppTextField(
+                  label: 'E-mail',
+                  hint: 'example@google.com',
+                  controller: _identifier,
+                  prefixIcon: AppIcons.person,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.username],
+                  enabled: !login.isLoading,
+                  validator: (v) => _required(v, 'Saisissez votre e-mail.'),
+                ),
+                const SizedBox(height: 14),
+                AppPasswordField(
+                  label: 'Mot de passe',
+                  controller: _password,
+                  textInputAction: TextInputAction.done,
+                  enabled: !login.isLoading,
+                  onSubmitted: (_) => _submit(),
+                  validator: (v) =>
+                      _required(v, 'Saisissez votre mot de passe.'),
+                ),
+                if (_signedOutElsewhere) ...[
+                  const SizedBox(height: 16),
+                  const ErrorBanner(
+                    message:
+                        'Votre session a pris fin (connexion sur un autre appareil ou session expirée). Reconnectez-vous.',
+                  ),
+                ],
+                if (login.hasError) ...[
+                  const SizedBox(height: 16),
+                  ErrorBanner(message: messageFor(login.error!)),
+                ],
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: AppLinkButton(
+                    label: 'Mot de passe oublié ?',
+                    onTap: () => context.push(Routes.forgotPassword),
                   ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                AppButton(
+                  label: 'Se connecter',
+                  loading: login.isLoading,
+                  onPressed: _submit,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Pas de compte ? Votre compte est créé par Ndzela avec votre contrat.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.caption,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

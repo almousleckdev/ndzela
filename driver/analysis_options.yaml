@@ -21,6 +21,16 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
+    avoid_print: true
+    avoid_dynamic_calls: true
+    unawaited_futures: true
+    always_declare_return_types: true
+    prefer_final_locals: true
+    prefer_final_fields: true
+    cancel_subscriptions: true
+    close_sinks: true
+    only_throw_errors: true
+    use_super_parameters: true
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 

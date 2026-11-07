@@ -20,9 +20,7 @@ class PaymentAmountCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            selected == null
-                ? 'Montant total à régulariser'
-                : 'Montant à régler',
+            'Montant à régler',
             style: TextStyle(
               color: AppColors.muted,
               fontWeight: FontWeight.w500,
@@ -30,7 +28,7 @@ class PaymentAmountCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            (selected?.amount ?? arrears.total).toString(),
+            (selected?.amount ?? arrears.amountToSettle).toString(),
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w500,
@@ -38,10 +36,7 @@ class PaymentAmountCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            '${arrears.unpaidDays} ${arrears.unpaidDays > 1 ? 'jours' : 'jour'} de loyer en retard',
-            style: const TextStyle(color: AppColors.muted),
-          ),
+          Text(_summary(), style: const TextStyle(color: AppColors.muted)),
           const SizedBox(height: 10),
           Text(_note(), style: TextStyle(color: AppColors.muted, fontSize: 13)),
         ],
@@ -49,15 +44,22 @@ class PaymentAmountCard extends StatelessWidget {
     );
   }
 
+  String _summary() {
+    final days = arrears.daysToSettle;
+    final base = '$days ${days > 1 ? 'jours' : 'jour'} de loyer à régler';
+    final late = arrears.unpaidDays;
+    return late > 0 && late < days ? '$base, dont $late en retard' : base;
+  }
+
   String _note() {
     if (arrears.options.isEmpty) {
-      return 'Le paiement couvre la totalité de vos loyers en retard.';
+      return 'Le paiement couvre la totalité de vos loyers à régler.';
     }
     if (arrears.options.length > 1) {
       return 'Choisissez combien de jours régler : les plus anciens sont payés en premier.';
     }
-    return arrears.unpaidDays == 1
-        ? 'Votre jour de loyer en retard se règle en une fois.'
-        : 'Vos ${arrears.unpaidDays} jours de loyer en retard se règlent ensemble.';
+    return arrears.daysToSettle == 1
+        ? 'Votre loyer du jour se règle en une fois.'
+        : 'Vos ${arrears.daysToSettle} jours de loyer se règlent ensemble.';
   }
 }

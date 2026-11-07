@@ -16,6 +16,13 @@ class PaymentFlowTracking extends PaymentFlowState {
   final PaymentAttempt attempt;
 }
 
+// The operator has not answered after a long wait; the server keeps checking, the driver can check again or leave.
+class PaymentFlowStalled extends PaymentFlowState {
+  const PaymentFlowStalled(this.attempt);
+
+  final PaymentAttempt attempt;
+}
+
 class PaymentFlowFinished extends PaymentFlowState {
   const PaymentFlowFinished(this.attempt);
 

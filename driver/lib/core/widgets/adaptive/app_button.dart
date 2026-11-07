@@ -22,6 +22,7 @@ class AppButton extends StatelessWidget {
     this.loading = false,
     this.icon,
     this.variant = AppButtonVariant.primary,
+    this.compact = false,
   });
 
   final String label;
@@ -29,6 +30,11 @@ class AppButton extends StatelessWidget {
   final bool loading;
   final AppIcon? icon;
   final AppButtonVariant variant;
+
+  // A shorter button for use inside a card
+  final bool compact;
+
+  double get _height => compact ? 38 : AppTheme.controlHeight;
 
   bool get _outlined => variant == AppButtonVariant.secondary;
 
@@ -69,7 +75,7 @@ class AppButton extends StatelessWidget {
             ? Colors.transparent
             : (loading ? _fill(context) : AppColors.line),
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        minimumSize: const Size.fromHeight(AppTheme.controlHeight),
+        minimumSize: Size.fromHeight(_height),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         onPressed: action,
         child: DefaultTextStyle.merge(
@@ -97,7 +103,7 @@ class AppButton extends StatelessWidget {
       return OutlinedButton(
         onPressed: action,
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(AppTheme.controlHeight),
+          minimumSize: Size.fromHeight(_height),
           foregroundColor: AppColors.ink,
           side: const BorderSide(color: AppColors.line),
           shape: RoundedRectangleBorder(
@@ -110,11 +116,16 @@ class AppButton extends StatelessWidget {
     }
     return FilledButton(
       onPressed: action,
-      style: variant == AppButtonVariant.primary
+      style: variant == AppButtonVariant.primary && !compact
           ? null
           : FilledButton.styleFrom(
-              backgroundColor: _fill(context),
-              foregroundColor: _foreground(context),
+              backgroundColor: variant == AppButtonVariant.primary
+                  ? null
+                  : _fill(context),
+              foregroundColor: variant == AppButtonVariant.primary
+                  ? null
+                  : _foreground(context),
+              minimumSize: Size.fromHeight(_height),
             ),
       child: content,
     );

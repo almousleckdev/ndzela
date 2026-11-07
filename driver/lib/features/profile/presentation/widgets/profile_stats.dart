@@ -12,27 +12,30 @@ class ProfileStats extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final contract = ref.watch(contractDetailsProvider).asData?.value;
     if (contract == null) return const SizedBox.shrink();
-    return Row(
-      children: [
-        Expanded(
-          child: FigureTile(label: 'Contrat', value: contract.number),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: FigureTile(
-            label: 'Loyer par jour',
-            value: contract.dailyRent.toString(),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: FigureTile(label: 'Contrat', value: contract.number),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: FigureTile(
-            label: 'Jours payés',
-            value:
-                '${contract.progress.paidDays}/${contract.progress.elapsedDays}',
+          const SizedBox(width: 8),
+          Expanded(
+            child: FigureTile(
+              label: 'Loyer par jour',
+              value: contract.dailyRent.toString(),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Expanded(
+            child: FigureTile(
+              label: 'Jours payés',
+              value:
+                  '${contract.progress.paidDays}/${contract.progress.elapsedDays}',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

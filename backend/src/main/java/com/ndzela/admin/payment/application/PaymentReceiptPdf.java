@@ -56,6 +56,7 @@ final class PaymentReceiptPdf {
         document.add(dots());
         document.add(pair("Chauffeur", r.payerName()));
         document.add(pair("Contrat", r.contractNumber()));
+        document.add(pair("Véhicule", r.vehicleNumber()));
         document.add(pair("Opérateur", r.operatorLabel()));
         document.add(pair("Numéro", r.maskedPhone()));
         document.add(pair("Transaction", r.providerReference() == null ? "—" : r.providerReference()));

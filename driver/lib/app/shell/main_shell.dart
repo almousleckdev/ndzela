@@ -7,6 +7,7 @@ import '../../core/widgets/navigation/app_bottom_bar.dart';
 import '../../core/widgets/navigation/app_tab.dart';
 import '../../features/payments/domain/driver_access.dart';
 import '../../features/payments/presentation/driver_access_provider.dart';
+import 'tab_refresh.dart';
 
 class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.shell});
@@ -44,10 +45,13 @@ class MainShell extends ConsumerWidget {
           : AppBottomBar(
               tabs: _tabs,
               selectedIndex: shell.currentIndex,
-              onSelected: (index) => shell.goBranch(
-                index,
-                initialLocation: index == shell.currentIndex,
-              ),
+              onSelected: (index) {
+                if (index != shell.currentIndex) refreshTab(ref, index);
+                shell.goBranch(
+                  index,
+                  initialLocation: index == shell.currentIndex,
+                );
+              },
             ),
     );
   }

@@ -10,7 +10,7 @@ import '../../../core/widgets/adaptive/app_button.dart';
 import '../../../core/widgets/adaptive/app_text_field.dart';
 import '../../../core/widgets/feedback/error_banner.dart';
 import 'forgot_password_controller.dart';
-import 'widgets/auth_step_scaffold.dart';
+import 'widgets/auth_hero_scaffold.dart';
 import 'widgets/back_to_login_button.dart';
 
 // Step 1 of a forgotten password: the phone or e-mail that gets the code.
@@ -38,16 +38,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final sent = await ref
         .read(forgotPasswordControllerProvider.notifier)
         .requestCode(identifier);
-    if (sent && mounted) context.push(Routes.verifyCode, extra: identifier);
+    if (sent && mounted) {
+      await context.push(Routes.verifyCode, extra: identifier);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(forgotPasswordControllerProvider);
-    return AuthStepScaffold(
+    return AuthHeroScaffold(
       title: 'Mot de passe oublié',
       subtitle: 'Recevez un code par e-mail.',
-      showBack: false,
       children: [
         Form(
           key: _formKey,
@@ -55,13 +56,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Saisissez votre téléphone ou votre e-mail. Si un compte existe, '
+                'Saisissez votre e-mail. Si un compte existe, '
                 'nous envoyons un code à l’adresse e-mail liée à votre compte.',
                 style: AppTextStyles.label,
               ),
               const SizedBox(height: 20),
               AppTextField(
-                label: 'Téléphone ou e-mail',
+                label: 'E-mail',
                 hint: 'example@google.com',
                 controller: _identifier,
                 prefixIcon: AppIcons.person,
@@ -70,7 +71,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 enabled: !state.isLoading,
                 onSubmitted: (_) => _sendCode(),
                 validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Saisissez votre téléphone ou votre e-mail.'
+                    ? 'Saisissez votre e-mail.'
                     : null,
               ),
               if (state.hasError) ...[

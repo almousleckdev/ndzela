@@ -27,7 +27,7 @@ public class AuditExportService {
     @Transactional
     public ExportFile export(String action, String actor, String targetType, LocalDate from, LocalDate to, ExportFormat format) {
         List<AuditLog> rows = queries.forExport(action, actor, targetType, from, to);
-        List<List<Object>> lines = rows.stream().map(a -> Arrays.<Object>asList(branding.dateTime(a.getCreatedAt()), a.getActor(), a.getAction(),
+        List<List<Object>> lines = rows.stream().map(a -> Arrays.<Object>asList(branding.dateTime(a.getCreatedAt()), AuditActors.display(a), a.getAction(),
                 a.getTarget() == null ? "" : a.getTarget(), a.getResult(), a.getReason() == null ? (a.getDetails() == null ? "" : a.getDetails()) : a.getReason())).toList();
         audit.record("AUDIT_EXPORTED", "AUDIT_LOG", null, "Export journal d'audit", TenantHolder.current().countryId(), lines.size() + " lignes");
         ExportTable table = new ExportTable("Journal d'audit", branding.header(from, to), List.of(ExportColumn.text("Date", 18), ExportColumn.text("Acteur", 24), ExportColumn.text("Action", 22),

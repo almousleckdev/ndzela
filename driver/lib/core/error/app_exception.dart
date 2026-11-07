@@ -33,8 +33,8 @@ class AppException implements Exception {
           requestId: body['requestId'] as String?,
           fieldErrors: errors is List
               ? {
-                  for (final e in errors)
-                    (e['field'] as String): (e['message'] as String),
+                  for (final e in errors.whereType<Map<String, dynamic>>())
+                    e['field'] as String: e['message'] as String,
                 }
               : const {},
         );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:driver/app/router.dart';
 import 'package:driver/core/money/money.dart';
 import 'package:driver/core/widgets/navigation/app_bottom_bar.dart';
@@ -49,7 +51,7 @@ void main() {
       expect(find.byType(AppBottomBar), findsNothing);
       expect(find.textContaining('3 jours de loyer impayés'), findsOneWidget);
       expect(
-        find.text('Le paiement couvre la totalité de vos loyers en retard.'),
+        find.text('Le paiement couvre la totalité de vos loyers à régler.'),
         findsOneWidget,
       );
     },
@@ -80,7 +82,7 @@ void main() {
       await openApp(tester, _locked);
       final router = GoRouter.of(tester.element(find.byType(PaymentScreen)));
 
-      router.push(Routes.supportMessage, extra: 'Bonjour');
+      unawaited(router.push(Routes.supportMessage, extra: 'Bonjour'));
       await tester.pumpAndSettle();
       expect(find.byType(SupportMessageScreen), findsOneWidget);
 
@@ -177,7 +179,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Aucun loyer à régulariser'), findsOneWidget);
+      expect(find.text('Aucun loyer à régler'), findsOneWidget);
     },
   );
 

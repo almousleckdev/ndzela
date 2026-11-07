@@ -43,9 +43,11 @@ abstract class AbstractDriverPayingTest extends AbstractDriverAppTest {
     // Moves the contract start until exactly `unpaid` rent days are late
     protected void withUnpaidDays(int unpaid) throws Exception {
         for (int back = 1; back <= 14; back++) {
-            jdbc.update("update contracts set start_date = current_date - " + back + ", end_date = current_date + 300");
-            int now = JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.unpaidDays");
-            if (now == unpaid) {
+            java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Africa/Libreville"));
+            jdbc.update("update contracts set start_date = ?, end_date = ?", today.minusDays(back), today.plusDays(300));
+            java.util.List<Object> amounts = JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.options[*].amount");
+            int toSettle = amounts.isEmpty() ? 0 : new java.math.BigDecimal(amounts.get(amounts.size() - 1).toString()).divide(RENT, java.math.RoundingMode.HALF_UP).intValue();
+            if (toSettle == unpaid) {
                 return;
             }
         }

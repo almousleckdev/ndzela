@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/brand_colors.dart';
+import '../../../app/theme/app_colors.dart';
 
-// Sweeps a soft light over its child, the "loading" look of the app; it stands still when the phone asks for fewer animations.
+// Sweeps a soft white light over grey placeholder blocks, the "loading" look of the app; it stands still when the phone asks for fewer animations.
 class Shimmer extends StatefulWidget {
   const Shimmer({super.key, required this.child});
 
@@ -36,7 +36,6 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final light = context.brand.primarySoft;
     return ExcludeSemantics(
       child: AnimatedBuilder(
         animation: _controller,
@@ -46,8 +45,12 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
           shaderCallback: (bounds) => LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
-            colors: [light, Colors.white, light],
-            stops: const [0.1, 0.5, 0.9],
+            colors: const [
+              AppColors.skeleton,
+              AppColors.skeletonLight,
+              AppColors.skeleton,
+            ],
+            stops: const [0.25, 0.5, 0.75],
             transform: _Slide(_controller.value),
           ).createShader(bounds),
           child: child,
@@ -86,7 +89,7 @@ class SkeletonBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: context.brand.primarySoft,
+        color: AppColors.skeleton,
         borderRadius: BorderRadius.circular(radius),
       ),
     );

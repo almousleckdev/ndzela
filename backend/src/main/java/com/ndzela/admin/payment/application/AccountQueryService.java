@@ -134,9 +134,10 @@ public class AccountQueryService {
         DriverRef driver = driverArrears.get(driverId);
         ContractResponse contract = contractService.activeOf(List.of(driverId)).get(driverId);
         if (contract == null) {
-            return new PayableDays(null, List.of());
+            return new PayableDays(null, List.of(), null);
         }
-        return new PayableDays(contract.id(), PaymentSelection.options(accounts.state(driver.countryId(), contract, Instant.now())));
+        AccountState state = accounts.state(driver.countryId(), contract, Instant.now());
+        return new PayableDays(contract.id(), PaymentSelection.options(state), PaymentSelection.settleBy(state));
     }
 
     @Transactional(readOnly = true)

@@ -21,10 +21,11 @@ class BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final late = arrears.isLate;
+    final toPay = arrears.canPay;
     final brand = context.brand;
     final onBrand = Colors.white.withValues(alpha: 0.85);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: brand.primary,
         borderRadius: BorderRadius.circular(18),
@@ -36,12 +37,12 @@ class BalanceCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Solde à régulariser',
+                  'Loyer à régler',
                   style: AppTextStyles.label.copyWith(color: onBrand),
                 ),
               ),
               StatusChip(
-                label: late ? 'En retard' : 'À jour',
+                label: late ? 'En retard' : (toPay ? 'À régler' : 'À jour'),
                 color: Colors.white,
                 background: Colors.white.withValues(alpha: 0.22),
               ),
@@ -55,11 +56,14 @@ class BalanceCard extends StatelessWidget {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: arrears.total.digits,
-                    style: AppTextStyles.hero.copyWith(color: Colors.white),
+                    text: arrears.amountToSettle.digits,
+                    style: AppTextStyles.hero.copyWith(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
                   ),
                   TextSpan(
-                    text: ' ${arrears.total.currencyLabel}',
+                    text: ' ${arrears.amountToSettle.currencyLabel}',
                     style: AppTextStyles.heading.copyWith(color: onBrand),
                   ),
                 ],
@@ -72,13 +76,16 @@ class BalanceCard extends StatelessWidget {
                 ? (arrears.unpaidDays > 1
                       ? '${arrears.unpaidDays} jours de retard'
                       : '1 jour de retard')
-                : 'Aucun loyer en retard. Merci !',
+                : (toPay
+                      ? 'Le loyer du jour est ouvert : payez avant 12:00.'
+                      : 'Aucun loyer en retard. Merci !'),
             style: AppTextStyles.label.copyWith(color: onBrand),
           ),
-          if (late) ...[
-            const SizedBox(height: 14),
+          if (toPay) ...[
+            const SizedBox(height: 10),
             AppButton(
-              label: 'Régulariser maintenant',
+              compact: true,
+              label: late ? 'Régulariser maintenant' : 'Payer mon loyer',
               icon: AppIcons.pay,
               variant: AppButtonVariant.light,
               onPressed: onRegularise,

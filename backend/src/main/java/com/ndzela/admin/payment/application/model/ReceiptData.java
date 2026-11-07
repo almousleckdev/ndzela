@@ -15,6 +15,7 @@ public record ReceiptData(
         String maskedPhone,
         String payerName,
         String contractNumber,
+        String vehicleNumber,
         BigDecimal amount,
         BigDecimal fee,
         String currency,

@@ -46,8 +46,8 @@ class DriverPaymentStartTest extends AbstractPvitFlowTest {
         mvc.perform(post("/api/v1/driver/payments").header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"operator\":\"AIRTEL_MONEY\",\"phoneNumber\":\"074111111\",\"amount\":1}")).andExpect(status().isAccepted());
 
-        int due = JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.totalDue");
-        assertEquals(0, amount().compareTo(new BigDecimal(due)));
+        java.util.List<Object> amounts = JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.options[*].amount");
+        assertEquals(0, amount().compareTo(new BigDecimal(amounts.get(amounts.size() - 1).toString())));
     }
 
     @Test

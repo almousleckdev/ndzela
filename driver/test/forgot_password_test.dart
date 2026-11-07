@@ -26,10 +26,7 @@ void main() {
 
     await tester.tap(find.text('Envoyer le code'));
     await tester.pumpAndSettle();
-    expect(
-      find.text('Saisissez votre téléphone ou votre e-mail.'),
-      findsOneWidget,
-    );
+    expect(find.text('Saisissez votre e-mail.'), findsOneWidget);
     verifyNever(() => backend.auth.requestResetCode(any()));
 
     await tester.enterText(find.byType(TextFormField).first, 'awa@ndzela.test');

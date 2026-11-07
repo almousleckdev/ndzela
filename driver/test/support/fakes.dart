@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+
+import 'package:driver/app/splash_hold.dart';
 import 'memory_storage.dart';
 import 'mocks.dart';
 import 'package:dio/dio.dart';
@@ -20,6 +22,7 @@ import 'package:driver/features/profile/presentation/profile_providers.dart';
 import 'package:driver/features/support/presentation/support_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:mocktail/mocktail.dart';
 import 'sample_data.dart';
 
@@ -183,9 +186,15 @@ DioException apiError(int status, String code) {
   );
 }
 
-Widget appWith(FakeBackend backend) {
+Widget appWith(
+  FakeBackend backend, {
+  List<Override> overrides = const [],
+  Duration splashMinimum = Duration.zero,
+}) {
   return ProviderScope(
     overrides: [
+      splashMinimumProvider.overrideWithValue(splashMinimum),
+      ...overrides,
       tokenStorageProvider.overrideWithValue(backend.tokens),
       authRepositoryProvider.overrideWithValue(backend.auth),
       profileRepositoryProvider.overrideWithValue(backend.profile),

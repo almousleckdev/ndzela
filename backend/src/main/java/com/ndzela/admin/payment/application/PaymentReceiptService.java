@@ -2,7 +2,9 @@ package com.ndzela.admin.payment.application;
 
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
+import com.ndzela.admin.contract.api.dto.ContractResponse;
 import com.ndzela.admin.contract.application.ContractService;
+import com.ndzela.admin.vehicle.application.VehicleService;
 import com.ndzela.admin.country.application.CountryBrand;
 import com.ndzela.admin.country.domain.Country;
 import com.ndzela.admin.country.domain.CountryRepository;
@@ -48,6 +50,7 @@ public class PaymentReceiptService {
     private final LedgerEntryDayRepository entryDays;
     private final DriverArrearsService driverArrears;
     private final ContractService contracts;
+    private final VehicleService vehicles;
     private final CountryRepository countries;
     private final PaymentOperatorService operators;
 
@@ -111,13 +114,14 @@ public class PaymentReceiptService {
         List<PaidDay> days = entryDays.findAllByLedgerEntryIdOrderByBusinessDayAscKindAsc(entry.getId()).stream()
                 .map(d -> new PaidDay(d.getBusinessDay(), d.getKind(), d.getAmount(), d.isPaidOnTime())).toList();
         BigDecimal settled = days.stream().map(PaidDay::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        ContractResponse contract = contracts.get(entry.getContractId());
         String reference = intent != null ? intent.getReference() : entry.getReference();
         return new ReceiptData(
                 reference, intent != null ? intent.getProviderReference() : null,
                 entry.getCreatedAt().atZoneSameInstant(zone),
                 operatorLabel(intent != null ? intent.getOperatorCode() : entry.getMethod().name()),
                 ReceiptTicketStyle.maskPhone(intent != null ? intent.getCustomerPhone() : null),
-                driver.firstName() + " " + driver.lastName(), contracts.get(entry.getContractId()).contractNumber(),
+                driver.firstName() + " " + driver.lastName(), contract.contractNumber(), vehicles.get(contract.vehicleId()).fleetNumber(),
                 entry.getAmount(), intent != null ? intent.getFeeAmount() : null, country.getCurrencyCode(),
                 orDefault(country.getLegalName(), CountryBrand.ofCountry(country.getCode()).name()), country.getHeadOffice(),
                 country.getLegalPhone(), country.getLegalEmail(), CountryBrand.ofCountry(country.getCode()),

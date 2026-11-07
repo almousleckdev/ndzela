@@ -86,7 +86,7 @@ class DriverPaymentLockTest extends AbstractPvitFlowTest {
                 .andExpect(jsonPath("$.code").value("INVALID_PAYMENT_DAYS"));
         startOk();
 
-        int due = JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.totalDue");
-        assertEquals(0, amount().compareTo(new BigDecimal(due)));
+        java.util.List<Object> amounts = JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.options[*].amount");
+        assertEquals(0, amount().compareTo(new BigDecimal(amounts.get(amounts.size() - 1).toString())));
     }
 }

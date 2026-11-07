@@ -7,6 +7,26 @@ import 'support/fakes.dart';
 import 'support/phone_view.dart';
 
 void main() {
+  testWidgets('both fields stay above the keyboard on a small phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 3;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 800);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(appWith(FakeBackend()));
+    await tester.pumpAndSettle();
+
+    final visibleBottom = (1920 - 800) / 3;
+    final fields = find.byType(TextFormField);
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(fields.at(i));
+      await tester.pumpAndSettle();
+      expect(tester.getBottomLeft(fields.at(i)).dy, lessThan(visibleBottom));
+      expect(tester.getTopLeft(fields.at(i)).dy, greaterThan(0));
+    }
+  });
+
   testWidgets('without a stored token the driver lands on the login screen', (
     tester,
   ) async {
@@ -27,10 +47,7 @@ void main() {
       await tester.tap(find.text('Se connecter'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Saisissez votre téléphone ou votre e-mail.'),
-        findsOneWidget,
-      );
+      expect(find.text('Saisissez votre e-mail.'), findsOneWidget);
       expect(find.text('Saisissez votre mot de passe.'), findsOneWidget);
       verifyNever(
         () => backend.auth.signIn(

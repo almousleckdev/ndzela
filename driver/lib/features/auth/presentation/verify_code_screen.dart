@@ -12,7 +12,7 @@ import '../../../core/widgets/adaptive/otp_field.dart';
 import '../../../core/widgets/feedback/error_banner.dart';
 import '../domain/reset_credentials.dart';
 import 'forgot_password_controller.dart';
-import 'widgets/auth_step_scaffold.dart';
+import 'widgets/auth_hero_scaffold.dart';
 
 // Step 2 of a forgotten password: the 6-digit code, checked before the new password is asked.
 class VerifyCodeScreen extends ConsumerStatefulWidget {
@@ -41,7 +41,7 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
         .read(forgotPasswordControllerProvider.notifier)
         .verifyCode(identifier: widget.identifier, code: _code.text);
     if (ok && mounted) {
-      context.push(
+      await context.push(
         Routes.newPassword,
         extra: ResetCredentials(
           identifier: widget.identifier,
@@ -63,7 +63,8 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(forgotPasswordControllerProvider);
-    return AuthStepScaffold(
+    return AuthHeroScaffold(
+      showBack: true,
       title: 'Saisir le code',
       subtitle: 'Code à 6 chiffres reçu par e-mail.',
       children: [

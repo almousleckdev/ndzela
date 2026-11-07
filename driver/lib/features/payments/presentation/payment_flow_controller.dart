@@ -9,8 +9,6 @@ import 'payments_providers.dart';
 // Follows a payment from "approve on your phone" to the operator's answer
 class PaymentFlowController extends Notifier<PaymentFlowState> {
   static const _pollEvery = Duration(seconds: 3);
-  static const _giveUpAfter = Duration(minutes: 10);
-
   Timer? _timer;
 
   @override
@@ -27,7 +25,7 @@ class PaymentFlowController extends Notifier<PaymentFlowState> {
     }
     state = PaymentFlowTracking(attempt);
     final startedAt = DateTime.now();
-    _timer = Timer.periodic(_pollEvery, (_) => _poll(attempt.id, startedAt));
+    _timer = Timer.periodic(_pollEvery, (_) => _poll(attempt, startedAt));
   }
 
   // Back to the form, e.g.
@@ -36,15 +34,28 @@ class PaymentFlowController extends Notifier<PaymentFlowState> {
     state = const PaymentFlowIdle();
   }
 
-  Future<void> _poll(String id, DateTime startedAt) async {
-    if (DateTime.now().difference(startedAt) > _giveUpAfter) {
+  // Asks the server again after the app stopped waiting.
+  Future<void> recheck() async {
+    final current = state;
+    if (current is! PaymentFlowStalled) return;
+    await _fetch(current.attempt);
+  }
+
+  Future<void> _poll(PaymentAttempt attempt, DateTime startedAt) async {
+    if (DateTime.now().difference(startedAt) >
+        ref.read(paymentGiveUpAfterProvider)) {
       _timer?.cancel();
+      state = PaymentFlowStalled(attempt);
       return;
     }
+    await _fetch(attempt);
+  }
+
+  Future<void> _fetch(PaymentAttempt attempt) async {
     try {
       final latest = await ref
           .read(paymentsRepositoryProvider)
-          .fetchAttempt(id);
+          .fetchAttempt(attempt.id);
       if (latest.status.isFinal) await _finish(latest);
     } on Exception {
       return;
@@ -65,6 +76,11 @@ class PaymentFlowController extends Notifier<PaymentFlowState> {
     state = PaymentFlowFinished(attempt);
   }
 }
+
+// How long the app waits for the operator before it says the confirmation is pending; a provider so tests can shorten it.
+final paymentGiveUpAfterProvider = Provider<Duration>(
+  (ref) => const Duration(minutes: 10),
+);
 
 final paymentFlowControllerProvider =
     NotifierProvider<PaymentFlowController, PaymentFlowState>(

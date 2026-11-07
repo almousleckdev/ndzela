@@ -8,8 +8,7 @@ class ArrearsSummary {
     this.locked = false,
     this.suspended = false,
     this.options = const [],
-    this.weekClosesAt,
-    this.weekSettled = true,
+    this.settleBy,
   });
 
   final int unpaidDays;
@@ -24,15 +23,19 @@ class ArrearsSummary {
   // The numbers of unpaid days that can be paid, oldest first
   final List<PaymentOption> options;
 
-  // When the week's rents must be settled (Sunday noon), and whether they are
-  final DateTime? weekClosesAt;
-  final bool weekSettled;
+  // When the oldest rent day still to settle is due, noon of that day
+  final DateTime? settleBy;
 
   bool get isLate => unpaidDays > 0;
 
-  bool get restricted => locked || suspended;
+  // A day open since midnight can be paid before it is late
+  bool get canPay => unpaidDays > 0 || options.isNotEmpty;
 
-  // The week's rents are not settled and the weekend is near
-  bool showsWeekWarning(DateTime now) =>
-      !weekSettled && weekClosesAt != null && now.weekday >= DateTime.friday;
+  // How many rent days paying everything settles
+  int get daysToSettle => options.isEmpty ? unpaidDays : options.last.days;
+
+  // What paying everything costs
+  Money get amountToSettle => options.isEmpty ? total : options.last.amount;
+
+  bool get restricted => locked || suspended;
 }

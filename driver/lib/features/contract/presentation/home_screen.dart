@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../app/router.dart';
 import '../../../core/widgets/adaptive/refreshable_list.dart';
 import '../../../core/widgets/feedback/async_view.dart';
+import '../../../core/widgets/feedback/loading_state.dart';
+import '../../../core/widgets/feedback/screen_skeleton.dart';
 import '../../../core/widgets/layout/header_band.dart';
 import '../../payments/presentation/payments_providers.dart';
 import '../../profile/presentation/profile_providers.dart';
@@ -31,7 +33,12 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final contract = ref.watch(contractDetailsProvider).asData?.value;
+    final vehicle = ref.watch(vehicleProvider);
+    final arrears = ref.watch(arrearsProvider);
+    final contractValue = ref.watch(contractDetailsProvider);
+    final history = ref.watch(paymentHistoryProvider);
+    final contract = contractValue.asData?.value;
+    final loading = anyLoading([vehicle, arrears, contractValue, history]);
     return Scaffold(
       body: Column(
         children: [
@@ -40,28 +47,30 @@ class HomeScreen extends ConsumerWidget {
             child: RefreshableList(
               onRefresh: () => _refresh(ref),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              children: [
-                AsyncView(
-                  value: ref.watch(arrearsProvider),
-                  onRetry: () => ref.invalidate(arrearsProvider),
-                  data: (arrears) => BalanceCard(
-                    arrears: arrears,
-                    onRegularise: () => context.go(Routes.pay),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AsyncView(
-                  value: ref.watch(vehicleProvider),
-                  onRetry: () => ref.invalidate(vehicleProvider),
-                  data: (vehicle) => VehicleCard(vehicle: vehicle),
-                ),
-                if (contract != null) ...[
-                  const SizedBox(height: 12),
-                  ContractSummaryCard(contract: contract),
-                ],
-                const SizedBox(height: 12),
-                const WeekPaymentsCard(),
-              ],
+              children: loading
+                  ? const [ScreenSkeleton()]
+                  : [
+                      AsyncView(
+                        value: vehicle,
+                        onRetry: () => ref.invalidate(vehicleProvider),
+                        data: (info) => VehicleCard(vehicle: info),
+                      ),
+                      const SizedBox(height: 12),
+                      AsyncView(
+                        value: arrears,
+                        onRetry: () => ref.invalidate(arrearsProvider),
+                        data: (summary) => BalanceCard(
+                          arrears: summary,
+                          onRegularise: () => context.go(Routes.pay),
+                        ),
+                      ),
+                      if (contract != null) ...[
+                        const SizedBox(height: 12),
+                        ContractSummaryCard(contract: contract),
+                      ],
+                      const SizedBox(height: 12),
+                      const WeekPaymentsCard(),
+                    ],
             ),
           ),
         ],

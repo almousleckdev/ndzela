@@ -1,3 +1,4 @@
+import 'package:driver/app/theme/app_theme.dart';
 import 'package:driver/core/money/money.dart';
 import 'package:driver/core/widgets/navigation/nav_item.dart';
 import 'package:driver/features/payments/domain/arrears_summary.dart';
@@ -7,6 +8,7 @@ import 'package:driver/features/payments/domain/payment_option.dart';
 import 'package:driver/features/payments/domain/payment_request.dart';
 import 'package:driver/features/payments/domain/payment_status.dart';
 import 'package:driver/features/payments/presentation/payments_providers.dart';
+import 'package:driver/features/payments/presentation/widgets/due_banner.dart';
 import 'package:driver/features/payments/presentation/widgets/payment_form.dart';
 import 'package:driver/features/payments/presentation/widgets/payment_history_tile.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +63,7 @@ void main() {
 
     expect(find.text('Jours à régler'), findsNothing);
     expect(
-      find.text('Vos 3 jours de loyer en retard se règlent ensemble.'),
+      find.text('Vos 3 jours de loyer se règlent ensemble.'),
       findsOneWidget,
     );
   });
@@ -99,7 +101,7 @@ void main() {
     await openPay(tester, _owing(1, [_option(1)]));
 
     expect(
-      find.text('Votre jour de loyer en retard se règle en une fois.'),
+      find.text('Votre loyer du jour se règle en une fois.'),
       findsOneWidget,
     );
   });
@@ -177,32 +179,47 @@ void main() {
     expect(find.text('Payé le'), findsOneWidget);
   });
 
-  group('the week warning', () {
-    final closes = DateTime(2026, 10, 18, 12);
-    final unsettled = ArrearsSummary(
-      unpaidDays: 1,
-      total: _rent,
-      weekClosesAt: closes,
-      weekSettled: false,
+  group('a rent open since midnight', () {
+    final noon = DateTime(2026, 11, 7, 12);
+    final open = ArrearsSummary(
+      unpaidDays: 0,
+      total: const Money(0, 'XAF'),
+      options: [PaymentOption(days: 1, amount: _rent)],
+      settleBy: noon,
     );
 
-    test('appears from Friday when the week is not settled', () {
-      expect(unsettled.showsWeekWarning(DateTime(2026, 10, 16, 9)), isTrue);
-      expect(unsettled.showsWeekWarning(DateTime(2026, 10, 17, 9)), isTrue);
-      expect(unsettled.showsWeekWarning(DateTime(2026, 10, 18, 9)), isTrue);
+    test('can be paid before it is late', () {
+      expect(open.isLate, isFalse);
+      expect(open.canPay, isTrue);
+      expect(open.amountToSettle, _rent);
+      expect(open.daysToSettle, 1);
     });
 
-    test('stays quiet earlier in the week', () {
-      expect(unsettled.showsWeekWarning(DateTime(2026, 10, 15, 9)), isFalse);
-    });
-
-    test('stays quiet once the week is settled', () {
-      final settled = ArrearsSummary(
-        unpaidDays: 0,
-        total: const Money(0, 'XAF'),
-        weekClosesAt: closes,
+    testWidgets('says to pay before noon of that day', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: Scaffold(
+            body: DueBanner(arrears: open, now: DateTime(2026, 11, 7, 0, 5)),
+          ),
+        ),
       );
-      expect(settled.showsWeekWarning(DateTime(2026, 10, 17, 9)), isFalse);
+
+      expect(find.textContaining('Loyer à payer avant le'), findsOneWidget);
+      expect(find.textContaining('12:00'), findsOneWidget);
+    });
+
+    testWidgets('says it is late once noon has passed', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: Scaffold(
+            body: DueBanner(arrears: open, now: DateTime(2026, 11, 7, 13)),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('Loyer en retard depuis le'), findsOneWidget);
     });
   });
 }

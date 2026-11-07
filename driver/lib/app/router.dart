@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/widgets/feedback/splash_screen.dart';
+import 'splash_hold.dart';
 import '../features/auth/domain/session.dart';
 import '../features/auth/presentation/change_password_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
@@ -43,6 +44,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(sessionControllerProvider, (_, _) => refresh.value++);
   ref.listen(driverAccessProvider, (_, _) => refresh.value++);
+  ref.listen(splashHeldProvider, (_, _) => refresh.value++);
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
@@ -51,6 +53,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final at = state.matchedLocation;
+      if (ref.read(splashHeldProvider)) {
+        return at == Routes.splash ? null : Routes.splash;
+      }
       return switch (ref.read(sessionControllerProvider)) {
         SessionLoading() => at == Routes.splash ? null : Routes.splash,
         SignedOut() =>

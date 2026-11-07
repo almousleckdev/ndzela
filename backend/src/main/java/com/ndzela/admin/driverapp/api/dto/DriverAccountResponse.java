@@ -8,4 +8,4 @@ import java.util.List;
 
 // What the driver owes now, when the payment week closes, the numbers of unpaid days the driver may pay, and the rent days of the last weeks, oldest first
 public record DriverAccountResponse(int unpaidDays, BigDecimal totalDue, String currency, boolean locked, boolean suspended, OffsetDateTime weekClosesAt, boolean weekSettled,
-                                     List<PaymentOption> options, List<DriverDayResponse> days) {}
+                                     OffsetDateTime settleBy, List<PaymentOption> options, List<DriverDayResponse> days) {}
