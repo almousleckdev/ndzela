@@ -1,6 +1,6 @@
 # Releasing the driver app (TestFlight and Google Play testing)
 
-App name **NdZela**, Android `applicationId` and iOS bundle id **`com.ndzela.driver`**. Both stores use the same version: `version: x.y.z+n` in `driver/pubspec.yaml` (`x.y.z` is shown to users, `n` is the build number; **every upload needs a higher `n`**; pass `--build-number` to override).
+App name **NdZela**, Android `applicationId` and iOS bundle id **`com.ndzela.rider`**. Both stores use the same version: `version: x.y.z+n` in `driver/pubspec.yaml` (`x.y.z` is shown to users, `n` is the build number; **every upload needs a higher `n`**; pass `--build-number` to override).
 
 ## 1. Which backend a build talks to
 A release build refuses to start without an HTTPS `API_BASE_URL` (see `AppConfig`). The values live in `driver/env/*.json` (public values only, never a secret):
@@ -13,12 +13,12 @@ A release build refuses to start without an HTTPS `API_BASE_URL` (see `AppConfig
 ## 2. Android: Google Play internal testing
 1. **Upload key** (once, keep the file and passwords in the team's secret store, never in Git): `keytool -genkey -v -keystore ~/ndzela-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`. Copy `driver/android/key.properties.example` to `key.properties` and fill it. Without it `flutter build appbundle` refuses to run (a debug-signed bundle would be rejected anyway).
 2. Build: `cd driver && flutter build appbundle --release --dart-define-from-file=env/staging.json` (output `build/app/outputs/bundle/release/app-release.aab`).
-3. Play Console: create the app (name NdZela, package `com.ndzela.driver`), accept **Play App Signing** (Google keeps the app key; ours is only the upload key), Testing, **Internal testing**, create a release, upload the `.aab`, add testers by e-mail list, share the opt-in link.
+3. Play Console: create the app (name NdZela, package `com.ndzela.rider`), accept **Play App Signing** (Google keeps the app key; ours is only the upload key), Testing, **Internal testing**, create a release, upload the `.aab`, add testers by e-mail list, share the opt-in link.
 4. Store listing needs: privacy policy `https://ndzela.com/confidentialite`, account deletion page `https://ndzela.com/suppression-compte` (the app also deletes from Profil, "Supprimer mon compte"), the Data safety form (name, e-mail, phone, payment history, all linked to the account and not shared; encrypted in transit; deletion on request), and a **reviewer test account** (a driver created for that purpose).
 
 ## 3. iOS: TestFlight
-1. Apple Developer account, then App Store Connect, My Apps, **New App**: name NdZela, bundle id `com.ndzela.driver` (register it under Certificates, Identifiers & Profiles first), primary language French.
-2. In Xcode open `driver/ios/Runner.xcworkspace`, target Runner, Signing & Capabilities: tick **Automatically manage signing** and pick the team (the project currently names team `W9XVSW8Z3S`; change it to the company's team).
+1. Apple Developer account, then App Store Connect, My Apps, **New App**: name NdZela, bundle id `com.ndzela.rider` (register it under Certificates, Identifiers & Profiles first), primary language French.
+2. In Xcode open `driver/ios/Runner.xcworkspace`, target Runner, Signing & Capabilities: tick **Automatically manage signing** and pick the team (the project names team `XB5CS344AV`; change it to the company's team if the app moves).
 3. Build: `cd driver && flutter build ipa --release --dart-define-from-file=env/staging.json` (output `build/ios/ipa/*.ipa`). Upload it with the **Transporter** app (or Xcode, Window, Organizer, Distribute App).
 4. TestFlight: wait for processing, then add **internal testers** (App Store Connect users, no review) or an **external group** (first build goes through a short Beta App Review; give it a driver test account and the contact details). Export-compliance questions are already answered in `Info.plist` (`ITSAppUsesNonExemptEncryption=false`: the app only uses the system's HTTPS).
 

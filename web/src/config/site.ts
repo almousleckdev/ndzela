@@ -31,7 +31,7 @@ export const siteConfig = {
     { days: [0], label: "Dimanche", hours: null, text: "Fermé" },
   ] satisfies OpeningDay[],
   // Store listings of the driver app; null until the app is published, the buttons then say "Bientôt".
-  app: { appStore: null as string | null, googlePlay: null as string | null },
+  app: { appStore: null as string | null, googlePlay: "https://play.google.com/store/apps/details?id=com.ndzela.rider" as string | null },
   // Store listings of the charging app, same rule as `app`.
   chargingApp: { appStore: null as string | null, googlePlay: null as string | null },
   nav: [

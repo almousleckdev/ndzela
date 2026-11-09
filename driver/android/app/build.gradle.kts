@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ndzela.driver"
+        applicationId = "com.ndzela.rider"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
