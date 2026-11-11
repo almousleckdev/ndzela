@@ -59,7 +59,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("app.jwt.secret", () -> "dGVzdC1vbmx5LWp3dC1zZWNyZXQtdGVzdC1vbmx5LWp3dC1zZWNyZXQ=");
         registry.add("app.mfa.encryption-key", () -> "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=");
         registry.add("app.mail.provider", () -> "log");
-        for (String schedule : new String[] {"lookup-interval", "feed-interval", "lookup-initial-delay", "feed-initial-delay"}) {
+        for (String schedule : new String[] {"lookup-interval", "feed-interval", "command-interval", "lookup-initial-delay", "feed-initial-delay", "command-initial-delay"}) {
             registry.add("app.zella." + schedule, () -> "PT24H");
         }
         registry.add("app.ocpp.webhook-secret", () -> "whsecret");

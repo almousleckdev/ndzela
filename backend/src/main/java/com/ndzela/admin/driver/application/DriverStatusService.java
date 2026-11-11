@@ -6,6 +6,7 @@ import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
 import com.ndzela.admin.driver.domain.DriverStatus;
+import com.ndzela.admin.driver.domain.SuspensionCause;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,16 +27,32 @@ public class DriverStatusService {
 
     @Transactional
     public Driver suspend(UUID id, String reason) {
+        return suspend(id, reason, SuspensionCause.MANUAL);
+    }
+
+    @Transactional
+    public Driver suspend(UUID id, String reason, SuspensionCause cause) {
         Driver driver = load(id);
         if (driver.getStatus() == DriverStatus.BLOCKED) {
             throw new BusinessRuleViolationException("DRIVER_BLOCKED", "This driver is blocked.");
         }
-        return change(driver, DriverStatus.SUSPENDED, reason, "DRIVER_SUSPENDED");
+        return change(driver, DriverStatus.SUSPENDED, reason, "DRIVER_SUSPENDED", cause, false);
+    }
+
+    // Lifts a suspension for arrears only; a manual suspension stays until a person lifts it.
+    @Transactional
+    public boolean restoreFromArrears(UUID id) {
+        Driver driver = load(id);
+        if (driver.getStatus() != DriverStatus.SUSPENDED || driver.getSuspensionCause() != SuspensionCause.ARREARS) {
+            return false;
+        }
+        change(driver, DriverStatus.ACTIVE, null, "DRIVER_REACTIVATED", null, true);
+        return true;
     }
 
     @Transactional
     public Driver block(UUID id, String reason) {
-        return change(load(id), DriverStatus.BLOCKED, reason, "DRIVER_BLOCKED");
+        return change(load(id), DriverStatus.BLOCKED, reason, "DRIVER_BLOCKED", null, false);
     }
 
     @Transactional
@@ -44,7 +61,7 @@ public class DriverStatusService {
         if (driver.getStatus() != DriverStatus.ACTIVE && driver.getStatus() != DriverStatus.INACTIVE) {
             throw new BusinessRuleViolationException("DRIVER_NOT_ACTIVE", "Only an active driver can be set inactive.");
         }
-        return change(driver, DriverStatus.INACTIVE, reason, "DRIVER_DEACTIVATED");
+        return change(driver, DriverStatus.INACTIVE, reason, "DRIVER_DEACTIVATED", null, false);
     }
 
     @Transactional
@@ -59,7 +76,7 @@ public class DriverStatusService {
         if (needed != null && !permissions.contains(needed)) {
             throw new AccessDeniedException("Missing permission " + needed);
         }
-        return change(driver, DriverStatus.ACTIVE, null, "DRIVER_REACTIVATED");
+        return change(driver, DriverStatus.ACTIVE, null, "DRIVER_REACTIVATED", null, false);
     }
 
     // Clears the login-attempt lockout only; never touches DriverStatus (suspend/block are separate, business-level locks).
@@ -73,10 +90,12 @@ public class DriverStatusService {
         return driver;
     }
 
-    private Driver change(Driver driver, DriverStatus target, String reason, String action) {
+    private Driver change(Driver driver, DriverStatus target, String reason, String action, SuspensionCause cause, boolean automatic) {
         if (driver.getStatus() != target) {
             driver.setStatus(target);
             driver.setStatusReason(reason == null ? null : reason.trim());
+            driver.setSuspensionCause(target == DriverStatus.SUSPENDED ? cause : null);
+            driver.setAutoRestoredAt(automatic ? java.time.OffsetDateTime.now() : null);
             drivers.save(driver);
             audit.record(action, "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(), reason == null ? null : "reason: " + reason.trim());
         }

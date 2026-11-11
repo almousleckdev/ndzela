@@ -9,7 +9,6 @@ import com.ndzela.admin.country.domain.CountryRepository;
 import com.ndzela.admin.driver.application.DriverArrearsService;
 import com.ndzela.admin.driver.application.model.DriverRef;
 import com.ndzela.admin.driver.domain.ArrearsLevel;
-import com.ndzela.admin.infrastructure.email.EmailProvider;
 import com.ndzela.admin.notification.application.NotificationService;
 import com.ndzela.admin.payment.domain.DayStatus;
 import com.ndzela.admin.payment.application.model.AccountDay;
@@ -48,7 +47,8 @@ public class ArrearsEvaluator {
     private final CountryRepository countries;
     private final VehicleService vehicleService;
     private final NotificationService notifications;
-    private final EmailProvider email;
+    private final ArrearsMailer mailer;
+    private final ArrearsSuspensionSync suspensionSync;
     private final AuditService audit;
 
     @Transactional
@@ -82,12 +82,20 @@ public class ArrearsEvaluator {
         if (highestNew != ArrearsLevel.NONE) {
             act(driver, contract, state, highestNew);
         }
+        if (state.unpaid() == 0) {
+            suspensionSync.settled(driver, state);
+        } else if (state.unpaid() >= STEPS.size()) {
+            suspensionSync.unpaidAgain(driver, state);
+        }
     }
 
     private void act(DriverRef driver, ContractResponse contract, AccountState state, ArrearsLevel level) {
         sendEmail(driver, state, level);
         if (level == ArrearsLevel.RED) {
             boolean suspended = driverArrears.suspendForArrears(driver.id(), SUSPENSION_REASON);
+            if (suspended) {
+                suspensionSync.suspended(driver, state);
+            }
             String plate = vehicleService.responsesByIds(java.util.List.of(contract.vehicleId())).values().stream().findFirst().map(v -> v.fleetNumber() + " " + v.plate()).orElse("");
             notifications.notifyHolders("arrears:manage", driver.countryId(), null, "ARREARS_RED", "Impayés : 3 jours ou plus",
                     driver.fullName() + " : " + state.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " FCFA impayés"
@@ -96,8 +104,7 @@ public class ArrearsEvaluator {
     }
 
     private void sendEmail(DriverRef driver, AccountState state, ArrearsLevel level) {
-        CountryBrand brand = CountryBrand.ofCountry(countries.findById(driver.countryId()).map(Country::getCode).orElse(null));
-        String subject = brand.name() + " : " + switch (level) {
+        String subject = switch (level) {
             case YELLOW -> "rappel de paiement de votre loyer";
             case DARK_YELLOW -> "urgent : deux jours de loyer impayés";
             default -> "votre compte est suspendu pour impayés";
@@ -107,11 +114,6 @@ public class ArrearsEvaluator {
             case DARK_YELLOW -> "Deux jours de loyer sont impayés. Une pénalité peut s'appliquer. Régularisez immédiatement.";
             default -> "Trois jours de loyer ou plus sont impayés : votre compte est suspendu et votre véhicule peut être bloqué. Régularisez l'intégralité pour le débloquer.";
         };
-        try {
-            email.sendHtmlEmail(driver.email(), subject, "arrears-email", Map.of("name", driver.firstName(), "message", message, "brand", brand.name(), "company", brand.company(), "color", brand.accentHex(),
-                    "logo", brand.logoDataUri(), "amount", state.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " FCFA"));
-        } catch (RuntimeException e) {
-            log.warn("Could not send the arrears email to driver {}", driver.id(), e);
-        }
+        mailer.send(driver, subject, message, state.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " FCFA");
     }
 }

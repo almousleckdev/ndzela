@@ -7,6 +7,7 @@ import com.ndzela.admin.driver.domain.ArrearsLevel;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
 import com.ndzela.admin.driver.domain.DriverStatus;
+import com.ndzela.admin.driver.domain.SuspensionCause;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -83,7 +84,23 @@ public class DriverArrearsService {
         if (status != DriverStatus.ACTIVE && status != DriverStatus.INACTIVE) {
             return false;
         }
-        statusService.suspend(id, reason);
+        statusService.suspend(id, reason, SuspensionCause.ARREARS);
+        return true;
+    }
+
+    @Transactional
+    public boolean restoreFromArrears(UUID id) {
+        return statusService.restoreFromArrears(id);
+    }
+
+    // Only a driver the system restored itself is suspended again; one staff reactivated by hand is left alone.
+    @Transactional
+    public boolean suspendAgainAfterRestore(UUID id, String reason) {
+        Driver driver = drivers.findById(id).orElseThrow(() -> new ResourceNotFoundException("Driver not found."));
+        if (driver.getStatus() != DriverStatus.ACTIVE || driver.getAutoRestoredAt() == null) {
+            return false;
+        }
+        statusService.suspend(id, reason, SuspensionCause.ARREARS);
         return true;
     }
 

@@ -20,6 +20,7 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { LEVEL_MARKER, useAccountColumns } from "@/features/payments/components/account-columns";
 import { IncidentDialog } from "@/features/payments/components/incident-dialog";
+import { SuspensionCasesPanel } from "@/features/payments/components/suspension-cases-panel";
 import { RecordPaymentDialog } from "@/features/payments/components/record-payment-dialog";
 import { WaiverDialog } from "@/features/payments/components/waiver-dialog";
 import { paymentsService } from "@/features/payments/services/payments.service";
@@ -96,6 +97,8 @@ function ArrearsContent() {
           server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: query.sorting, onSortingChange: query.setSorting }}
           empty={<EmptyState title="Aucun impayé" description="Tous les chauffeurs de cette sélection sont à jour." />} />
       </Panel>
+
+      {can(PERMISSIONS.ARREARS_MANAGE) && <SuspensionCasesPanel />}
 
       {paying && <RecordPaymentDialog driverId={paying.driverId} driverName={paying.driverName} overdueAmount={paying.overdueAmount} dailyRent={paying.dailyRent} onClose={() => setPaying(null)} onSaved={() => { setPaying(null); refresh(); }} />}
       {waiving && <WaiverDialog driverId={waiving.driverId} driverName={waiving.driverName} overdueAmount={waiving.overdueAmount} dailyRent={waiving.dailyRent} onClose={() => setWaiving(null)} onSaved={() => { setWaiving(null); refresh(); }} />}

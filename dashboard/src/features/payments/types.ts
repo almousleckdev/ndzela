@@ -172,3 +172,24 @@ export interface HistoryQuery {
   from: string;
   to: string;
 }
+
+export interface CaseDriver {
+  id: string;
+  name: string;
+  vehicle: string | null;
+}
+
+// A refused attempt to help a suspended driver. The helper is a driver only when that account is a linked NDZela driver; otherwise only the reference Zella gave.
+export interface SuspensionCase {
+  id: string;
+  occurredAt: string;
+  kind: string;
+  amountMinor: number;
+  currency: string | null;
+  suspended: CaseDriver | null;
+  helper: CaseDriver | null;
+  helperReference: string;
+  score: number | null;
+  reasons: string[];
+  flagged: boolean;
+}

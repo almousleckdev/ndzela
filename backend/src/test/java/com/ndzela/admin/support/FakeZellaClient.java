@@ -3,6 +3,7 @@ package com.ndzela.admin.support;
 import com.ndzela.admin.config.properties.ZellaProperties;
 import com.ndzela.admin.infrastructure.zella.ZellaClient;
 import com.ndzela.admin.infrastructure.zella.ZellaDriver;
+import com.ndzela.admin.infrastructure.zella.ZellaEvidencePage;
 import com.ndzela.admin.infrastructure.zella.ZellaException;
 import com.ndzela.admin.infrastructure.zella.ZellaFeedItem;
 import com.ndzela.admin.infrastructure.zella.ZellaFeedPage;
@@ -33,6 +34,7 @@ public class FakeZellaClient extends ZellaClient {
     private final Map<String, ZellaFeedPage> publicPages = new java.util.concurrent.ConcurrentHashMap<>();
     private final List<String> publicAsked = new CopyOnWriteArrayList<>();
     private volatile RuntimeException publicFailure;
+    private final Map<String, ZellaEvidencePage> evidencePages = new java.util.concurrent.ConcurrentHashMap<>();
 
     public FakeZellaClient(ZellaProperties props) {
         super(null, props, null);
@@ -78,6 +80,22 @@ public class FakeZellaClient extends ZellaClient {
     }
 
     @Override
+    public void suspend(String customerId, long owedMinor, String currency, int decimals) {
+        if (down) {
+            throw new ZellaException("down", null);
+        }
+        calls.add("SUSPEND " + customerId + " " + owedMinor);
+    }
+
+    @Override
+    public void restore(String customerId) {
+        if (down) {
+            throw new ZellaException("down", null);
+        }
+        calls.add("RESTORE " + customerId);
+    }
+
+    @Override
     public void unlink(String customerId) {
         calls.add("DELETE " + customerId);
         if (down) {
@@ -113,6 +131,20 @@ public class FakeZellaClient extends ZellaClient {
         }
         ZellaFeedPage page = publicPages.get(cursor == null ? "" : cursor);
         return page != null ? page : new ZellaFeedPage(List.of(), cursor, false);
+    }
+
+    @Override
+    public ZellaEvidencePage evidence(String cursor, int limit) {
+        if (down) {
+            throw new ZellaException("down", null);
+        }
+        ZellaEvidencePage page = evidencePages.get(cursor == null ? "" : cursor);
+        return page != null ? page : new ZellaEvidencePage(List.of(), cursor, false);
+    }
+
+    /** The page the evidence feed serves for a cursor ("" is the first request). */
+    public void serveEvidence(String cursor, ZellaEvidencePage page) {
+        evidencePages.put(cursor, page);
     }
 
     /** The page the public feed serves for a cursor ("" is the first request). */
@@ -197,6 +229,7 @@ public class FakeZellaClient extends ZellaClient {
         feedFailure = null;
         publicPages.clear();
         publicAsked.clear();
+        evidencePages.clear();
         publicFailure = null;
     }
 }

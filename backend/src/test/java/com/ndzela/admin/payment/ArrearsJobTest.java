@@ -27,52 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class ArrearsJobTest extends AbstractDriverTest {
-    private static final ZoneId ZONE = ZoneId.of("Africa/Libreville");
-
-    @MockitoBean
-    EmailProvider email;
-
-    @Autowired
-    ArrearsService arrears;
-
-    private String driver;
-    private Instant firstDue;
-
-    @BeforeEach
-    void setup() throws Exception {
-        driver = id(createDriver(manager, DriverJson.create(newVehicle(manager), newCenter(manager, "NDZELA"))).andExpect(status().isCreated()));
-        LocalDate day = LocalDate.now(ZONE).plusDays(1);
-        while (day.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            day = day.plusDays(1);
-        }
-        firstDue = day.atTime(12, 0).atZone(ZONE).toInstant();
-    }
-
-    private void evaluateAt(long hoursAfterFirstDeadline) {
-        arrears.evaluateAll(firstDue.plusSeconds(hoursAfterFirstDeadline * 3600));
-    }
-
-    // The deadline of the k-th rent day (Sunday is skipped); an hour later that day counts as unpaid.
-    private Instant dueOfRentDay(int k) {
-        LocalDate day = LocalDate.now(ZONE);
-        for (int counted = 0; counted < k; ) {
-            day = day.plusDays(1);
-            if (day.getDayOfWeek() != DayOfWeek.SUNDAY) {
-                counted++;
-            }
-        }
-        return day.atTime(12, 0).atZone(ZONE).toInstant();
-    }
-
-    private void evaluateWhenUnpaidDaysAre(int k) {
-        arrears.evaluateAll(dueOfRentDay(k).plusSeconds(3600));
-    }
-
-    private String level() throws Exception {
-        return com.jayway.jsonpath.JsonPath.read(send(get("/api/v1/drivers/" + driver), manager).andReturn().getResponse().getContentAsString(), "$.arrears.level");
-    }
-
+class ArrearsJobTest extends AbstractArrearsTest {
     @Test
     void nothingHappensBeforeTheDeadline() throws Exception {
         arrears.evaluateAll(firstDue.minusSeconds(60));
@@ -132,15 +87,17 @@ class ArrearsJobTest extends AbstractDriverTest {
     }
 
     @Test
-    void payingEverythingClearsTheLevelButOnlyAnAdministratorLiftsTheSuspension() throws Exception {
+    void payingEverythingClearsTheLevelAtOnceAndTheNextRunRestoresTheDriverWithoutAnAdministrator() throws Exception {
         evaluateWhenUnpaidDaysAre(3);
         UUID request = UUID.randomUUID();
         postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":1000000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"requestId\":\"" + request + "\"}", manager).andExpect(status().isCreated());
         assertEquals("NONE", level());
         assertEquals("SUSPENDED", jdbc.queryForObject("select status from drivers", String.class));
 
-        send(post("/api/v1/drivers/" + driver + "/reactivate"), manager).andExpect(status().isForbidden());
-        send(post("/api/v1/drivers/" + driver + "/reactivate"), admin).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACTIVE"));
+        evaluateWhenUnpaidDaysAre(3);
+
+        assertEquals("ACTIVE", jdbc.queryForObject("select status from drivers", String.class));
+        assertEquals(1, auditRows("DRIVER_REACTIVATED"));
     }
 
     @Test

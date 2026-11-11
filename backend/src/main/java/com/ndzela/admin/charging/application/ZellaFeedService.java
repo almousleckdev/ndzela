@@ -46,6 +46,7 @@ public class ZellaFeedService {
     private final DeletedSessions deleted;
     private final IdTagRepository tags;
     private final ZellaFeedState state;
+    private final ZellaEvidenceSync evidence;
     private final TransactionTemplate transaction;
     private final StringRedisTemplate redis;
 
@@ -60,7 +61,7 @@ public class ZellaFeedService {
         }
         try {
             state.attempted(countryId);
-            int changed = feed(countryId) + histories() + publicFeed(countryId);
+            int changed = feed(countryId) + histories() + publicFeed(countryId) + evidence.sync(countryId);
             state.succeeded(countryId);
             return changed;
         } catch (ZellaRateLimitedException e) {

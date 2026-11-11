@@ -128,6 +128,13 @@ public class Driver extends TenantOwned {
     @Column(name = "status_reason")
     private String statusReason;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "suspension_cause")
+    private SuspensionCause suspensionCause;
+
+    @Column(name = "auto_restored_at")
+    private java.time.OffsetDateTime autoRestoredAt;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "arrears_level", nullable = false)

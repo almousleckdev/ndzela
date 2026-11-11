@@ -55,7 +55,16 @@ public class ZellaClient {
         return read("/v1/partners/ndzela/public-sessions", cursor, limit, null, false);
     }
 
+    /** One page of what the Zella app refused for the suspended drivers (top-ups paid from their number). */
+    public ZellaEvidencePage evidence(String cursor, int limit) {
+        return ZellaEvidenceParser.parse(get("/v1/partners/ndzela/evidence", cursor, limit, null));
+    }
+
     private ZellaFeedPage read(String path, String cursor, int limit, String customerId, boolean ofACustomer) {
+        return page(get(path, cursor, limit, customerId), ofACustomer);
+    }
+
+    private JsonNode get(String path, String cursor, int limit, String customerId) {
         try {
             String body = client.get().uri(uri -> {
                 uri.path(path).queryParam("limit", limit);
@@ -67,7 +76,7 @@ public class ZellaClient {
                 }
                 return uri.build();
             }).header("X-Api-Key", props.apiKey()).retrieve().body(String.class);
-            return page(mapper.readTree(body), ofACustomer);
+            return mapper.readTree(body);
         } catch (JacksonException e) {
             throw new ZellaException("The Zella app answered something unreadable.", e);
         } catch (RestClientResponseException e) {
@@ -109,12 +118,12 @@ public class ZellaClient {
         return new ZellaFeedPage(items, text(json, "nextCursor"), json.path("hasMore").asBoolean(false));
     }
 
-    private static String text(JsonNode node, String field) {
+    static String text(JsonNode node, String field) {
         JsonNode value = node.path(field);
         return value.isValueNode() && !value.isNull() && !value.asString("").isBlank() ? value.asString("").trim() : null;
     }
 
-    private static Long number(JsonNode node, String field) {
+    static Long number(JsonNode node, String field) {
         String value = text(node, field);
         try {
             return value == null ? null : new java.math.BigDecimal(value).longValue();
@@ -132,7 +141,7 @@ public class ZellaClient {
         }
     }
 
-    private static java.time.OffsetDateTime time(JsonNode node, String field) {
+    static java.time.OffsetDateTime time(JsonNode node, String field) {
         String value = text(node, field);
         try {
             return value == null ? null : java.time.OffsetDateTime.parse(value);
@@ -144,6 +153,18 @@ public class ZellaClient {
     /** Tells Zella this customer is our driver (idempotent): its feed only serves linked customers. */
     public void link(String customerId) {
         send(() -> client.put().uri("/v1/partners/ndzela/links/{id}", customerId).header("X-Api-Key", props.apiKey()).retrieve().toBodilessEntity());
+    }
+
+    /** Tells Zella to suspend this customer for unpaid rent, with the amount owed (idempotent). */
+    public void suspend(String customerId, long owedMinor, String currency, int decimals) {
+        send(() -> client.put().uri("/v1/partners/ndzela/customers/{id}/suspension", customerId).header("X-Api-Key", props.apiKey())
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .body(java.util.Map.of("owedMinor", owedMinor, "currency", currency, "decimals", decimals)).retrieve().toBodilessEntity());
+    }
+
+    /** Tells Zella the rent is settled and the customer may use the app again (idempotent). */
+    public void restore(String customerId) {
+        send(() -> client.delete().uri("/v1/partners/ndzela/customers/{id}/suspension", customerId).header("X-Api-Key", props.apiKey()).retrieve().toBodilessEntity());
     }
 
     /** Tells Zella the link is gone (idempotent). */

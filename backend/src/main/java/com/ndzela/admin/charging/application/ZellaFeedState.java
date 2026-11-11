@@ -22,6 +22,14 @@ class ZellaFeedState {
         return jdbc.query("select public_sync_cursor from zella_sync_state where country_id = ?", rs -> rs.next() ? rs.getString(1) : null, countryId);
     }
 
+    String evidenceCursor(UUID countryId) {
+        return jdbc.query("select evidence_cursor from zella_sync_state where country_id = ?", rs -> rs.next() ? rs.getString(1) : null, countryId);
+    }
+
+    void saveEvidenceCursor(UUID countryId, String cursor) {
+        jdbc.update("insert into zella_sync_state (country_id, evidence_cursor) values (?, ?) on conflict (country_id) do update set evidence_cursor = excluded.evidence_cursor", countryId, cursor);
+    }
+
     void savePublicCursor(UUID countryId, String cursor) {
         jdbc.update("insert into zella_sync_state (country_id, public_sync_cursor) values (?, ?) on conflict (country_id) do update set public_sync_cursor = excluded.public_sync_cursor", countryId, cursor);
     }
