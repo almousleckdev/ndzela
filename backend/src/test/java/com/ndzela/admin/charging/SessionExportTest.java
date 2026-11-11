@@ -55,7 +55,7 @@ class SessionExportTest extends AbstractZellaFeedTest {
         assertTrue(cell(sheet.getRow(2), 1).contains("Type : public"), cell(sheet.getRow(2), 1));
         assertEquals(1, sheet.getLastRowNum() - 5, "one session and the totals row");
         assertEquals("Public", cell(sheet.getRow(5), column(sheet, "Type")));
-        assertEquals("Sans objet (public)", cell(sheet.getRow(5), column(sheet, "Paiement")));
+        assertEquals("Payé via Zella", cell(sheet.getRow(5), column(sheet, "Paiement")));
     }
 
     @Test

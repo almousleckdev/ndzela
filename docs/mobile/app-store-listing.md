@@ -1,6 +1,6 @@
 # App Store listing: NdZela driver app (`com.ndzela.rider`)
 
-Bundle id `com.ndzela.rider`, team `XB5CS344AV`, version 1.0.0 (1), iOS 14.0 and up. IPA: `driver/build/ios/ipa/NdZela.ipa` (build: `flutter build ipa --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=env/production.json`). Upload with the Transporter app. Steps: [release.md](release.md).
+Bundle id `com.ndzela.rider`, team `XB5CS344AV`, version 1.0.0 (3), iPhone only, iOS 15.0 and up. IPA: `driver/build/ios/ipa/NdZela.ipa` (build: `flutter build ipa --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=env/production.json`). Upload with the Transporter app. Steps: [release.md](release.md).
 
 ## App Store Connect
 1. Register `com.ndzela.rider` under Certificates, Identifiers & Profiles (Xcode already registered it with automatic signing).

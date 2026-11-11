@@ -26,7 +26,7 @@ public class SessionPayment extends TenantOwned {
     @Column(name = "transaction_id", nullable = false, updatable = false)
     private String transactionId;
 
-    @Column(name = "customer_id", nullable = false)
+    @Column(name = "customer_id")
     private String customerId;
 
     @Column(name = "id_tag")

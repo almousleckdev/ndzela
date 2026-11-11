@@ -33,12 +33,21 @@ class ZellaPublicFeedTest extends AbstractZellaFeedTest {
     }
 
     @Test
-    void noDriverPaymentIsKeptForAPublicSession() {
+    void aPublicSessionKeepsItsPaymentWithNoCustomer() {
         aPublicSession();
 
         sync();
 
-        assertEquals(0, rows("select count(*) from session_payments"));
+        assertEquals(1, rows("select count(*) from session_payments where transaction_id = '900' and customer_id is null and id_tag is null and payment_state = 'CHARGED' and total_charged_minor = 6000"));
+    }
+
+    @Test
+    void aPublicSessionIsListedAsPaidThroughZella() throws Exception {
+        aPublicSession();
+        sync();
+
+        send(get("/api/v1/charging/sessions?kind=PUBLIC"), manager).andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].payment.state").value("CHARGED")).andExpect(jsonPath("$.items[0].payment.total").value(6000));
     }
 
     @Test

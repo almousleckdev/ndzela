@@ -33,7 +33,7 @@ cd driver
 flutter build appbundle --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=env/production.json   # Google Play (needs android/key.properties)
 flutter build ipa --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=env/production.json         # App Store (then upload with Transporter or Xcode Organizer)
 ```
-Keep `build/symbols` of every release (it turns a crash report back into readable code): upload it to Play Console (Debug symbols) and to your crash tool. Both stores need the minimum iOS to be **14.0** and Android `targetSdk` 36 (set by Flutter).
+Keep `build/symbols` of every release (it turns a crash report back into readable code): upload it to Play Console (Debug symbols) and to your crash tool. Both stores need the minimum iOS to be **15.0** (Apple requires 15.0 from April 2027) and Android `targetSdk` 36 (set by Flutter).
 
 ## Release hardening (2026-11-06 audit)
 - **Android:** the release manifest asks only for `INTERNET`. The `READ_MEDIA_*` and `READ_EXTERNAL_STORAGE` permissions added by the file picker are removed on purpose (Google Play refuses them without a reason; the phone's own picker needs none). Cleartext traffic and backups are off. Check with `aapt2 dump permissions app-release.apk` before each upload.

@@ -82,11 +82,11 @@ public class ZellaFeedService {
         return readAll(state.cursor(countryId), cursor -> zella.sessions(cursor, PAGE, null), this::store, next -> state.saveCursor(countryId, next));
     }
 
-    // The sessions of people who are not NDZela drivers only fill the charging pages: there is no payment of a driver to keep
+    // The sessions of people who are not NDZela drivers keep what they paid, without a customer, so the pages show them as paid through Zella
     private int publicFeed(UUID countryId) {
         return readAll(state.publicCursor(countryId), cursor -> zella.publicSessions(cursor, PAGE), items -> {
             sessionWriter.store(items);
-            return items.size();
+            return savePayments(items);
         }, next -> state.savePublicCursor(countryId, next));
     }
 
@@ -149,6 +149,10 @@ public class ZellaFeedService {
     private int store(List<ZellaFeedItem> received) {
         List<ZellaFeedItem> items = deleted.withoutDeleted(TenantHolder.requireCountry(), received, ZellaFeedItem::transactionId);
         sessionWriter.store(items);
+        return savePayments(items);
+    }
+
+    private int savePayments(List<ZellaFeedItem> items) {
         Map<String, SessionPayment> known = new HashMap<>();
         payments.findAllByTransactionIdIn(items.stream().map(ZellaFeedItem::transactionId).toList()).forEach(p -> known.put(p.getTransactionId(), p));
         int changed = 0;
@@ -167,7 +171,9 @@ public class ZellaFeedService {
     }
 
     private static void copy(ZellaFeedItem item, SessionPayment p) {
-        p.setCustomerId(item.customerId());
+        if (item.customerId() != null) {
+            p.setCustomerId(item.customerId());
+        }
         p.setIdTag(item.idTag());
         p.setSessionState(item.sessionState());
         p.setPaymentState(item.paymentState());
