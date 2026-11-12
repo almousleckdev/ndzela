@@ -74,10 +74,12 @@ class DeletionTest extends AbstractDriverTest {
     }
 
     @Test
-    void unpaidRentKeepsTheDriver() throws Exception {
+    void unpaidRentDoesNotBlockDeletionAndTheCarIsFreed() throws Exception {
         jdbc.update("update drivers set arrears_level = 'YELLOW', overdue_amount = 23000");
-        send(delete("/api/v1/drivers/" + driver), manager).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DRIVER_HAS_ARREARS"));
-        assertEquals(1, rows("select count(*) from drivers"));
+        send(delete("/api/v1/drivers/" + driver), manager).andExpect(status().isNoContent());
+        assertEquals(0, rows("select count(*) from drivers"));
+        assertEquals(0, rows("select count(*) from contracts"));
+        assertEquals("AVAILABLE", jdbc.queryForObject("select status from vehicles where id = ?::uuid", String.class, vehicle));
     }
 
     @Test

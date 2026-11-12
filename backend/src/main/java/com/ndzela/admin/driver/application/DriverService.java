@@ -120,9 +120,6 @@ public class DriverService {
     @Transactional
     public void delete(UUID id) {
         Driver driver = load(id);
-        if (driver.getArrearsLevel() != com.ndzela.admin.driver.domain.ArrearsLevel.NONE) {
-            throw new BusinessRuleViolationException("DRIVER_HAS_ARREARS", "This driver owes rent. Settle it or grant a delay first, or suspend the driver instead.");
-        }
         audit.record("DRIVER_DELETED", "DRIVER", id.toString(), label(driver), driver.getCountryId(), null);
         try {
             assignmentService.discardOf(driver);

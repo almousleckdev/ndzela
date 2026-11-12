@@ -54,7 +54,6 @@ const CODE_MESSAGES: Record<string, string> = {
   DRIVER_HAS_VEHICLE: "Ce chauffeur a déjà un véhicule.",
   DRIVER_HAS_NO_VEHICLE: "Ce chauffeur n'a pas de véhicule.",
   DRIVER_HAS_HISTORY: "Ce chauffeur a des paiements ou des recharges enregistrés : suspendez-le plutôt que de le supprimer.",
-  DRIVER_HAS_ARREARS: "Ce chauffeur a des loyers impayés : régularisez-les ou accordez un délai, ou suspendez-le plutôt que de le supprimer.",
   VEHICLE_NOT_AVAILABLE: "Ce véhicule n'est pas disponible.",
   VEHICLE_ALREADY_ASSIGNED: "Ce véhicule vient d'être affecté à un autre chauffeur.",
   TRAINING_CENTER_NAME_TAKEN: "Un centre de formation avec ce nom existe déjà.",

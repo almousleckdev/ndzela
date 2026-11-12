@@ -80,7 +80,7 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
       title={isDelete ? "Supprimer ce chauffeur ?" : isUnlock ? "Débloquer la connexion de ce chauffeur ?" : "Réactiver ce chauffeur ?"}
       description={
         isDelete
-          ? `${name} sera supprimé définitivement avec ses contrats, ses arrêts et ses affectations, et son véhicule redeviendra disponible. Impossible si un paiement ou une recharge est enregistré : suspendez-le alors.`
+          ? `${name} sera supprimé définitivement avec ses contrats, ses arrêts et ses affectations, et son véhicule redeviendra disponible. Les loyers impayés sont abandonnés. Impossible si un paiement ou une recharge est enregistré : suspendez-le alors.`
           : isUnlock
             ? `${name} a été bloqué après plusieurs tentatives de connexion échouées. Il pourra se reconnecter immédiatement, sans attendre la fin du blocage.`
             : `${name} redeviendra actif.`
