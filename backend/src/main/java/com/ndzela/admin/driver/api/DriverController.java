@@ -7,6 +7,7 @@ import com.ndzela.admin.common.web.dto.ReasonRequest;
 import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.driver.api.dto.AssignVehicleRequest;
 import com.ndzela.admin.driver.api.dto.ChangeVehicleRequest;
+import com.ndzela.admin.driver.api.dto.PurgeRequest;
 import com.ndzela.admin.driver.api.dto.CreateDriverRequest;
 import com.ndzela.admin.driver.api.dto.DriverResponse;
 import com.ndzela.admin.driver.api.dto.SuspendRequest;
@@ -138,6 +139,13 @@ public class DriverController {
     @PreAuthorize("hasAuthority('drivers:delete')")
     public void delete(@PathVariable UUID id) {
         drivers.delete(id);
+    }
+
+    @PostMapping("/{id}/purge")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('drivers:purge')")
+    public void purge(@PathVariable UUID id, @Valid @RequestBody PurgeRequest request) {
+        drivers.purge(id);
     }
 
     @PostMapping("/{id}/vehicle")

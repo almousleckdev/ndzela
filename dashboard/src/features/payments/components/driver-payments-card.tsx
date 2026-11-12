@@ -13,6 +13,7 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { ContractProgressBlock } from "@/features/payments/components/contract-progress-block";
 import { RecordPaymentDialog } from "@/features/payments/components/record-payment-dialog";
+import { IncidentDialog } from "@/features/payments/components/incident-dialog";
 import { WaiverDialog } from "@/features/payments/components/waiver-dialog";
 import { DAY_STATUS_CLASS, DAY_STATUS_LABELS, ENTRY_TYPE_LABELS, LEVEL_BADGE, LEVEL_LABELS, METHOD_LABELS } from "@/features/payments/lib/payment-labels";
 import { paymentsService } from "@/features/payments/services/payments.service";
@@ -25,6 +26,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
   const account = useAsync(() => paymentsService.account(driverId), [driverId]);
   const [paying, setPaying] = useState(false);
   const [waiving, setWaiving] = useState(false);
+  const [halfDay, setHalfDay] = useState(false);
   const a = account.data;
   const refresh = () => { account.reload(); onChanged(); };
 
@@ -35,6 +37,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
         {a?.contractId && (
           <div className="flex flex-wrap gap-2">
             {can(PERMISSIONS.PAYMENTS_CREATE) && <Button onClick={() => setPaying(true)}>Enregistrer un paiement</Button>}
+            {can(PERMISSIONS.INCIDENTS_DECLARE) && <Button variant="outline" onClick={() => setHalfDay(true)}>Demi-journée</Button>}
             {can(PERMISSIONS.ARREARS_MANAGE) && a.overdueAmount > 0 && <Button variant="outline" onClick={() => setWaiving(true)}>Accorder un délai</Button>}
           </div>
         )}
@@ -86,6 +89,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
         </div>
       )}
       {paying && a && <RecordPaymentDialog driverId={driverId} driverName={a.driverName} overdueAmount={a.overdueAmount} dailyRent={a.dailyRent} onClose={() => setPaying(false)} onSaved={() => { setPaying(false); refresh(); }} />}
+      {halfDay && a && <IncidentDialog driverId={driverId} driverName={a.driverName} kind="HALF_DAY" onClose={() => setHalfDay(false)} onSaved={() => { setHalfDay(false); refresh(); }} />}
       {waiving && a && <WaiverDialog driverId={driverId} driverName={a.driverName} overdueAmount={a.overdueAmount} dailyRent={a.dailyRent} onClose={() => setWaiving(false)} onSaved={() => { setWaiving(false); refresh(); }} />}
     </Card>
   );

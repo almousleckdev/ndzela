@@ -33,6 +33,7 @@ import java.util.UUID;
 public class DayIncidentService {
     static final int HALF_DAY_FROM_HOURS = 4;
     static final int STOP_AFTER_HOURS = 8;
+    static final int MAX_DAYS_AHEAD = 7;
 
     private final DayIncidentRepository incidents;
     private final DriverArrearsService driverArrears;
@@ -82,14 +83,19 @@ public class DayIncidentService {
     }
 
     private static void validate(DeclareIncidentRequest request, ContractResponse contract, LocalDate today) {
-        LocalDate last = contract.endDate().isBefore(today) ? contract.endDate() : today;
+        LocalDate ahead = today.plusDays(MAX_DAYS_AHEAD);
+        LocalDate last = contract.endDate().isBefore(ahead) ? contract.endDate() : ahead;
         if (!request.day().isAfter(contract.startDate()) || request.day().isAfter(last)) {
-            throw new BusinessRuleViolationException("DAY_OUT_OF_CONTRACT", "The day must be after the contract starts and not in the future.");
+            throw new BusinessRuleViolationException("DAY_OUT_OF_CONTRACT", "The day must be after the contract starts and at most " + MAX_DAYS_AHEAD + " days ahead.");
         }
         if (request.day().getDayOfWeek() == DayOfWeek.SUNDAY) {
             throw new BusinessRuleViolationException("DAY_NOT_BILLABLE", "Sunday is a rest day: no rent is due.");
         }
-        if (request.cause() == IncidentCause.ELECTRICITY) {
+        if (request.cause() == IncidentCause.LATE_SIGNING) {
+            if (request.kind() != DayIncidentKind.HALF_DAY) {
+                throw new BusinessRuleViolationException("INCIDENT_KIND_INVALID", "A contract signed after noon gives a half day, not a stop.");
+            }
+        } else if (request.cause() == IncidentCause.ELECTRICITY) {
             validateElectricity(request);
         } else if (request.note() == null || request.note().isBlank()) {
             throw new BusinessRuleViolationException("INCIDENT_NOTE_REQUIRED", "A note is required when the cause is not an electricity cut.");

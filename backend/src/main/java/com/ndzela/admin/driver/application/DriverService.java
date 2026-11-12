@@ -122,15 +122,34 @@ public class DriverService {
         Driver driver = load(id);
         audit.record("DRIVER_DELETED", "DRIVER", id.toString(), label(driver), driver.getCountryId(), null);
         try {
-            assignmentService.discardOf(driver);
-            leaveService.deleteOfDriver(id);
-            contractService.deleteOfDriver(id);
-            drivers.delete(driver);
-            drivers.flush();
+            erase(driver);
         } catch (DataIntegrityViolationException e) {
             throw new BusinessRuleViolationException("DRIVER_HAS_HISTORY", "This driver has recorded payments or recharges and cannot be deleted. Suspend the driver instead.");
         }
         fileService.deleteFilesOf(driver);
+    }
+
+    // Erases the driver with all the money recorded on them (payments, waivers, recharges). The audit trail keeps what was erased.
+    @Transactional
+    public void purge(UUID id) {
+        Driver driver = load(id);
+        com.ndzela.admin.driver.domain.DriverPurgeEvent event = new com.ndzela.admin.driver.domain.DriverPurgeEvent(id, new java.util.LinkedHashMap<>());
+        events.publishEvent(event);
+        audit.record("DRIVER_PURGED", "DRIVER", id.toString(), label(driver), driver.getCountryId(), "erased " + event.erased());
+        try {
+            erase(driver);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessRuleViolationException("DRIVER_PURGE_BLOCKED", "Something still refers to this driver and prevents the deletion.");
+        }
+        fileService.deleteFilesOf(driver);
+    }
+
+    private void erase(Driver driver) {
+        assignmentService.discardOf(driver);
+        leaveService.deleteOfDriver(driver.getId());
+        contractService.deleteOfDriver(driver.getId());
+        drivers.delete(driver);
+        drivers.flush();
     }
 
     @Transactional

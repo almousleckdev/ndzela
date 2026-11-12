@@ -20,21 +20,21 @@ interface IncidentDialogProps {
 }
 
 const COPY: Record<IncidentKind, { title: string; hint: string; confirm: string; done: string }> = {
-  HALF_DAY: { title: "Déclarer une demi-journée", hint: "Coupure d'électricité de 4 à 8 h : le chauffeur ne paie que la moitié du loyer de ce jour.", confirm: "Déclarer la demi-journée", done: "Demi-journée déclarée." },
+  HALF_DAY: { title: "Déclarer une demi-journée", hint: "Le chauffeur ne paie que la moitié du loyer de ce jour : coupure d'électricité de 4 à 8 h, contrat signé après 12 h, urgence...", confirm: "Déclarer la demi-journée", done: "Demi-journée déclarée." },
   STOP: { title: "Déclarer un arrêt", hint: "Coupure de plus de 8 h : le chauffeur ne paie pas ce jour. Les dimanches sont déjà exclus.", confirm: "Déclarer l'arrêt", done: "Arrêt déclaré." },
 };
 
-function yesterday(): string {
+function inDays(offset: number): string {
   const date = new Date();
-  date.setDate(date.getDate() - 1);
+  date.setDate(date.getDate() + offset);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-// An administrator declares that a past day was half or not payable (electricity cut or another cause)
+// A holder of `incidents:declare` declares that a day is half or not payable (electricity cut, contract signed after noon or another cause)
 export function IncidentDialog({ driverId, driverName, kind, onClose, onSaved }: IncidentDialogProps) {
   const { addToast } = useToast();
   const copy = COPY[kind];
-  const [day, setDay] = useState(yesterday());
+  const [day, setDay] = useState(kind === "HALF_DAY" ? inDays(0) : inDays(-1));
   const [cause, setCause] = useState<IncidentCause>("ELECTRICITY");
   const [hours, setHours] = useState(kind === "HALF_DAY" ? "4" : "9");
   const [note, setNote] = useState("");
@@ -60,8 +60,8 @@ export function IncidentDialog({ driverId, driverName, kind, onClose, onSaved }:
   return (
     <Dialog isOpen onClose={onClose} title={copy.title} description={`${driverName}. ${copy.hint}`}>
       <div className="space-y-4">
-        <FormField label="Jour concerné *" type="date" max={yesterday()} value={day} onChange={(event) => change(setDay)(event.target.value)} hint="Un jour passé du contrat." />
-        <SelectField label="Cause *" options={[{ value: "ELECTRICITY", label: "Coupure d'électricité" }, { value: "OTHER", label: "Autre" }]} value={cause} onChange={(event) => change(setCause)(event.target.value as IncidentCause)} />
+        <FormField label="Jour concerné *" type="date" max={inDays(7)} value={day} onChange={(event) => change(setDay)(event.target.value)} hint="Aujourd'hui, un jour passé ou jusqu'à 7 jours à venir (hors dimanche)." />
+        <SelectField label="Cause *" options={[{ value: "ELECTRICITY", label: "Coupure d'électricité" }, ...(kind === "HALF_DAY" ? [{ value: "LATE_SIGNING", label: "Contrat signé après 12 h" }] : []), { value: "OTHER", label: "Autre (urgence...)" }]} value={cause} onChange={(event) => change(setCause)(event.target.value as IncidentCause)} />
         {cause === "ELECTRICITY" && <FormField label="Durée de la coupure (heures) *" inputMode="numeric" value={hours} onChange={(event) => change(setHours)(event.target.value)} />}
         <div>
           <Label htmlFor="incident-note">{cause === "OTHER" ? "Note *" : "Note"}</Label>

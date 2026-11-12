@@ -19,6 +19,10 @@ public interface ChargingEntryRepository extends JpaRepository<ChargingEntry, UU
 
     boolean existsByStationId(UUID stationId);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("delete from ChargingEntry e where e.driverId = :driverId or e.reversesEntryId in (select r.id from ChargingEntry r where r.driverId = :driverId)")
+    int deleteOfDriver(@Param("driverId") UUID driverId);
+
     boolean existsBySessionId(UUID sessionId);
 
     // (session id, recharge id) of the sessions already paid; a cancelled recharge frees its session

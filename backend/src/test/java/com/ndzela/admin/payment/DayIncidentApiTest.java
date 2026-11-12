@@ -95,9 +95,25 @@ class DayIncidentApiTest extends AbstractDriverTest {
             sunday = sunday.minusDays(1);
         }
         declare(admin, sunday, "HALF_DAY", "ELECTRICITY", 5, null).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DAY_NOT_BILLABLE"));
-        declare(admin, LocalDate.now(ZONE).plusDays(2), "STOP", "ELECTRICITY", 9, null).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DAY_OUT_OF_CONTRACT"));
+        declare(admin, LocalDate.now(ZONE).plusDays(8), "STOP", "ELECTRICITY", 9, null).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DAY_OUT_OF_CONTRACT"));
         declare(admin, LocalDate.now(ZONE).minusDays(30), "STOP", "ELECTRICITY", 9, null).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DAY_OUT_OF_CONTRACT"));
         assertEquals(0, rows("select count(*) from day_incidents"));
+    }
+
+    @Test
+    void aHalfDayCanBeGrantedForTodayBecauseTheContractWasSignedAfterNoon() throws Exception {
+        LocalDate day = LocalDate.now(ZONE);
+        while (day.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            day = day.plusDays(1);
+        }
+        declare(admin, day, "STOP", "LATE_SIGNING", null, null).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INCIDENT_KIND_INVALID"));
+        declare(admin, day, "HALF_DAY", "LATE_SIGNING", null, null).andExpect(status().isCreated()).andExpect(jsonPath("$.cause").value("LATE_SIGNING"));
+        assertEquals(1, rows("select count(*) from day_incidents where cause = 'LATE_SIGNING'"));
+    }
+
+    @Test
+    void onlyTheHolderOfTheIncidentPermissionCanDeclare() throws Exception {
+        declare(manager, pastRentDay, "HALF_DAY", "ELECTRICITY", 5, null).andExpect(status().isForbidden());
     }
 
     @Test

@@ -45,6 +45,8 @@ export const driversService = {
 
   unlockLogin: (id: string) => apiClient<Driver>(`/drivers/${id}/unlock-login`, { method: "POST" }),
 
+  purge: (id: string) => apiClient(`/drivers/${id}/purge`, { method: "POST", body: { confirm: true } }),
+
   remove: (id: string) => apiClient(`/drivers/${id}`, { method: "DELETE" }),
 
   assignVehicle: (id: string, vehicleId: string, deposit: number) => apiClient<Driver>(`/drivers/${id}/vehicle`, { method: "POST", body: { vehicleId, deposit } }),

@@ -25,6 +25,7 @@ import { RequirePermission } from "@/features/access/components/require-permissi
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { useAuthStore } from "@/features/auth/store/auth.store";
+import { DeleteDriversDialog } from "@/features/drivers/components/delete-drivers-dialog";
 import { DriverActionDialogs, availableActions, type DriverAction } from "@/features/drivers/components/driver-actions";
 import { DriverAvatar } from "@/features/drivers/components/driver-avatar";
 import { DriverLeavesDialog } from "@/features/drivers/components/driver-leaves-dialog";
@@ -70,8 +71,13 @@ function DriversContent() {
   const [action, setAction] = useState<DriverAction | null>(null);
   const [leavesOf, setLeavesOf] = useState<Driver | null>(null);
   const [centersOpen, setCentersOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDelete, setBulkDelete] = useState(false);
+  const mayDelete = can(PERMISSIONS.DRIVERS_DELETE) || can(PERMISSIONS.DRIVERS_PURGE);
   const mustPickCountry = isGlobal && selectedCountry === null;
-  const refresh = () => { list.reload(); stats.reload(); };
+  const refresh = () => { setSelected(new Set()); list.reload(); stats.reload(); };
+  // Only the rows of the page on screen count, so a selection left on another page is never deleted by mistake
+  const chosen = (list.data?.items ?? []).filter((driver) => selected.has(driver.id));
   const s = stats.data;
 
   const columns = useMemo(() => col.columns([
@@ -160,13 +166,23 @@ function DriversContent() {
           </>
         )} />
         <ActiveFilters filters={active} onClear={query.reset} />
-        <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(driver) => driver.id} initiallyHidden={["createdAt"]}
+        {mayDelete && chosen.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-orange-50/60 px-4 py-2 text-sm">
+            <span className="font-medium text-ink">{chosen.length} sélectionné{chosen.length > 1 ? "s" : ""}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setSelected(new Set())}>Tout désélectionner</Button>
+              <Button variant="destructive" onClick={() => setBulkDelete(true)}>Supprimer la sélection</Button>
+            </div>
+          </div>
+        )}
+        <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(driver) => driver.id} selection={mayDelete ? { selected, onChange: setSelected } : undefined} initiallyHidden={["createdAt"]}
           rowMarker={(driver) => LEVEL_MARKER[driver.arrears.level]}
           server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: query.sorting, onSortingChange: query.setSorting }}
           empty={<EmptyState title="Aucun chauffeur" description={(s?.total ?? 0) === 0 ? "Créez le premier chauffeur." : "Aucun chauffeur ne correspond à ces filtres."} />} />
       </Panel>
 
       <DriverActionDialogs target={action} onClose={() => setAction(null)} onDone={() => { setAction(null); refresh(); }} />
+      {bulkDelete && <DeleteDriversDialog drivers={chosen} onClose={() => setBulkDelete(false)} onDone={() => { setBulkDelete(false); refresh(); }} />}
       {leavesOf && <DriverLeavesDialog driver={leavesOf} canDeclare={can(PERMISSIONS.DRIVERS_UPDATE)} onClose={() => setLeavesOf(null)} onChanged={refresh} />}
       {centersOpen && <TrainingCentersDialog onClose={() => setCentersOpen(false)} />}
     </Page>

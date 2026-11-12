@@ -15,6 +15,7 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 | `reports` | read, export | **Seeded only** |
 | `audit` | read, export | Implemented (SUPER_ADMIN, ADMIN) |
 | `vehicles` | read, create, update, delete | Implemented (GESTIONNAIRE all four; ADMIN, COMPTABLE, VIEWER read) |
+| `drivers` (purge), `incidents` (declare) | purge, declare | Implemented, V55 (SUPER_ADMIN, ADMIN; assignable to any role). `drivers:purge` erases a driver with their money; `incidents:declare` declares and cancels half days and stops. |
 | `payments`, `arrears` | payments: read, create, reverse, export; arrears: manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse and export: ADMIN, export also COMPTABLE; arrears:manage: ADMIN). `payments:export` also gates `GET /payments/accounts/export` (the Progression/Arrears accounts view), separate from the transaction-history export. |
 | `charging` | read, create, reverse, export, manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse: ADMIN; export: ADMIN, COMPTABLE; manage stations: GESTIONNAIRE, ADMIN) |
 | `contracts` | read, print, update | Implemented (GESTIONNAIRE, ADMIN, COMPTABLE: read and print; VIEWER: read; GESTIONNAIRE and ADMIN also update) |

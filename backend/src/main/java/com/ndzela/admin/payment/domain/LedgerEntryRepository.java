@@ -16,6 +16,13 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID>,
 
     boolean existsByContractId(UUID contractId);
 
+    @Query("select coalesce(sum(e.amount), 0) from LedgerEntry e where e.driverId = :driverId and e.type = com.ndzela.admin.payment.domain.LedgerEntryType.PAYMENT")
+    java.math.BigDecimal paymentsTotalOf(@Param("driverId") UUID driverId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("delete from LedgerEntry e where e.driverId = :driverId")
+    int deleteOfDriver(@Param("driverId") UUID driverId);
+
     Optional<LedgerEntry> findByRequestId(UUID requestId);
 
     List<LedgerEntry> findAllByRequestIdIn(Collection<UUID> requestIds);

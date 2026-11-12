@@ -33,13 +33,13 @@ public class DayIncidentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAuthority('arrears:manage')")
+    @PreAuthorize("hasAuthority('incidents:declare')")
     public IncidentResponse declare(@PathVariable UUID driverId, @Valid @RequestBody DeclareIncidentRequest request) {
         return incidents.declare(driverId, request);
     }
 
     @PostMapping("/{incidentId}/cancel")
-    @PreAuthorize("hasAuthority('arrears:manage')")
+    @PreAuthorize("hasAuthority('incidents:declare')")
     public IncidentResponse cancel(@PathVariable UUID driverId, @PathVariable UUID incidentId) {
         return incidents.cancel(driverId, incidentId);
     }

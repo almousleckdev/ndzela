@@ -5,6 +5,7 @@ import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions";
+import { DeleteDriversDialog } from "@/features/drivers/components/delete-drivers-dialog";
 import { SuspendDialog } from "@/features/drivers/components/suspend-dialog";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver } from "@/features/drivers/types";
@@ -23,7 +24,7 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
   if (can(PERMISSIONS.DRIVERS_BLOCK) && driver.status !== "BLOCKED") items.push({ kind: "block", label: "Bloquer", destructive: true });
   if (can(PERMISSIONS.DRIVERS_UNLOCK) && driver.loginLocked) items.push({ kind: "unlock-login", label: "Débloquer la connexion" });
   if (can(PERMISSIONS.DRIVERS_UPDATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Retirer le véhicule" });
-  if (can(PERMISSIONS.DRIVERS_DELETE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
+  if (can(PERMISSIONS.DRIVERS_DELETE) || can(PERMISSIONS.DRIVERS_PURGE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
   return items;
 }
 
@@ -61,14 +62,14 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
     );
   }
 
-  const isDelete = kind === "delete";
+  if (kind === "delete") return <DeleteDriversDialog drivers={[driver]} onClose={onClose} onDone={() => onDone(kind)} />;
+
   const isUnlock = kind === "unlock-login";
   const confirm = async () => {
     try {
-      if (isDelete) await driversService.remove(driver.id);
-      else if (isUnlock) await driversService.unlockLogin(driver.id);
+      if (isUnlock) await driversService.unlockLogin(driver.id);
       else await driversService.reactivate(driver.id);
-      addToast({ title: "Succès", description: isDelete ? "Chauffeur supprimé." : isUnlock ? "Connexion débloquée." : "Chauffeur réactivé.", type: "success" });
+      addToast({ title: "Succès", description: isUnlock ? "Connexion débloquée." : "Chauffeur réactivé.", type: "success" });
       onDone(kind);
     } catch (error) {
       addToast({ title: "Erreur", description: getErrorMessage(error, "L'action a échoué."), type: "error" });
@@ -76,15 +77,13 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
     }
   };
   return (
-    <ConfirmDialog isOpen onClose={onClose} onConfirm={confirm} destructive={isDelete}
-      title={isDelete ? "Supprimer ce chauffeur ?" : isUnlock ? "Débloquer la connexion de ce chauffeur ?" : "Réactiver ce chauffeur ?"}
+    <ConfirmDialog isOpen onClose={onClose} onConfirm={confirm}
+      title={isUnlock ? "Débloquer la connexion de ce chauffeur ?" : "Réactiver ce chauffeur ?"}
       description={
-        isDelete
-          ? `${name} sera supprimé définitivement avec ses contrats, ses arrêts et ses affectations, et son véhicule redeviendra disponible. Les loyers impayés sont abandonnés. Impossible si un paiement ou une recharge est enregistré : suspendez-le alors.`
-          : isUnlock
-            ? `${name} a été bloqué après plusieurs tentatives de connexion échouées. Il pourra se reconnecter immédiatement, sans attendre la fin du blocage.`
-            : `${name} redeviendra actif.`
+        isUnlock
+          ? `${name} a été bloqué après plusieurs tentatives de connexion échouées. Il pourra se reconnecter immédiatement, sans attendre la fin du blocage.`
+          : `${name} redeviendra actif.`
       }
-      confirmText={isDelete ? "Supprimer" : isUnlock ? "Débloquer" : "Réactiver"} cancelText="Annuler" />
+      confirmText={isUnlock ? "Débloquer" : "Réactiver"} cancelText="Annuler" />
   );
 }

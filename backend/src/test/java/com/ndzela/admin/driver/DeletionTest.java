@@ -83,6 +83,32 @@ class DeletionTest extends AbstractDriverTest {
     }
 
     @Test
+    void aDriverWithMoneyIsErasedWithItOnlyByAnAdministratorWhoConfirms() throws Exception {
+        pay(driver);
+        String station = id(postJson("/api/v1/charging/stations", "{\"name\":\"Akanda\"}", manager).andExpect(status().isCreated()));
+        postJson("/api/v1/charging/recharges", "{\"vehicleId\":\"" + vehicle + "\",\"stationId\":\"" + station + "\",\"amount\":3000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"batteryBefore\":20,\"batteryAfter\":80,\"requestId\":\"" + UUID.randomUUID() + "\"}", manager)
+                .andExpect(status().isCreated());
+        String url = "/api/v1/drivers/" + driver + "/purge";
+
+        send(delete("/api/v1/drivers/" + driver), manager).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DRIVER_HAS_HISTORY"));
+        postJson(url, "{\"confirm\":true}", manager).andExpect(status().isForbidden());
+        postJson(url, "{\"confirm\":false}", admin).andExpect(status().isBadRequest());
+        postJson(url, "{}", admin).andExpect(status().isBadRequest());
+        assertEquals(1, rows("select count(*) from drivers"));
+
+        postJson(url, "{\"confirm\":true}", admin).andExpect(status().isNoContent());
+
+        assertEquals(0, rows("select count(*) from drivers"));
+        assertEquals(0, rows("select count(*) from ledger_entries"));
+        assertEquals(0, rows("select count(*) from ledger_entry_days"));
+        assertEquals(0, rows("select count(*) from charging_entries"));
+        assertEquals(0, rows("select count(*) from contracts"));
+        assertEquals("AVAILABLE", jdbc.queryForObject("select status from vehicles", String.class));
+        assertEquals(1, auditRows("DRIVER_PURGED"));
+        org.junit.jupiter.api.Assertions.assertTrue(jdbc.queryForObject("select details from audit_logs where action = 'DRIVER_PURGED'", String.class).contains("paymentsAmount=1000"));
+    }
+
+    @Test
     void aRechargeKeepsTheDriverAndTheVehicle() throws Exception {
         String station = id(postJson("/api/v1/charging/stations", "{\"name\":\"Akanda\"}", manager).andExpect(status().isCreated()));
         postJson("/api/v1/charging/recharges", "{\"vehicleId\":\"" + vehicle + "\",\"stationId\":\"" + station + "\",\"amount\":3000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R1\",\"batteryBefore\":20,\"batteryAfter\":80,\"requestId\":\"" + UUID.randomUUID() + "\"}", manager)

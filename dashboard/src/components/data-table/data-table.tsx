@@ -39,10 +39,12 @@ interface DataTableProps<T extends RowData> {
   // Ids of columns hidden at first; the user can show them from "Colonnes".
   initiallyHidden?: string[];
   className?: string;
+  // Adds a checkbox column (and "select the page"); the caller owns the selected ids, which need `getRowId`.
+  selection?: { selected: ReadonlySet<string>; onChange: (next: Set<string>) => void };
 }
 
 // The one table of the console
-export function DataTable<T extends RowData>({ columns, data, server, error, onRetry, getRowId, rowMarker, numeric = [], empty, initialSorting = [], initiallyHidden = [], className }: DataTableProps<T>) {
+export function DataTable<T extends RowData>({ columns, data, server, error, onRetry, getRowId, rowMarker, numeric = [], empty, initialSorting = [], initiallyHidden = [], className, selection }: DataTableProps<T>) {
   const [localSorting, setLocalSorting] = useState<SortingState>(initialSorting);
   const [localPagination, setLocalPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [visibility, setVisibility] = useState<ColumnVisibilityState>(() => Object.fromEntries(initiallyHidden.map((id) => [id, false])));
@@ -77,6 +79,20 @@ export function DataTable<T extends RowData>({ columns, data, server, error, onR
   const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize));
   const first = total === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1;
   const last = Math.min(total, (pagination.pageIndex + 1) * pagination.pageSize);
+  const pageIds = selection && getRowId && data ? data.map((row) => getRowId(row)) : [];
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => selection?.selected.has(id));
+  const togglePage = () => {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    for (const id of pageIds) { if (allOnPage) next.delete(id); else next.add(id); }
+    selection.onChange(next);
+  };
+  const toggleOne = (id: string) => {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    selection.onChange(next);
+  };
   const canHide = table.getAllLeafColumns().filter((column) => column.getCanHide());
 
   return (
@@ -94,6 +110,11 @@ export function DataTable<T extends RowData>({ columns, data, server, error, onR
               <thead className="sticky top-0 z-10 bg-white">
                 {table.getHeaderGroups().map((group) => (
                   <tr key={group.id}>
+                    {selection && (
+                      <th scope="col" className="w-10 border-b border-line py-2.5 pl-4 pr-1">
+                        <input type="checkbox" aria-label="Sélectionner toute la page" checked={allOnPage} onChange={togglePage} disabled={pageIds.length === 0} className="h-4 w-4 accent-[#F97316]" />
+                      </th>
+                    )}
                     {group.headers.map((header) => {
                       const right = numeric.includes(header.column.id);
                       const sort = header.column.getIsSorted();
@@ -116,15 +137,21 @@ export function DataTable<T extends RowData>({ columns, data, server, error, onR
               <tbody>
                 {data === null ? (
                   Array.from({ length: 6 }, (_, index) => (
-                    <tr key={index}><td colSpan={Math.max(table.getVisibleLeafColumns().length, 1)} className="border-b border-line/70 px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+                    <tr key={index}><td colSpan={Math.max(table.getVisibleLeafColumns().length + (selection ? 1 : 0), 1)} className="border-b border-line/70 px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
                   ))
                 ) : rows.map((row) => {
                   const marker = rowMarker?.(row.original as T);
                   return (
-                    <tr key={row.id} className="group relative border-b border-line/70 transition-colors last:border-b-0 hover:bg-slate-50/80">
+                    <tr key={row.id} className={cn("group relative border-b border-line/70 transition-colors last:border-b-0 hover:bg-slate-50/80", selection?.selected.has(row.id) && "bg-orange-50/60")}>
+                      {selection && (
+                        <td className="relative w-10 py-3 pl-4 pr-1 align-middle">
+                          {marker && <span aria-hidden className={cn("absolute inset-y-0 left-0 w-[3px]", marker)} />}
+                          <input type="checkbox" aria-label="Sélectionner la ligne" checked={selection.selected.has(row.id)} onChange={() => toggleOne(row.id)} className="h-4 w-4 accent-[#F97316]" />
+                        </td>
+                      )}
                       {row.getVisibleCells().map((cell, index) => (
                         <td key={cell.id} className={cn("relative whitespace-nowrap px-3.5 py-3 align-middle text-ink first:pl-4 last:pr-4", numeric.includes(cell.column.id) && "text-right tabular-nums")}>
-                          {index === 0 && marker && <span aria-hidden className={cn("absolute inset-y-0 left-0 w-[3px]", marker)} />}
+                          {index === 0 && marker && !selection && <span aria-hidden className={cn("absolute inset-y-0 left-0 w-[3px]", marker)} />}
                           <table.FlexRender cell={cell} />
                         </td>
                       ))}

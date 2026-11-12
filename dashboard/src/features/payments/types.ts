@@ -140,7 +140,7 @@ export interface TransactionRow {
 }
 
 export type IncidentKind = "HALF_DAY" | "STOP";
-export type IncidentCause = "ELECTRICITY" | "OTHER";
+export type IncidentCause = "ELECTRICITY" | "LATE_SIGNING" | "OTHER";
 
 export interface IncidentInput {
   day: string;

@@ -44,7 +44,7 @@ function ArrearsContent() {
   const [waiving, setWaiving] = useState<AccountRow | null>(null);
   const [declaring, setDeclaring] = useState<{ row: AccountRow; kind: IncidentKind } | null>(null);
   const onIncident = useCallback((row: AccountRow, kind: IncidentKind) => setDeclaring({ row, kind }), []);
-  const columns = useAccountColumns({ onPay: can(PERMISSIONS.PAYMENTS_CREATE) ? setPaying : undefined, onWaive: can(PERMISSIONS.ARREARS_MANAGE) ? setWaiving : undefined, onIncident: can(PERMISSIONS.ARREARS_MANAGE) ? onIncident : undefined, contact: true, showCollected: false });
+  const columns = useAccountColumns({ onPay: can(PERMISSIONS.PAYMENTS_CREATE) ? setPaying : undefined, onWaive: can(PERMISSIONS.ARREARS_MANAGE) ? setWaiving : undefined, onIncident: can(PERMISSIONS.INCIDENTS_DECLARE) ? onIncident : undefined, contact: true, showCollected: false });
   const refresh = () => { list.reload(); summary.reload(); };
   usePolling(refresh, 15000);
   const s = summary.data;

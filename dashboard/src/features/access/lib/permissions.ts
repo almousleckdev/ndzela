@@ -38,11 +38,13 @@ export const PERMISSIONS = {
   DRIVERS_UNLOCK: "drivers:unlock",
   DRIVERS_EXPORT: "drivers:export",
   DRIVERS_DELETE: "drivers:delete",
+  DRIVERS_PURGE: "drivers:purge",
   PAYMENTS_READ: "payments:read",
   PAYMENTS_CREATE: "payments:create",
   PAYMENTS_REVERSE: "payments:reverse",
   PAYMENTS_EXPORT: "payments:export",
   ARREARS_MANAGE: "arrears:manage",
+  INCIDENTS_DECLARE: "incidents:declare",
   CHARGING_READ: "charging:read",
   CHARGING_CREATE: "charging:create",
   CHARGING_REVERSE: "charging:reverse",
@@ -102,12 +104,13 @@ const RESOURCE_LABELS: Record<string, string> = {
   audit: "Historique",
   vehicles: "Véhicules",
   drivers: "Chauffeurs",
+  incidents: "Demi-journées et arrêts",
   training_centers: "Centres de formation",
   inquiries: "Candidatures et messages du site",
 };
 
 // Business resources first, platform administration last.
-const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries", "audit", "vehicles", "drivers", "training_centers", "inquiries"];
+const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries", "audit", "vehicles", "drivers", "incidents", "training_centers", "inquiries"];
 
 const ACTION_LABELS: Record<string, string> = {
   read: "Consulter",
@@ -124,6 +127,8 @@ const ACTION_LABELS: Record<string, string> = {
   unlock: "Débloquer la connexion",
   manage: "Gérer",
   delete: "Supprimer",
+  purge: "Supprimer avec l'argent enregistré",
+  declare: "Déclarer et annuler",
 };
 
 // Resources whose permissions are guarded by the anti-escalation rule (mirrors the backend AccessPolicy).
