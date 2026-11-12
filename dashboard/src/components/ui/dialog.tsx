@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,8 @@ export function Dialog({ isOpen, onClose, title, description, children, classNam
 
   if (!isOpen) return null;
 
-  return (
+  // Rendered in <body> so a dialog opened from inside another dialog is not clipped by it
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
       <div
         className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
@@ -58,6 +60,7 @@ export function Dialog({ isOpen, onClose, title, description, children, classNam
         </div>
         <div className="overflow-y-auto px-6 pb-6">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
