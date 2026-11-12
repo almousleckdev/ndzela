@@ -1,28 +1,27 @@
 import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button-link";
-import { Container } from "@/components/ui/container";
 import { RoadLine } from "@/components/ui/road-line";
 
 export function Hero() {
   return (
-    <section className="overflow-hidden bg-sky">
-      <Container className="grid items-center gap-8 py-14 lg:grid-cols-[1fr_1.1fr] lg:py-20">
+    <section className="flex min-h-[calc(100svh-4rem)] w-full items-center overflow-hidden bg-black text-white">
+      <div className="mx-auto grid h-full w-full max-w-[110rem] items-center gap-8 px-4 py-10 sm:px-8 lg:grid-cols-[1fr_1.3fr] lg:px-12">
         <div>
           <h1 className="font-display text-4xl font-bold leading-[1.08] tracking-tight text-balance sm:text-5xl lg:text-6xl">
             La voiture électrique qui travaille pour vous.
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-300">
             Ndzela loue des véhicules électriques aux chauffeurs VTC de Libreville, avec un contrat qui mène à la propriété de la voiture. Et pour tous les automobilistes, nos propres bornes de recharge.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <ButtonLink href="/devenir-chauffeur" className="h-12 px-6 text-base">Devenir chauffeur partenaire</ButtonLink>
-            <ButtonLink href="/#recharge" variant="secondary" className="h-12 px-6 text-base">Recharger ma voiture</ButtonLink>
+            <ButtonLink href="/#recharge" variant="secondary" className="h-12 border-white/30 bg-transparent px-6 text-base text-white hover:bg-white/10">Recharger ma voiture</ButtonLink>
           </div>
           <RoadLine className="mt-12 max-w-xs" />
         </div>
 
-        <Image src="/appui/loginandhome.png" alt="Les écrans de connexion et d'accueil de l'application Ndzela, avec le solde du loyer" width={999} height={1295} priority sizes="(min-width: 1024px) 520px, 90vw" className="mx-auto h-auto max-h-[36rem] w-auto max-w-full" />
-      </Container>
+        <Image src="/appui/hero.png" alt="Les écrans de connexion et d'accueil de l'application Ndzela, avec le solde du loyer" width={1920} height={1440} priority sizes="(min-width: 1024px) 60vw, 100vw" className="mx-auto h-auto max-h-[calc(100svh-6rem)] w-full object-contain" />
+      </div>
     </section>
   );
 }

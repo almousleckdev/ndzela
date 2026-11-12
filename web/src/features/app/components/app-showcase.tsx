@@ -26,8 +26,8 @@ export function AppShowcase() {
             <div className="mt-10"><StoreButtons /></div>
             <p className="mt-4 text-sm text-muted">Pour iPhone et Android. Le compte est créé par Ndzela avec votre contrat.</p>
           </div>
-          <div>
-            <Image src="/appui/paymentandsuccess.png" alt="Écran de paiement du loyer et détails d'un paiement confirmé dans l'application Ndzela" width={1070} height={1257} sizes="(min-width: 1024px) 480px, 90vw" className="mx-auto h-auto max-h-[36rem] w-auto max-w-full" />
+          <div className="overflow-hidden rounded-3xl bg-black">
+            <Image src="/appui/payment.png" alt="Écran de paiement du loyer et détails d'un paiement confirmé dans l'application Ndzela" width={1920} height={1440} sizes="(min-width: 1024px) 560px, 90vw" className="mx-auto h-auto w-full" />
           </div>
         </div>
 
