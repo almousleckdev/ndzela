@@ -79,7 +79,7 @@ export function DataTable<T extends RowData>({ columns, data, server, error, onR
   const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize));
   const first = total === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1;
   const last = Math.min(total, (pagination.pageIndex + 1) * pagination.pageSize);
-  const pageIds = selection && getRowId && data ? data.map((row) => getRowId(row)) : [];
+  const pageIds = selection ? rows.map((row) => row.id) : [];
   const allOnPage = pageIds.length > 0 && pageIds.every((id) => selection?.selected.has(id));
   const togglePage = () => {
     if (!selection) return;

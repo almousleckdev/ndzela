@@ -86,7 +86,7 @@ public class DayIncidentService {
         LocalDate ahead = today.plusDays(MAX_DAYS_AHEAD);
         LocalDate last = contract.endDate().isBefore(ahead) ? contract.endDate() : ahead;
         if (!request.day().isAfter(contract.startDate()) || request.day().isAfter(last)) {
-            throw new BusinessRuleViolationException("DAY_OUT_OF_CONTRACT", "The day must be after the contract starts and at most " + MAX_DAYS_AHEAD + " days ahead.");
+            throw new BusinessRuleViolationException("DAY_OUT_OF_CONTRACT", "The first billed day is the day after the contract starts; the day must be that day or later, and at most " + MAX_DAYS_AHEAD + " days ahead.");
         }
         if (request.day().getDayOfWeek() == DayOfWeek.SUNDAY) {
             throw new BusinessRuleViolationException("DAY_NOT_BILLABLE", "Sunday is a rest day: no rent is due.");

@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { Stack, Status, type Tone } from "@/components/data-table/cells";
+import { BulkDelete } from "@/components/data-table/bulk-delete";
 import { DataTable } from "@/components/data-table/data-table";
 import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { columnsFor } from "@/components/data-table/features";
@@ -52,6 +53,7 @@ function VehiclesContent() {
   const [editing, setEditing] = useState<Vehicle | "new" | null>(null);
   const [changing, setChanging] = useState<{ vehicle: Vehicle; action: (typeof STATUS_ACTIONS)[number] } | null>(null);
   const [deleting, setDeleting] = useState<Vehicle | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const { reload: reloadList } = list;
   const { reload: reloadCounts } = counts;
   const refresh = useCallback(() => { reloadList(); reloadCounts(); }, [reloadList, reloadCounts]);
@@ -135,7 +137,11 @@ function VehiclesContent() {
           </>
         )} />
         <ActiveFilters filters={active} onClear={query.reset} />
-        <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(vehicle) => vehicle.id} numeric={["dailyRent"]} initiallyHidden={["createdAt"]}
+        {can(PERMISSIONS.VEHICLES_DELETE) && (
+          <BulkDelete items={list.data?.items ?? []} selected={selected} onSelectedChange={setSelected} idOf={(v) => v.id} nameOf={(v) => `${v.fleetNumber} · ${v.plate}`}
+            remove={(v) => vehiclesService.remove(v.id)} noun={{ one: "véhicule", many: "véhicules" }} note="Impossible pour un véhicule loué ou qui a de l'argent enregistré : retirez-le du chauffeur ou mettez-le hors service." onDone={refresh} />
+        )}
+        <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(vehicle) => vehicle.id} selection={can(PERMISSIONS.VEHICLES_DELETE) ? { selected, onChange: setSelected } : undefined} numeric={["dailyRent"]} initiallyHidden={["createdAt"]}
           server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: query.sorting, onSortingChange: query.setSorting }}
           empty={<EmptyState title="Aucun véhicule" description={total === 0 ? "Ajoutez le premier véhicule de la flotte." : "Aucun véhicule ne correspond à ces filtres."} />} />
       </Panel>

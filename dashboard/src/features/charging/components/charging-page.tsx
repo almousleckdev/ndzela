@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { None, Stack } from "@/components/data-table/cells";
+import { BulkDelete } from "@/components/data-table/bulk-delete";
 import { DataTable } from "@/components/data-table/data-table";
 import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { columnsFor } from "@/components/data-table/features";
@@ -52,6 +53,7 @@ function ChargingContent() {
   const [tab, setTab] = useState<"recharges" | "sessions">("sessions");
   const [cancelling, setCancelling] = useState<Recharge | null>(null);
   const [deleting, setDeleting] = useState<Recharge | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const refresh = () => { list.reload(); summary.reload(); };
   usePolling(refresh, 10000);
   const s = summary.data;
@@ -117,7 +119,12 @@ function ChargingContent() {
           </>
         )} />
         <ActiveFilters filters={active} onClear={query.reset} />
-        <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(r) => r.id} numeric={["amount"]} rowMarker={(r) => (r.critical && !r.reversed ? "bg-red-500" : undefined)}
+        {can(PERMISSIONS.CHARGING_DELETE) && (
+          <BulkDelete items={(list.data?.items ?? []).filter((r) => r.type === "RECHARGE")} selected={selected} onSelectedChange={setSelected} idOf={(r) => r.id}
+            nameOf={(r) => `${r.vehicle} · ${formatFcfa(r.amount)}`} remove={(r, reason) => chargingService.deleteRecharge(r.id, reason)} withReason
+            noun={{ one: "recharge", many: "recharges" }} note="Les recharges et leurs annulations sont supprimées définitivement ; la suppression est enregistrée dans le journal d'audit." onDone={refresh} />
+        )}
+        <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(r) => r.id} selection={can(PERMISSIONS.CHARGING_DELETE) ? { selected, onChange: setSelected } : undefined} numeric={["amount"]} rowMarker={(r) => (r.critical && !r.reversed ? "bg-red-500" : undefined)}
           server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: query.sorting, onSortingChange: query.setSorting }}
           empty={<EmptyState title="Aucune recharge" description="Aucune recharge sur cette période. Choisissez une autre période ou enregistrez la première recharge." />} />
       </Panel>

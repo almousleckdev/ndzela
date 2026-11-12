@@ -14,6 +14,7 @@
    - you cannot manage (edit, block, delete...) a user whose roles carry administrative permissions beyond yours;
    - you cannot change your own roles, disable, block, delete or reset the MFA of your own account.
    Business permissions (transactions, accounts, reports, cash...) may be granted freely by anyone who can assign roles.
+2b. **Who manages roles (V56, 2026-11-12):** only the SUPER_ADMIN and the ADMIN hold `roles:create`, `roles:update`, `roles:delete` and the user-management permissions, so only they create roles and choose what other roles can see and do. The other default roles (GESTIONNAIRE, CAISSIER, COMPTABLE, VIEWER) hold none of them, and a user without role-management rights sees only their own roles (`GET /roles/visible`).
 3. **Protected role**: `SUPER_ADMIN` cannot be edited or deleted; a role still assigned to users cannot be deleted.
 4. **UI**: `usePermissions`/`RequirePermission`/nav filtering hide what the user cannot do. This is convenience only.
 

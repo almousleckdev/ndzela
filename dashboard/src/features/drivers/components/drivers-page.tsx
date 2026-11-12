@@ -3,12 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarOff, Eye, GraduationCap, MoreHorizontal, Plus } from "lucide-react";
+import { CalendarOff, CloudLightning, Eye, GraduationCap, MoreHorizontal, Plus } from "lucide-react";
 import { ExportMenu } from "@/components/export-menu";
 import { Button } from "@/components/ui/button";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tabs } from "@/components/ui/tabs";
+import { BulkBar } from "@/components/data-table/bulk-bar";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { None, Stack, Status, type Tone } from "@/components/data-table/cells";
 import { DataTable } from "@/components/data-table/data-table";
@@ -69,7 +70,7 @@ function DriversContent() {
   const list = useAsync(() => driversService.list({ ...server, scope, q: query.q, from: range.from, to: range.to, sort: query.sort, page: query.page, size: query.size }), [filters.status, scope, query.q, range.from, range.to, query.sort, query.page, query.size]);
   const stats = useAsync(driversService.stats, []);
   const [action, setAction] = useState<DriverAction | null>(null);
-  const [leavesOf, setLeavesOf] = useState<Driver | null>(null);
+  const [leavesOf, setLeavesOf] = useState<{ driver: Driver; tab: "leaves" | "half-days" } | null>(null);
   const [centersOpen, setCentersOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDelete, setBulkDelete] = useState(false);
@@ -105,7 +106,8 @@ function DriversContent() {
       return (
         <div className="flex justify-end gap-0.5">
           <Button variant="ghost" size="icon" aria-label={`Voir ${name}`} title="Voir les détails" onClick={() => router.push(`/drivers/${driver.id}`)}><Eye className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" aria-label={`Gérer les arrêts de ${name}`} title="Gérer les arrêts" onClick={() => setLeavesOf(driver)}><CalendarOff className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" aria-label={`Gérer les arrêts de ${name}`} title="Gérer les arrêts" onClick={() => setLeavesOf({ driver, tab: "leaves" })}><CalendarOff className="h-4 w-4" /></Button>
+          {driver.contract && can(PERMISSIONS.INCIDENTS_DECLARE) && <Button variant="ghost" size="icon" aria-label={`Déclarer une demi-journée pour ${name}`} title="Déclarer une demi-journée" onClick={() => setLeavesOf({ driver, tab: "half-days" })}><CloudLightning className="h-4 w-4" /></Button>}
           <Dropdown trigger={<Button variant="ghost" size="icon" aria-label={`Actions pour ${name}`}><MoreHorizontal className="h-4 w-4" /></Button>}>
             <DropdownItem onClick={() => router.push(`/drivers/${driver.id}`)}>Voir</DropdownItem>
             {can(PERMISSIONS.DRIVERS_UPDATE) && <DropdownItem onClick={() => router.push(`/drivers/${driver.id}/edit`)}>Modifier</DropdownItem>}
@@ -166,15 +168,7 @@ function DriversContent() {
           </>
         )} />
         <ActiveFilters filters={active} onClear={query.reset} />
-        {mayDelete && chosen.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-orange-50/60 px-4 py-2 text-sm">
-            <span className="font-medium text-ink">{chosen.length} sélectionné{chosen.length > 1 ? "s" : ""}</span>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelected(new Set())}>Tout désélectionner</Button>
-              <Button variant="destructive" onClick={() => setBulkDelete(true)}>Supprimer la sélection</Button>
-            </div>
-          </div>
-        )}
+        {mayDelete && <BulkBar count={chosen.length} onClear={() => setSelected(new Set())}><Button variant="destructive" onClick={() => setBulkDelete(true)}>Supprimer la sélection</Button></BulkBar>}
         <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(driver) => driver.id} selection={mayDelete ? { selected, onChange: setSelected } : undefined} initiallyHidden={["createdAt"]}
           rowMarker={(driver) => LEVEL_MARKER[driver.arrears.level]}
           server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: query.sorting, onSortingChange: query.setSorting }}
@@ -183,7 +177,7 @@ function DriversContent() {
 
       <DriverActionDialogs target={action} onClose={() => setAction(null)} onDone={() => { setAction(null); refresh(); }} />
       {bulkDelete && <DeleteDriversDialog drivers={chosen} onClose={() => setBulkDelete(false)} onDone={() => { setBulkDelete(false); refresh(); }} />}
-      {leavesOf && <DriverLeavesDialog driver={leavesOf} canDeclare={can(PERMISSIONS.DRIVERS_UPDATE)} onClose={() => setLeavesOf(null)} onChanged={refresh} />}
+      {leavesOf && <DriverLeavesDialog driver={leavesOf.driver} initialTab={leavesOf.tab} canDeclare={can(PERMISSIONS.DRIVERS_UPDATE)} onClose={() => setLeavesOf(null)} onChanged={refresh} />}
       {centersOpen && <TrainingCentersDialog onClose={() => setCentersOpen(false)} />}
     </Page>
   );

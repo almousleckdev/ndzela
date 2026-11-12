@@ -55,7 +55,7 @@ const CODE_MESSAGES: Record<string, string> = {
   DRIVER_HAS_NO_VEHICLE: "Ce chauffeur n'a pas de véhicule.",
   DRIVER_PURGE_BLOCKED: "Un autre enregistrement empêche la suppression de ce chauffeur.",
   INCIDENT_KIND_INVALID: "Un contrat signé après midi donne une demi-journée, pas un arrêt.",
-  DAY_OUT_OF_CONTRACT: "Le jour doit suivre le début du contrat et ne pas dépasser 7 jours à venir.",
+  DAY_OUT_OF_CONTRACT: "Le premier jour facturé est le lendemain de la signature du contrat : choisissez ce jour ou un jour suivant (7 jours à venir au plus).",
   DRIVER_HAS_HISTORY: "Ce chauffeur a des paiements ou des recharges enregistrés : suspendez-le plutôt que de le supprimer.",
   VEHICLE_NOT_AVAILABLE: "Ce véhicule n'est pas disponible.",
   VEHICLE_ALREADY_ASSIGNED: "Ce véhicule vient d'être affecté à un autre chauffeur.",

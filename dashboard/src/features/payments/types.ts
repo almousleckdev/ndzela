@@ -150,6 +150,18 @@ export interface IncidentInput {
   note?: string;
 }
 
+export interface IncidentRow {
+  id: string;
+  day: string;
+  kind: IncidentKind;
+  cause: IncidentCause;
+  hours: number | null;
+  note: string | null;
+  createdBy: string;
+  createdAt: string;
+  cancelledAt: string | null;
+}
+
 export type RiderScope = "CURRENT" | "FORMER";
 
 export interface TransactionQuery {

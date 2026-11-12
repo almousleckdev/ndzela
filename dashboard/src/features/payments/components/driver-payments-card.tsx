@@ -21,7 +21,7 @@ import { paymentsService } from "@/features/payments/services/payments.service";
 const day = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 
 // The driver's payment status
-export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; onChanged: () => void }) {
+export function DriverPaymentsCard({ driverId, contractStart, onChanged }: { driverId: string; contractStart?: string; onChanged: () => void }) {
   const { can } = usePermissions();
   const account = useAsync(() => paymentsService.account(driverId), [driverId]);
   const [paying, setPaying] = useState(false);
@@ -89,7 +89,7 @@ export function DriverPaymentsCard({ driverId, onChanged }: { driverId: string; 
         </div>
       )}
       {paying && a && <RecordPaymentDialog driverId={driverId} driverName={a.driverName} overdueAmount={a.overdueAmount} dailyRent={a.dailyRent} onClose={() => setPaying(false)} onSaved={() => { setPaying(false); refresh(); }} />}
-      {halfDay && a && <IncidentDialog driverId={driverId} driverName={a.driverName} kind="HALF_DAY" onClose={() => setHalfDay(false)} onSaved={() => { setHalfDay(false); refresh(); }} />}
+      {halfDay && a && <IncidentDialog driverId={driverId} driverName={a.driverName} kind="HALF_DAY" contractStart={contractStart} onClose={() => setHalfDay(false)} onSaved={() => { setHalfDay(false); refresh(); }} />}
       {waiving && a && <WaiverDialog driverId={driverId} driverName={a.driverName} overdueAmount={a.overdueAmount} dailyRent={a.dailyRent} onClose={() => setWaiving(false)} onSaved={() => { setWaiving(false); refresh(); }} />}
     </Card>
   );

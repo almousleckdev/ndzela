@@ -47,7 +47,7 @@ function DriverDetailContent({ id }: { id: string }) {
   const { can } = usePermissions();
   const driver = useAsync(() => driversService.get(id), [id]);
   const [action, setAction] = useState<DriverAction | null>(null);
-  const [leaves, setLeaves] = useState(false);
+  const [leaves, setLeaves] = useState<false | "leaves" | "half-days">(false);
   const [photoVersion, setPhotoVersion] = useState(0);
   const [assigning, setAssigning] = useState(false);
   const isGlobal = useAuthStore((state) => state.user?.country === null);
@@ -73,7 +73,8 @@ function DriverDetailContent({ id }: { id: string }) {
         action={(
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={displayStatus(d).variant}>{displayStatus(d).label}</Badge>
-            <Button variant="outline" onClick={() => setLeaves(true)}>Gérer les arrêts</Button>
+            <Button variant="outline" onClick={() => setLeaves("leaves")}>Gérer les arrêts</Button>
+            {d.contract && can(PERMISSIONS.INCIDENTS_DECLARE) && <Button variant="outline" onClick={() => setLeaves("half-days")}>Demi-journée</Button>}
             {can(PERMISSIONS.DRIVERS_UPDATE) && <Link href={`/drivers/${id}/edit`}><Button variant="outline">Modifier</Button></Link>}
             {d.contract && can(PERMISSIONS.CONTRACTS_READ) && <Link href={`/contracts/${d.contract.id}`}><Button variant="outline">Contrat</Button></Link>}
             {availableActions(d, can).filter((item) => item.kind !== "remove-vehicle").map((item) => (
@@ -128,7 +129,7 @@ function DriverDetailContent({ id }: { id: string }) {
         )}
       </Card>
 
-      {can(PERMISSIONS.PAYMENTS_READ) && <DriverPaymentsCard driverId={id} onChanged={() => driver.reload()} />}
+      {can(PERMISSIONS.PAYMENTS_READ) && <DriverPaymentsCard driverId={id} contractStart={d.contract?.startDate} onChanged={() => driver.reload()} />}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
@@ -168,7 +169,7 @@ function DriverDetailContent({ id }: { id: string }) {
 
       <DriverFilesCard driver={d} canEdit={can(PERMISSIONS.DRIVERS_UPDATE)} onChanged={() => { setPhotoVersion((v) => v + 1); driver.reload(); }} />
 
-      {leaves && <DriverLeavesDialog driver={d} canDeclare={can(PERMISSIONS.DRIVERS_UPDATE)} onClose={() => setLeaves(false)} onChanged={() => driver.reload()} />}
+      {leaves && <DriverLeavesDialog driver={d} initialTab={leaves} canDeclare={can(PERMISSIONS.DRIVERS_UPDATE)} onClose={() => setLeaves(false)} onChanged={() => driver.reload()} />}
 
       {assigning && <AssignVehicleDialog driver={d} onClose={() => setAssigning(false)} onSaved={() => { setAssigning(false); driver.reload(); }} />}
       <DriverActionDialogs target={action} onClose={() => setAction(null)}

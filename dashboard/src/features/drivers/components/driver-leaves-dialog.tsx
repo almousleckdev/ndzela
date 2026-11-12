@@ -8,10 +8,14 @@ import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import { SelectField } from "@/components/ui/select-field";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs } from "@/components/ui/tabs";
 import { useAsync } from "@/hooks/use-async";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDateTime } from "@/lib/time";
+import { usePermissions } from "@/features/access/hooks/use-permissions";
+import { PERMISSIONS } from "@/features/access/lib/permissions";
+import { HalfDaysPanel } from "@/features/payments/components/half-days-panel";
 import { LEAVE_REASON_LABELS, toOptions } from "@/features/drivers/lib/driver-labels";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver, Leave, LeaveReason, LeaveType } from "@/features/drivers/types";
@@ -29,15 +33,19 @@ const period = (leave: Leave) => (leave.startDate === leave.endDate ? day(leave.
 interface DriverLeavesDialogProps {
   driver: Driver;
   canDeclare: boolean;
+  initialTab?: "leaves" | "half-days";
   onClose: () => void;
   // Called after a declaration or a cancellation, so the caller can refresh the driver's status.
   onChanged: () => void;
 }
 
 // Declares days off (single day or date range) and lists the driver's leave history.
-export function DriverLeavesDialog({ driver, canDeclare, onClose, onChanged }: DriverLeavesDialogProps) {
+export function DriverLeavesDialog({ driver, canDeclare, initialTab = "leaves", onClose, onChanged }: DriverLeavesDialogProps) {
   const { addToast } = useToast();
   const history = useAsync(() => driversService.leaves(driver.id), [driver.id]);
+  const { can } = usePermissions();
+  const [tab, setTab] = useState<"leaves" | "half-days">(initialTab);
+  const showHalfDays = Boolean(driver.contract) && can(PERMISSIONS.PAYMENTS_READ);
   const [type, setType] = useState<LeaveType>("SINGLE_DAY");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -80,6 +88,10 @@ export function DriverLeavesDialog({ driver, canDeclare, onClose, onChanged }: D
 
   return (
     <Dialog isOpen onClose={onClose} title="Gérer les arrêts" description={`${driver.personal.lastName} ${driver.personal.firstName}. Le loyer n'est pas dû les jours d'arrêt déclarés.`} className="max-w-2xl">
+      {showHalfDays && <Tabs tabs={[{ value: "leaves", label: "Arrêts" }, { value: "half-days", label: "Demi-journées" }]} value={tab} onChange={setTab} label="Arrêts et demi-journées" />}
+      {tab === "half-days" && showHalfDays ? (
+        <div className="pt-4"><HalfDaysPanel driverId={driver.id} driverName={`${driver.personal.lastName} ${driver.personal.firstName}`} contractStart={driver.contract?.startDate} canDeclare={can(PERMISSIONS.INCIDENTS_DECLARE)} onChanged={onChanged} /></div>
+      ) : (
       <div className="space-y-6">
         {canDeclare && (
           <section className="space-y-4">
@@ -122,6 +134,7 @@ export function DriverLeavesDialog({ driver, canDeclare, onClose, onChanged }: D
           )}
         </section>
       </div>
+      )}
     </Dialog>
   );
 }

@@ -15,6 +15,8 @@ interface IncidentDialogProps {
   driverId: string;
   driverName: string;
   kind: IncidentKind;
+  // The contract start day: rent is billed from the next day, so no earlier day can be declared.
+  contractStart?: string;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -24,17 +26,20 @@ const COPY: Record<IncidentKind, { title: string; hint: string; confirm: string;
   STOP: { title: "Déclarer un arrêt", hint: "Coupure de plus de 8 h : le chauffeur ne paie pas ce jour. Les dimanches sont déjà exclus.", confirm: "Déclarer l'arrêt", done: "Arrêt déclaré." },
 };
 
-function inDays(offset: number): string {
-  const date = new Date();
+function inDays(offset: number, from = new Date()): string {
+  const date = new Date(from);
   date.setDate(date.getDate() + offset);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 // A holder of `incidents:declare` declares that a day is half or not payable (electricity cut, contract signed after noon or another cause)
-export function IncidentDialog({ driverId, driverName, kind, onClose, onSaved }: IncidentDialogProps) {
+export function IncidentDialog({ driverId, driverName, kind, contractStart, onClose, onSaved }: IncidentDialogProps) {
   const { addToast } = useToast();
   const copy = COPY[kind];
-  const [day, setDay] = useState(kind === "HALF_DAY" ? inDays(0) : inDays(-1));
+  // The first billed day is the one after the contract start
+  const first = contractStart ? inDays(1, new Date(`${contractStart}T00:00:00`)) : undefined;
+  const wanted = kind === "HALF_DAY" ? inDays(0) : inDays(-1);
+  const [day, setDay] = useState(first && wanted < first ? first : wanted);
   const [cause, setCause] = useState<IncidentCause>("ELECTRICITY");
   const [hours, setHours] = useState(kind === "HALF_DAY" ? "4" : "9");
   const [note, setNote] = useState("");
@@ -44,6 +49,7 @@ export function IncidentDialog({ driverId, driverName, kind, onClose, onSaved }:
 
   const save = async () => {
     if (!day) return setError("Choisissez le jour concerné.");
+    if (first && day < first) return setError("Le premier jour facturé est le lendemain de la signature du contrat.");
     if (cause === "ELECTRICITY" && !/^\d{1,2}$/.test(hours)) return setError("Saisissez la durée de la coupure en heures.");
     if (cause === "OTHER" && !note.trim()) return setError("Précisez la cause dans la note.");
     setIsSaving(true);
@@ -60,7 +66,7 @@ export function IncidentDialog({ driverId, driverName, kind, onClose, onSaved }:
   return (
     <Dialog isOpen onClose={onClose} title={copy.title} description={`${driverName}. ${copy.hint}`}>
       <div className="space-y-4">
-        <FormField label="Jour concerné *" type="date" max={inDays(7)} value={day} onChange={(event) => change(setDay)(event.target.value)} hint="Aujourd'hui, un jour passé ou jusqu'à 7 jours à venir (hors dimanche)." />
+        <FormField label="Jour concerné *" type="date" min={first} max={inDays(7)} value={day} onChange={(event) => change(setDay)(event.target.value)} hint={first ? `À partir du ${new Date(`${first}T00:00:00`).toLocaleDateString("fr-FR")} (premier jour facturé), jusqu'à 7 jours à venir, hors dimanche.` : "Aujourd'hui, un jour passé ou jusqu'à 7 jours à venir (hors dimanche)."} />
         <SelectField label="Cause *" options={[{ value: "ELECTRICITY", label: "Coupure d'électricité" }, ...(kind === "HALF_DAY" ? [{ value: "LATE_SIGNING", label: "Contrat signé après 12 h" }] : []), { value: "OTHER", label: "Autre (urgence...)" }]} value={cause} onChange={(event) => change(setCause)(event.target.value as IncidentCause)} />
         {cause === "ELECTRICITY" && <FormField label="Durée de la coupure (heures) *" inputMode="numeric" value={hours} onChange={(event) => change(setHours)(event.target.value)} />}
         <div>

@@ -11,6 +11,7 @@ import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { None, Stack } from "@/components/data-table/cells";
+import { BulkDelete } from "@/components/data-table/bulk-delete";
 import { DataTable } from "@/components/data-table/data-table";
 import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { columnsFor } from "@/components/data-table/features";
@@ -49,6 +50,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
   const { addToast } = useToast();
   const [detail, setDetail] = useState<ChargingSessionRow | null>(null);
   const [deleting, setDeleting] = useState<ChargingSessionRow | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const summary = useAsync(() => chargingService.sessionSummary(kind), [kind]);
   usePolling(() => { list.reload(); summary.reload(); }, 5000);
   const s = summary.data;
@@ -107,7 +109,12 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
         <ExportMenu range={range} option={{ label: "Type de sessions", options: KIND_TABS, initial: kind }} path={(format, c) => chargingService.exportSessionsPath({ q: query.q, from: c.range.from, to: c.range.to, kind: (c.option as SessionKind | undefined) ?? kind }, format)} filename="sessions-reseau" failure="Impossible d'exporter les sessions." />
       )} />
       <ActiveFilters filters={active} onClear={query.reset} />
-      <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} numeric={["energyKwh", "amount"]}
+      {can(PERMISSIONS.CHARGING_DELETE) && (
+        <BulkDelete items={list.data?.items ?? []} selected={selected} onSelectedChange={setSelected} idOf={(s) => s.id} nameOf={(s) => `Session ${s.transactionId}`}
+          remove={(s, reason) => chargingService.deleteSession(s.id, reason)} withReason noun={{ one: "session", many: "sessions" }}
+          note="Les sessions sont supprimées définitivement et ne reviennent pas à la prochaine synchronisation ; la suppression est enregistrée dans le journal d'audit." onDone={() => { list.reload(); summary.reload(); }} />
+      )}
+      <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} selection={can(PERMISSIONS.CHARGING_DELETE) ? { selected, onChange: setSelected } : undefined} numeric={["energyKwh", "amount"]}
         server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: [], onSortingChange: () => {} }}
         empty={<EmptyState title="Aucune session" description="Aucune session de recharge reçue sur cette période." />} />
       </Panel>

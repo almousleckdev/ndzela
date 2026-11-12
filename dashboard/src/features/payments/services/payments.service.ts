@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api/api-client";
 import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import type { AccountDetail, PatternCase, SuspensionCase, AccountFilter, AccountRow, HistoryQuery, IncidentInput, LedgerEntry, PaymentMethod, PaymentResult, PaymentSummary, TransactionQuery, TransactionRow } from "@/features/payments/types";
+import type { AccountDetail, PatternCase, SuspensionCase, AccountFilter, AccountRow, HistoryQuery, IncidentInput, IncidentRow, LedgerEntry, PaymentMethod, PaymentResult, PaymentSummary, TransactionQuery, TransactionRow } from "@/features/payments/types";
 
 const historyParams = ({ driverId, type, method, q, from, to }: HistoryQuery) => ({ driverId, type: type === "ALL" ? undefined : type, method: method === "ALL" ? undefined : method, q: q?.trim(), from, to });
 
@@ -49,6 +49,10 @@ export const paymentsService = {
 
   // The mobile-money operators of the country
   operators: () => apiClient<{ code: PaymentMethod; label: string }[]>("/payments/operators"),
+
+  incidents: (driverId: string) => apiClient<IncidentRow[]>(`/drivers/${driverId}/incidents`),
+
+  cancelIncident: (driverId: string, incidentId: string) => apiClient<IncidentRow>(`/drivers/${driverId}/incidents/${incidentId}/cancel`, { method: "POST" }),
 
   declareIncident: (driverId: string, input: IncidentInput) => apiClient<void>(`/drivers/${driverId}/incidents`, { method: "POST", body: input }),
 

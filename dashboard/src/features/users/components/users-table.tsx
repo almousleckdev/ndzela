@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { Stack, Status, type Tone } from "@/components/data-table/cells";
+import { BulkDelete } from "@/components/data-table/bulk-delete";
 import { DataTable } from "@/components/data-table/data-table";
 import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { columnsFor } from "@/components/data-table/features";
@@ -15,7 +16,9 @@ import { SearchField } from "@/components/data-table/search-field";
 import { Toolbar } from "@/components/layout/page";
 import { describeRange, NO_RANGE, type DateRange } from "@/lib/date-range";
 import { RoleChip } from "@/features/access/components/role-chip";
-import { roleLabel } from "@/features/access/lib/permissions";
+import { usePermissions } from "@/features/access/hooks/use-permissions";
+import { PERMISSIONS, roleLabel } from "@/features/access/lib/permissions";
+import { usersService } from "@/features/users/services/users.service";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { displayName } from "@/features/profile/lib/user";
 import { CountryFlag } from "@/features/tenancy/components/country-flag";
@@ -30,10 +33,13 @@ interface UsersTableProps {
   users: UserSummary[];
   onAction: (action: UserAction, user: UserSummary) => void;
   onInvite?: () => void;
+  onBulkDeleted?: () => void;
 }
 
 // The staff list is small, so it is searched, filtered, sorted and paged in the browser.
-export function UsersTable({ users, onAction, onInvite }: UsersTableProps) {
+export function UsersTable({ users, onAction, onInvite, onBulkDeleted }: UsersTableProps) {
+  const { can } = usePermissions();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const myEmail = useAuthStore((state) => state.user?.email);
   const showCountryColumn = useAuthStore((state) => state.user?.isGlobal || (state.user?.countries.length ?? 0) > 1);
   const [search, setSearch] = useState("");
@@ -92,7 +98,11 @@ export function UsersTable({ users, onAction, onInvite }: UsersTableProps) {
         </>
       )} />
       <ActiveFilters filters={active} onClear={clear} />
-      <DataTable columns={columns} data={visible} getRowId={(user) => user.id} initiallyHidden={["createdAt"]} initialSorting={[{ id: "name", desc: false }]}
+      {can(PERMISSIONS.USERS_DELETE) && (
+        <BulkDelete items={visible} selected={selected} onSelectedChange={setSelected} idOf={(u) => u.id} nameOf={(u) => displayName(u)} remove={(u) => usersService.remove(u.id)}
+          noun={{ one: "utilisateur", many: "utilisateurs" }} note="Les comptes sont supprimés définitivement. Pour une absence temporaire, préférez « Suspendre »." onDone={() => onBulkDeleted?.()} />
+      )}
+      <DataTable columns={columns} data={visible} getRowId={(user) => user.id} selection={can(PERMISSIONS.USERS_DELETE) ? { selected, onChange: setSelected } : undefined} initiallyHidden={["createdAt"]} initialSorting={[{ id: "name", desc: false }]}
         empty={<EmptyState title={users.length === 0 ? "Aucun utilisateur pour l'instant" : "Aucun résultat"} description={users.length === 0 && onInvite ? "Invitez votre premier administrateur pour commencer." : "Aucun utilisateur ne correspond à ces filtres."} />} />
     </div>
   );

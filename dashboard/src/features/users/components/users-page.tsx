@@ -135,7 +135,7 @@ function UsersContent() {
       <Panel>
         {users.isLoading
           ? <Skeleton className="h-64 w-full rounded-none" />
-          : <UsersTable users={users.data ?? []} onAction={handleAction} onInvite={can(PERMISSIONS.USERS_CREATE) ? () => setEditing("new") : undefined} />}
+          : <UsersTable users={users.data ?? []} onAction={handleAction} onBulkDeleted={users.reload} onInvite={can(PERMISSIONS.USERS_CREATE) ? () => setEditing("new") : undefined} />}
       </Panel>
 
       {viewing && <UserDetailsDialog user={viewing} onClose={() => setViewing(null)} />}
