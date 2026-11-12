@@ -20,7 +20,7 @@ export function Hero() {
           <RoadLine className="mt-12 max-w-xs" />
         </div>
 
-        <Image src="/appui/hero.png" alt="Les écrans de connexion et d'accueil de l'application Ndzela, avec le solde du loyer" width={1920} height={1440} priority sizes="(min-width: 1024px) 60vw, 100vw" className="mx-auto h-auto max-h-[calc(100svh-6rem)] w-full object-contain" />
+        <Image src="/appui/hero.png" alt="Les écrans de connexion et d'accueil de l'application Ndzela, avec le solde du loyer" width={1538} height={1356} quality={95} priority sizes="(min-width: 1024px) 60vw, 100vw" className="mx-auto h-auto max-h-[calc(100svh-6rem)] w-full object-contain" />
       </div>
     </section>
   );

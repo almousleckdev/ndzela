@@ -15,7 +15,7 @@ export function AppShowcase() {
   return (
     <section id="application" className="overflow-x-clip py-20 sm:py-28">
       <Container>
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1fr]">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
           <div>
             <SectionHeading title="Votre loyer, simplement, dans votre poche" description="L'application Ndzela est réservée aux chauffeurs partenaires : elle réunit le paiement du loyer, le suivi du contrat et le support." />
             <ul className="mt-8 space-y-3">
@@ -27,7 +27,7 @@ export function AppShowcase() {
             <p className="mt-4 text-sm text-muted">Pour iPhone et Android. Le compte est créé par Ndzela avec votre contrat.</p>
           </div>
           <div>
-            <Image src="/appui/payment.png" alt="Écran de paiement du loyer et détails d'un paiement confirmé dans l'application Ndzela" width={1920} height={1440} sizes="(min-width: 1024px) 560px, 90vw" className="mx-auto h-auto w-full" />
+            <Image src="/appui/payment.png" alt="Écran de paiement du loyer et détails d'un paiement confirmé dans l'application Ndzela" width={1142} height={1394} quality={95} sizes="(min-width: 1024px) 760px, 95vw" className="mx-auto h-auto w-full max-w-[46rem]" />
           </div>
         </div>
 
