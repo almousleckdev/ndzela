@@ -40,7 +40,6 @@ final class ContractClauses {
                 "Signaler immédiatement tout dysfonctionnement ;",
                 "Ne pas apposer d'éléments non autorisés ;",
                 "Ne pas exercer d'activité secondaire autre que la conduite des taxis NDZELA ;",
-                "Effectuer en moyenne 3 recharges par semaine ;",
                 "Se présenter au bureau NDZELA, à la demande de l'administration, sous 24 heures.");
         b.para("Utilisation exclusive pour l'activité de VTC à Libreville. Le chauffeur s'engage à :");
         bullets("Ne pas prêter, sous-louer ou céder le véhicule ;",

@@ -75,6 +75,7 @@ function DriverDetailContent({ id }: { id: string }) {
             <Badge variant={displayStatus(d).variant}>{displayStatus(d).label}</Badge>
             <Button variant="outline" onClick={() => setLeaves(true)}>Gérer les arrêts</Button>
             {can(PERMISSIONS.DRIVERS_UPDATE) && <Link href={`/drivers/${id}/edit`}><Button variant="outline">Modifier</Button></Link>}
+            {d.contract && can(PERMISSIONS.CONTRACTS_READ) && <Link href={`/contracts/${d.contract.id}`}><Button variant="outline">Contrat</Button></Link>}
             {availableActions(d, can).filter((item) => item.kind !== "remove-vehicle").map((item) => (
               <Button key={item.kind} variant="outline" className={item.destructive ? "text-red-600 hover:bg-red-50" : undefined} onClick={() => setAction({ kind: item.kind, driver: d })}>{item.label}</Button>
             ))}

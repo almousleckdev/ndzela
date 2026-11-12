@@ -26,6 +26,10 @@ A contract can be **updated while it is active**: editing a driver (Chauffeurs, 
 
 In "Modifier le chauffeur" (holders of `contracts:update`, driver with an active contract), staff can **change the car** (step 3) and **correct the start date** (step 4). The contract stays the same: number, rent, total price, deposit and dates are unchanged by a car change, even when the new car's rent differs; the printed vehicle and parties are refreshed and the revision counted. The start date can move (today to 90 days ahead, end date following) **only while no payment, waiver, fee, reversal or incident is recorded** on the contract. Endpoints `PUT /drivers/{id}/vehicle` and `PUT /drivers/{id}/contract/start-date`; audit `CONTRACT_VEHICLE_CHANGED`, `CONTRACT_RESCHEDULED`.
 
+## Contract text of 2026-11-12
+
+**3.3** lists "Casier judiciaire de moins de 3 mois" instead of "Justificatif de domicile de moins de 3 mois" (the third document uploaded in the wizard is the criminal record). **6** no longer requires "Effectuer en moyenne 3 recharges par semaine" (the 6 rides a day stay). Applies to every contract printed from now on, like the 2026-10-20 text.
+
 ## Contract text of 2026-10-20 (`documents/CONTRAT NDZELA .pdf`)
 
 The PDF template (`ContractArticles` for the preamble and articles 1 to 5, `ContractClauses` for 6 to 18) now follows the updated contract. It applies to **every contract printed from now on, including those already created** (the text is rendered from the snapshot at print time; a frozen text per signed contract would need a new template version: ask before doing it). What changed:

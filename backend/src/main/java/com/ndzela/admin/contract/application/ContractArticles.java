@@ -81,7 +81,7 @@ final class ContractArticles {
         List<String> provided = new ArrayList<>();
         if (s.documents().licence()) provided.add("Permis de conduire");
         if (s.documents().id()) provided.add("Pièce d'identité");
-        if (s.documents().addressProof()) provided.add("Justificatif de domicile de moins de 3 mois");
+        if (s.documents().addressProof()) provided.add("Casier judiciaire de moins de 3 mois");
         if (s.documents().residenceCertificate()) provided.add("Certificat de résidence");
         b.para("3.3. Documents fournis : " + (provided.isEmpty() ? "Aucun document numérisé à ce jour." : String.join(", ", provided) + "."));
     }
