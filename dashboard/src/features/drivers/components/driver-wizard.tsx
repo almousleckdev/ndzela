@@ -34,7 +34,7 @@ export function DriverWizard({ driver }: { driver?: Driver }) {
         <Skeleton className="h-96 w-full" />
       ) : (
         // The form is built only once the lists are loaded, so stored phone numbers can be split into code and number.
-        <DriverWizardForm driver={driver} countries={countries.data} centers={centers.data ?? []} vehicles={driver ? null : vehicles.data?.items ?? []} />
+        <DriverWizardForm driver={driver} countries={countries.data} centers={centers.data ?? []} vehicles={vehicles.data?.items ?? []} />
       )}
     </div>
   );

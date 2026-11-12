@@ -120,6 +120,52 @@ class ZellaCommandQueueTest extends AbstractZellaFeedTest {
     }
 
     @Test
+    void aBlockedOrDeactivatedDriverStaysSuspendedInZella() {
+        jdbc.update("update drivers set status = 'SUSPENDED', suspension_cause = 'ARREARS', overdue_amount = 69000 where id = ?", driverId());
+        reconcile();
+        sendDue(Instant.now());
+
+        jdbc.update("update drivers set status = 'BLOCKED', suspension_cause = null where id = ?", driverId());
+        reconcile();
+
+        assertEquals(0, jdbc.queryForObject("select count(*) from zella_commands where type = 'RESTORE'", Integer.class));
+
+        jdbc.update("update drivers set status = 'INACTIVE' where id = ?", driverId());
+        reconcile();
+
+        assertEquals(0, jdbc.queryForObject("select count(*) from zella_commands where type = 'RESTORE'", Integer.class));
+    }
+
+    @Test
+    void aDriverUnlinkedWhileSuspendedHasTheirZellaAccountRestored() {
+        jdbc.update("update drivers set status = 'SUSPENDED', suspension_cause = 'ARREARS', overdue_amount = 69000 where id = ?", driverId());
+        reconcile();
+        sendDue(Instant.now());
+
+        jdbc.update("update id_tags set status = 'UNLINKED' where customer_id = 'cust-1'");
+        reconcile();
+        sendDue(Instant.now());
+
+        assertTrue(zella.calls().contains("RESTORE cust-1"), zella.calls().toString());
+    }
+
+    @Test
+    void relinkingToAnotherZellaAccountSuspendsTheNewOneAndRestoresTheOld() {
+        jdbc.update("update drivers set status = 'SUSPENDED', suspension_cause = 'ARREARS', overdue_amount = 69000 where id = ?", driverId());
+        reconcile();
+        sendDue(Instant.now());
+        jdbc.update("update id_tags set status = 'UNLINKED' where customer_id = 'cust-1'");
+        jdbc.update("insert into id_tags (id, country_id, id_tag, customer_id, driver_id, status, matched_on, decided_by, zella_notified, history_read) "
+                + "select gen_random_uuid(), country_id, 'Z-NEW', 'cust-2', driver_id, 'LINKED', 'email+phone', 'staff', true, true from id_tags where customer_id = 'cust-1'");
+
+        reconcile();
+        sendDue(Instant.now());
+
+        assertTrue(zella.calls().contains("SUSPEND cust-2 69000"), zella.calls().toString());
+        assertTrue(zella.calls().contains("RESTORE cust-1"), zella.calls().toString());
+    }
+
+    @Test
     void aManualSuspensionIsNeverSentToZella() {
         jdbc.update("update drivers set status = 'SUSPENDED', suspension_cause = 'MANUAL' where id = ?", driverId());
 

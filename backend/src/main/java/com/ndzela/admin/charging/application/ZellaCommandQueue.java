@@ -26,12 +26,18 @@ public class ZellaCommandQueue {
 
     @Transactional
     public boolean suspend(UUID driverId, long owedMinor) {
-        return enqueue(driverId, ZellaCommandType.SUSPEND, owedMinor);
+        return linkedCustomer(driverId).map(customerId -> enqueue(driverId, customerId, ZellaCommandType.SUSPEND, owedMinor)).orElse(false);
     }
 
     @Transactional
     public boolean restore(UUID driverId) {
-        return enqueue(driverId, ZellaCommandType.RESTORE, 0);
+        return linkedCustomer(driverId).map(customerId -> enqueue(driverId, customerId, ZellaCommandType.RESTORE, 0)).orElse(false);
+    }
+
+    /** Restores a Zella customer the driver is no longer linked to (unlinked or relinked while suspended). */
+    @Transactional
+    public boolean restore(UUID driverId, String customerId) {
+        return enqueue(driverId, customerId, ZellaCommandType.RESTORE, 0);
     }
 
     @Transactional(readOnly = true)
@@ -39,18 +45,18 @@ public class ZellaCommandQueue {
         return commands.countByStatusAndCreatedAtBefore(ZellaCommandStatus.PENDING, createdBefore);
     }
 
-    private boolean enqueue(UUID driverId, ZellaCommandType type, long owedMinor) {
-        Optional<IdTag> tag = idTags.findAllByDriverId(driverId).stream().filter(t -> t.getStatus() == IdTagStatus.LINKED).findFirst();
-        if (tag.isEmpty()) {
-            return false;
-        }
-        List<ZellaCommand> pending = commands.findByDriverIdAndStatus(driverId, ZellaCommandStatus.PENDING);
+    private Optional<String> linkedCustomer(UUID driverId) {
+        return idTags.findAllByDriverId(driverId).stream().filter(t -> t.getStatus() == IdTagStatus.LINKED).map(IdTag::getCustomerId).findFirst();
+    }
+
+    private boolean enqueue(UUID driverId, String customerId, ZellaCommandType type, long owedMinor) {
+        List<ZellaCommand> pending = commands.findByCustomerIdAndStatus(customerId, ZellaCommandStatus.PENDING);
         pending.stream().filter(c -> c.getType() != type).forEach(c -> c.setStatus(ZellaCommandStatus.CANCELLED));
         Optional<ZellaCommand> same = pending.stream().filter(c -> c.getType() == type).findFirst();
         same.ifPresent(c -> c.setOwedMinor(owedMinor));
         commands.saveAll(pending);
         if (same.isEmpty()) {
-            commands.save(ZellaCommand.builder().driverId(driverId).customerId(tag.get().getCustomerId()).type(type).owedMinor(owedMinor)
+            commands.save(ZellaCommand.builder().driverId(driverId).customerId(customerId).type(type).owedMinor(owedMinor)
                     .status(ZellaCommandStatus.PENDING).attempts(0).nextAttemptAt(OffsetDateTime.now()).build());
         }
         return true;

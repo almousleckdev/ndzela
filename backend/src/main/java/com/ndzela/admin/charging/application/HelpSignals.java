@@ -27,7 +27,7 @@ public final class HelpSignals {
         return false;
     }
 
-    /** The battery of a session must follow from the latest session that ended before it: it can fall at a bounded pace while driving, and never rise. */
+    /** The battery of a session must follow from the latest session that ended before it: it can fall only at a bounded pace while driving. A rise proves nothing, the driver may charge elsewhere. */
     public static boolean batteryChainBroken(List<HelpSession> sessions) {
         List<HelpSession> byStart = sessions.stream().sorted(Comparator.comparing(HelpSession::startedAt)).toList();
         for (int i = 0; i < byStart.size(); i++) {
@@ -60,6 +60,6 @@ public final class HelpSignals {
         double gapHours = Duration.between(previous.endedAt(), next.startedAt()).toMinutes() / 60.0;
         double drop = previous.socAfter().subtract(next.socBefore()).doubleValue();
         double allowedDrop = gapHours * MAX_DRAIN_POINTS_PER_HOUR + TOLERANCE_POINTS;
-        return drop > allowedDrop || -drop > TOLERANCE_POINTS;
+        return drop > allowedDrop;
     }
 }

@@ -175,6 +175,8 @@ public class ZellaClient {
     private static void send(Runnable call) {
         try {
             call.run();
+        } catch (RestClientResponseException e) {
+            throw failure(e);
         } catch (RestClientException e) {
             throw new ZellaException("The Zella app could not be reached or refused the request.", e);
         }

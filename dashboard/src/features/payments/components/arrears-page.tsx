@@ -20,6 +20,7 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { LEVEL_MARKER, useAccountColumns } from "@/features/payments/components/account-columns";
 import { IncidentDialog } from "@/features/payments/components/incident-dialog";
+import { PatternCasesPanel } from "@/features/payments/components/pattern-cases-panel";
 import { SuspensionCasesPanel } from "@/features/payments/components/suspension-cases-panel";
 import { RecordPaymentDialog } from "@/features/payments/components/record-payment-dialog";
 import { WaiverDialog } from "@/features/payments/components/waiver-dialog";
@@ -99,6 +100,7 @@ function ArrearsContent() {
       </Panel>
 
       {can(PERMISSIONS.ARREARS_MANAGE) && <SuspensionCasesPanel />}
+      {can(PERMISSIONS.ARREARS_MANAGE) && <PatternCasesPanel />}
 
       {paying && <RecordPaymentDialog driverId={paying.driverId} driverName={paying.driverName} overdueAmount={paying.overdueAmount} dailyRent={paying.dailyRent} onClose={() => setPaying(null)} onSaved={() => { setPaying(null); refresh(); }} />}
       {waiving && <WaiverDialog driverId={waiving.driverId} driverName={waiving.driverName} overdueAmount={waiving.overdueAmount} dailyRent={waiving.dailyRent} onClose={() => setWaiving(null)} onSaved={() => { setWaiving(null); refresh(); }} />}

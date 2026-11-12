@@ -38,5 +38,6 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0031](0031-deleting-sessions-and-recharges-and-the-zella-wallet.md) | Admins can delete sessions and recharges; recharges are paid from the Zella Wallet | Accepted |
 | [0032](0032-public-sessions-keep-their-zella-payment.md) | Public sessions keep what was paid through Zella, still without identity | Accepted |
 | [0033](0033-arrears-suspension-in-both-apps.md) | Three unpaid days suspend the driver in NDZela and in Zella; paying everything restores both | Accepted |
+| [0034](0034-change-car-and-start-date-on-an-active-contract.md) | An active contract can move to another car and its start date can be corrected | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

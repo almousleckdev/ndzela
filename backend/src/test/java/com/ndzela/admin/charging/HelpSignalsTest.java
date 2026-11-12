@@ -57,8 +57,8 @@ class HelpSignalsTest {
     }
 
     @Test
-    void aBatteryThatRoseWithoutChargingBreaksTheChain() {
-        assertTrue(HelpSignals.batteryChainBroken(List.of(session(0, 1, "CP-1", 1, 20, 40, 8), session(2, 3, "CP-2", 1, 80, 95, 6))));
+    void aBatteryThatRoseBetweenSessionsIsNotAnAlarmBecauseTheDriverMayHaveChargedAtHome() {
+        assertFalse(HelpSignals.batteryChainBroken(List.of(session(0, 1, "CP-1", 1, 20, 40, 8), session(2, 3, "CP-2", 1, 80, 95, 6))));
     }
 
     @Test

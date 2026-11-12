@@ -49,6 +49,10 @@ export const driversService = {
 
   assignVehicle: (id: string, vehicleId: string, deposit: number) => apiClient<Driver>(`/drivers/${id}/vehicle`, { method: "POST", body: { vehicleId, deposit } }),
 
+  changeVehicle: (id: string, vehicleId: string) => apiClient<Driver>(`/drivers/${id}/vehicle`, { method: "PUT", body: { vehicleId } }),
+
+  changeContractStart: (id: string, startDate: string) => apiClient<Contract>(`/drivers/${id}/contract/start-date`, { method: "PUT", body: { startDate } }),
+
   removeVehicle: (id: string, reason: string) => apiClient<Driver>(`/drivers/${id}/vehicle/remove`, { method: "POST", body: { reason } }),
 
   filePath: (id: string, kind: DriverFileKind) => `/drivers/${id}/files/${kind}`,

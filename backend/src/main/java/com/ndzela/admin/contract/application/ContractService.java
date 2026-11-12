@@ -80,22 +80,57 @@ public class ContractService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public ContractResponse amend(UUID contractId, BigDecimal newDeposit, ContractSnapshot current) {
+        Contract contract = loadActive(contractId);
+        BigDecimal deposit = ContractTerms.of(contract.getStartDate(), contract.getDailyRent(), newDeposit).deposit();
+        BigDecimal previous = contract.getDeposit();
+        contract.setSnapshot(write(current.withBailleur(readSnapshot(contract).bailleur())));
+        contract.setDeposit(deposit);
+        touch(contract);
+        audit.record("CONTRACT_UPDATED", "CONTRACT", contract.getId().toString(), contract.getContractNumber(), contract.getCountryId(),
+                "revision " + contract.getRevision() + ", deposit " + previous.setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " -> " + deposit.toPlainString());
+        return ContractResponse.from(contract);
+    }
+
+    // The same contract moves to another car; the rent, the dates and the number stay as signed.
+    @Transactional(propagation = Propagation.MANDATORY)
+    public ContractResponse changeVehicle(UUID contractId, UUID vehicleId, ContractSnapshot current) {
+        Contract contract = loadActive(contractId);
+        UUID previous = contract.getVehicleId();
+        contract.setVehicleId(vehicleId);
+        contract.setSnapshot(write(current.withBailleur(readSnapshot(contract).bailleur())));
+        touch(contract);
+        audit.record("CONTRACT_VEHICLE_CHANGED", "CONTRACT", contract.getId().toString(), contract.getContractNumber(), contract.getCountryId(),
+                "revision " + contract.getRevision() + ", vehicle " + previous + " -> " + vehicleId);
+        return ContractResponse.from(contract);
+    }
+
+    // Moves the start date; the end date follows (1 248 billable days). The caller checks that nothing is recorded yet.
+    @Transactional(propagation = Propagation.MANDATORY)
+    public ContractResponse reschedule(UUID contractId, LocalDate newStart) {
+        Contract contract = loadActive(contractId);
+        LocalDate previous = contract.getStartDate();
+        ContractTerms terms = ContractTerms.of(newStart, contract.getDailyRent(), contract.getDeposit());
+        contract.setStartDate(terms.startDate());
+        contract.setEndDate(terms.endDate());
+        touch(contract);
+        audit.record("CONTRACT_RESCHEDULED", "CONTRACT", contract.getId().toString(), contract.getContractNumber(), contract.getCountryId(),
+                "revision " + contract.getRevision() + ", start " + previous + " -> " + newStart);
+        return ContractResponse.from(contract);
+    }
+
+    private Contract loadActive(UUID contractId) {
         Contract contract = contracts.findById(contractId).orElseThrow(() -> new ResourceNotFoundException("Contract not found."));
         if (contract.getStatus() != ContractStatus.ACTIVE) {
             throw new BusinessRuleViolationException("CONTRACT_NOT_ACTIVE", "Only an active contract can be updated.");
         }
-        BigDecimal deposit = ContractTerms.of(contract.getStartDate(), contract.getDailyRent(), newDeposit).deposit();
-        BigDecimal previous = contract.getDeposit();
-        ContractSnapshot signedParties = readSnapshot(contract);
-        contract.setSnapshot(write(current.withBailleur(signedParties.bailleur())));
-        contract.setDeposit(deposit);
+        return contract;
+    }
+
+    private void touch(Contract contract) {
         contract.setRevision(contract.getRevision() + 1);
         contract.setUpdatedAt(OffsetDateTime.now());
         contract.setUpdatedBy(Actor.name());
         contracts.save(contract);
-        audit.record("CONTRACT_UPDATED", "CONTRACT", contract.getId().toString(), contract.getContractNumber(), contract.getCountryId(),
-                "revision " + contract.getRevision() + ", deposit " + previous.setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " -> " + deposit.toPlainString());
-        return ContractResponse.from(contract);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)

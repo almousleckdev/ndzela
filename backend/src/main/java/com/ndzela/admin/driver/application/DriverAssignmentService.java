@@ -2,6 +2,7 @@ package com.ndzela.admin.driver.application;
 
 import com.ndzela.admin.audit.application.AuditService;
 import com.ndzela.admin.common.exception.BusinessRuleViolationException;
+import com.ndzela.admin.contract.api.dto.ContractResponse;
 import com.ndzela.admin.contract.application.model.ContractSeed;
 import com.ndzela.admin.contract.application.ContractService;
 import com.ndzela.admin.driver.domain.Driver;
@@ -18,11 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class DriverAssignmentService {
+    private static final String CHANGE_REASON = "Changement de véhicule";
+
     private final VehicleAssignmentRepository assignments;
     private final VehicleService vehicleService;
     private final ContractService contractService;
@@ -35,6 +39,36 @@ public class DriverAssignmentService {
             throw new BusinessRuleViolationException("DRIVER_HAS_VEHICLE", "This driver already has a vehicle.");
         }
         VehicleResponse vehicle = vehicleService.reserve(vehicleId);
+        openAssignment(driver, vehicleId);
+        contractService.open(new ContractSeed(driver.getCountryId(), driver.getId(), vehicleId, vehicle.dailyRent(), deposit, DriverContractSnapshots.of(driver, vehicle)));
+        audit.record("DRIVER_VEHICLE_ASSIGNED", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(),
+                vehicle.fleetNumber() + " " + vehicle.plate());
+    }
+
+    // The driver keeps the same contract and moves to another available car.
+    @Transactional
+    public void change(Driver driver, UUID vehicleId) {
+        VehicleAssignment open = assignments.findByDriverIdAndEndedAtIsNull(driver.getId())
+                .orElseThrow(() -> new BusinessRuleViolationException("DRIVER_HAS_NO_VEHICLE", "This driver has no vehicle."));
+        if (open.getVehicleId().equals(vehicleId)) {
+            throw new BusinessRuleViolationException("VEHICLE_UNCHANGED", "This is already the driver's vehicle.");
+        }
+        ContractResponse contract = contractService.activeOf(List.of(driver.getId())).get(driver.getId());
+        if (contract == null) {
+            throw new BusinessRuleViolationException("NO_ACTIVE_CONTRACT", "This driver has no active contract.");
+        }
+        VehicleResponse next = vehicleService.reserve(vehicleId);
+        open.setEndedAt(OffsetDateTime.now());
+        open.setEndReason(CHANGE_REASON);
+        assignments.saveAndFlush(open);
+        VehicleResponse previous = vehicleService.release(open.getVehicleId());
+        openAssignment(driver, vehicleId);
+        contractService.changeVehicle(contract.id(), vehicleId, DriverContractSnapshots.of(driver, next));
+        audit.record("DRIVER_VEHICLE_CHANGED", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(),
+                previous.fleetNumber() + " " + previous.plate() + " -> " + next.fleetNumber() + " " + next.plate());
+    }
+
+    private void openAssignment(Driver driver, UUID vehicleId) {
         try {
             assignments.saveAndFlush(VehicleAssignment.builder().driverId(driver.getId()).vehicleId(vehicleId).assignedAt(OffsetDateTime.now()).build());
         } catch (DataIntegrityViolationException e) {
@@ -43,9 +77,6 @@ public class DriverAssignmentService {
                     ? new BusinessRuleViolationException("DRIVER_HAS_VEHICLE", "This driver already has a vehicle.")
                     : new BusinessRuleViolationException("VEHICLE_ALREADY_ASSIGNED", "This vehicle has just been assigned to another driver.");
         }
-        contractService.open(new ContractSeed(driver.getCountryId(), driver.getId(), vehicleId, vehicle.dailyRent(), deposit, DriverContractSnapshots.of(driver, vehicle)));
-        audit.record("DRIVER_VEHICLE_ASSIGNED", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(),
-                vehicle.fleetNumber() + " " + vehicle.plate());
     }
 
     @Transactional

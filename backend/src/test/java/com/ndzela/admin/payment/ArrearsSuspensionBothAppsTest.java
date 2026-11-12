@@ -82,6 +82,19 @@ class ArrearsSuspensionBothAppsTest extends AbstractArrearsTest {
     }
 
     @Test
+    void aRemainingPenaltyKeepsTheDriverSuspendedEvenWhenEveryRentIsPaid() throws Exception {
+        jdbc.update("update countries set late_penalty = 5000 where code = 'GA'");
+        arrears.evaluateAll(dueOfRentDay(3).plusSeconds(49 * 3600));
+        assertEquals("SUSPENDED", driverColumn("status"));
+        postJson("/api/v1/payments", "{\"driverId\":\"" + driver + "\",\"amount\":79000,\"method\":\"AIRTEL_MONEY\",\"reference\":\"R-PEN\",\"requestId\":\"" + UUID.randomUUID() + "\"}", manager).andExpect(status().isCreated());
+
+        arrears.evaluateAll(dueOfRentDay(3).plusSeconds(49 * 3600));
+
+        assertEquals("SUSPENDED", driverColumn("status"));
+        assertEquals("", commands("RESTORE"));
+    }
+
+    @Test
     void aManualSuspensionIsNotLiftedByPayment() throws Exception {
         postJson("/api/v1/drivers/" + driver + "/suspend", REASON, admin).andExpect(status().isOk());
         evaluateWhenUnpaidDaysAre(3);

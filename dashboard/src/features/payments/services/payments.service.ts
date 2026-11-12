@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api/api-client";
 import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import type { AccountDetail, SuspensionCase, AccountFilter, AccountRow, HistoryQuery, IncidentInput, LedgerEntry, PaymentMethod, PaymentResult, PaymentSummary, TransactionQuery, TransactionRow } from "@/features/payments/types";
+import type { AccountDetail, PatternCase, SuspensionCase, AccountFilter, AccountRow, HistoryQuery, IncidentInput, LedgerEntry, PaymentMethod, PaymentResult, PaymentSummary, TransactionQuery, TransactionRow } from "@/features/payments/types";
 
 const historyParams = ({ driverId, type, method, q, from, to }: HistoryQuery) => ({ driverId, type: type === "ALL" ? undefined : type, method: method === "ALL" ? undefined : method, q: q?.trim(), from, to });
 
@@ -23,6 +23,8 @@ export interface RecordPaymentInput {
 }
 
 export const paymentsService = {
+  suspensionPatterns: () => apiClient<PatternCase[]>("/charging/suspension-cases/patterns"),
+
   suspensionCases: (page: number, size: number) => apiClient<Page<SuspensionCase>>(`/charging/suspension-cases?${queryString({ page, size })}`),
 
   summary: (range?: { from?: string; to?: string }) => apiClient<PaymentSummary>(`/payments/summary?${queryString({ from: range?.from, to: range?.to })}`),

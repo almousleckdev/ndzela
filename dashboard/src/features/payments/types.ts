@@ -193,3 +193,11 @@ export interface SuspensionCase {
   reasons: string[];
   flagged: boolean;
 }
+
+// An account of ours whose recent charges look like two cars while some drivers are suspended; nothing links it to one of them.
+export interface PatternCase {
+  account: CaseDriver;
+  score: number;
+  reasons: string[];
+  suspendedDrivers: string[];
+}

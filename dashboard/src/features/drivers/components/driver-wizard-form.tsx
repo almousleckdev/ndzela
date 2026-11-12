@@ -76,6 +76,7 @@ export function DriverWizardForm({ driver, countries, centers, vehicles }: Drive
   const form = useForm<DriverFormValues>({ resolver: zodResolver(driverSchema), defaultValues: initial?.values ?? EMPTY_DRIVER });
   const mayUpdateContract = Boolean(driver?.contract) && can(PERMISSIONS.CONTRACTS_UPDATE);
   const [updateContract, setUpdateContract] = useState(true);
+  const [startDate, setStartDate] = useState(driver?.contract?.startDate ?? "");
   const steps = driver && !mayUpdateContract ? STEPS.slice(0, 3) : STEPS;
   const isLastStep = step === steps.length - 1;
 
@@ -113,11 +114,24 @@ export function DriverWizardForm({ driver, countries, centers, vehicles }: Drive
 
   const save = async (existing: Driver) => {
     try {
+      const newVehicleId = mayUpdateContract ? form.getValues("vehicleId") : "";
+      // The start date goes first: it is the change most likely to be refused.
+      const startChanged = Boolean(mayUpdateContract && existing.contract && startDate && startDate !== existing.contract.startDate);
+      if (startChanged) await driversService.changeContractStart(existing.id, startDate);
       await driversService.update(existing.id, toRequestBody(form.getValues(), codes));
-      if (mayUpdateContract && updateContract) {
-        const contract = await driversService.updateContract(existing.id, Number(form.getValues("contract.deposit")));
+      const vehicleChanged = Boolean(newVehicleId && newVehicleId !== existing.vehicle?.id);
+      if (vehicleChanged) await driversService.changeVehicle(existing.id, newVehicleId);
+      const deposit = Number(form.getValues("contract.deposit"));
+      // A car change already refreshed the printed parties, so the contract is refreshed again only for a new deposit.
+      if (mayUpdateContract && updateContract && (!vehicleChanged || deposit !== existing.contract?.deposit)) {
+        const contract = await driversService.updateContract(existing.id, deposit);
         addToast({ title: "Succès", description: "Chauffeur et contrat mis à jour.", type: "success" });
         router.push(`/contracts/${contract.id}`);
+        return;
+      }
+      if (existing.contract && (vehicleChanged || startChanged)) {
+        addToast({ title: "Succès", description: "Chauffeur et contrat mis à jour.", type: "success" });
+        router.push(`/contracts/${existing.contract.id}`);
         return;
       }
       addToast({ title: "Succès", description: "Chauffeur mis à jour.", type: "success" });
@@ -155,8 +169,8 @@ export function DriverWizardForm({ driver, countries, centers, vehicles }: Drive
         <div hidden={step !== 0}><PersonalStep form={form} phoneCodes={phoneOptions} codes={codes} onCodeChange={(key, code) => setCodeChoice((c) => ({ ...c, [key]: code }))}
           photo={driver ? undefined : { file: uploads.photo, error: uploadErrors.photo, onChange: (file, error) => pick("photo", file, error) }} /></div>
         <div hidden={step !== 1}><EmergencyStep form={form} phoneCodes={phoneOptions} codes={codes} onCodeChange={(key, code) => setCodeChoice((c) => ({ ...c, [key]: code }))} /></div>
-        {(!driver || mayUpdateContract) && <div hidden={step !== 3}><ContractStep form={form} existing={driver?.contract ?? undefined} updateExisting={updateContract} onToggleUpdate={setUpdateContract} /></div>}
-        <div hidden={step !== 2}><TrainingStep form={form} centers={centers} vehicles={vehicles} uploads={driver ? undefined : { files: uploads, errors: uploadErrors, onPick: pick }} /></div>
+        {(!driver || mayUpdateContract) && <div hidden={step !== 3}><ContractStep form={form} existing={driver?.contract ?? undefined} updateExisting={updateContract} onToggleUpdate={setUpdateContract} startDate={startDate} onStartDateChange={setStartDate} /></div>}
+        <div hidden={step !== 2}><TrainingStep form={form} centers={centers} vehicles={driver && !(mayUpdateContract && driver.vehicle) ? null : vehicles} currentVehicle={driver?.vehicle} uploads={driver ? undefined : { files: uploads, errors: uploadErrors, onPick: pick }} /></div>
 
         <div className="mt-8 flex justify-between border-t border-slate-200 pt-4">
           <Button variant="outline" onClick={() => (step === 0 ? router.back() : setStep(step - 1))}>{step === 0 ? "Annuler" : "Précédent"}</Button>

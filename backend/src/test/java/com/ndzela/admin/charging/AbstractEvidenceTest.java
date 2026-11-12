@@ -26,4 +26,11 @@ abstract class AbstractEvidenceTest extends AbstractZellaFeedTest {
                 + "select gen_random_uuid(), country_id, 'Z-DEF', 'cust-2', id, 'LINKED', 'email+phone', 'system', true, true from drivers where id = ?::uuid", other);
         return UUID.fromString(other);
     }
+
+    protected void charge(String idTag, String transaction, int startMinutes, int endMinutes, String chargePoint, int connector, int socBefore, int socAfter, int energyWh) {
+        OffsetDateTime now = OffsetDateTime.now();
+        jdbc.update("insert into charging_sessions (id, country_id, transaction_id, id_tag, started_at, ended_at, status, energy_wh, cost_minor, currency, currency_decimals, raw, charge_point_id, connector_id, soc_before, soc_after) "
+                + "select gen_random_uuid(), id, ?, ?, ?, ?, 'COMPLETED', ?, 3500, 'XAF', 0, '{}', ?, ?, ?, ? from countries where code = 'GA'",
+                transaction, idTag, now.plusMinutes(startMinutes), now.plusMinutes(endMinutes), energyWh, chargePoint, connector, socBefore, socAfter);
+    }
 }

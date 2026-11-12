@@ -144,6 +144,13 @@ public class DriverService {
     }
 
     @Transactional
+    public DriverResponse changeVehicle(UUID id, UUID vehicleId) {
+        Driver driver = load(id);
+        assignmentService.change(driver, vehicleId);
+        return queries.response(driver);
+    }
+
+    @Transactional
     public DriverResponse removeVehicle(UUID id, String reason) {
         Driver driver = load(id);
         assignmentService.unassign(driver, reason);

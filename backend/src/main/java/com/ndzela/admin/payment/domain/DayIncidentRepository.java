@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DayIncidentRepository extends JpaRepository<DayIncident, UUID> {
+    boolean existsByContractId(UUID contractId);
+
     List<DayIncident> findAllByContractIdAndCancelledAtIsNull(UUID contractId);
 
     List<DayIncident> findAllByDriverIdOrderByDayDescCreatedAtDesc(UUID driverId);

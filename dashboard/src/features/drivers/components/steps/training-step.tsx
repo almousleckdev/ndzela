@@ -12,14 +12,16 @@ import type { Vehicle } from "@/features/vehicles/types";
 interface TrainingStepProps {
   form: UseFormReturn<DriverFormValues>;
   centers: TrainingCenter[];
-  // Available vehicles to choose from; null hides the vehicle choice (editing a driver).
+  // Available vehicles to choose from; null hides the vehicle choice.
   vehicles: Vehicle[] | null;
+  // Editing a driver who has a car: the choice then changes the car on the same contract (empty keeps the current one).
+  currentVehicle?: Vehicle | null;
   // The documents picked so far; absent when editing (files are managed on the driver's page).
   uploads?: { files: Uploads; errors: Partial<Record<UploadKey, string>>; onPick: (key: UploadKey, file: File | null, error?: string) => void };
 }
 
 // Step 3
-export function TrainingStep({ form, centers, vehicles, uploads }: TrainingStepProps) {
+export function TrainingStep({ form, centers, vehicles, currentVehicle, uploads }: TrainingStepProps) {
   const { register, formState } = form;
   const errors = formState.errors.training;
 
@@ -27,12 +29,15 @@ export function TrainingStep({ form, centers, vehicles, uploads }: TrainingStepP
     <div className="space-y-6">
       {vehicles && (
         <SelectField
-          label="Véhicule à assigner *"
-          placeholder={vehicles.length === 0 ? "Aucun véhicule disponible" : "Choisir un véhicule"}
+          label={currentVehicle ? "Changer de véhicule" : "Véhicule à assigner *"}
+          placeholder={currentVehicle ? `Garder ${currentVehicle.fleetNumber} · ${currentVehicle.brand} ${currentVehicle.model} · ${currentVehicle.plate}` : vehicles.length === 0 ? "Aucun véhicule disponible" : "Choisir un véhicule"}
           options={vehicles.map((vehicle) => ({ value: vehicle.id, label: `${vehicle.fleetNumber} · ${vehicle.brand} ${vehicle.model} · ${vehicle.plate}` }))}
           error={formState.errors.vehicleId?.message}
           {...register("vehicleId")}
         />
+      )}
+      {vehicles && currentVehicle && (
+        <p className="-mt-4 text-xs text-slate-500">Le contrat reste le même (numéro, dates et loyer inchangés) ; il passe au nouveau véhicule.</p>
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <SelectField label="Centre de formation" placeholder={centers.length === 0 ? "Aucun centre (facultatif)" : "Choisir (facultatif)"}

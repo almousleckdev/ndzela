@@ -2,7 +2,6 @@ package com.ndzela.admin.charging;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,13 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 // A case whose helper is one of our drivers is scored from that account's charges around the event; staff see the reasons only when it is flagged.
 class SuspensionCaseScoreTest extends AbstractEvidenceTest {
-    private void charge(String transaction, int startMinutes, int endMinutes, String chargePoint, int connector, int socBefore, int socAfter, int energyWh) {
-        OffsetDateTime now = OffsetDateTime.now();
-        jdbc.update("insert into charging_sessions (id, country_id, transaction_id, id_tag, started_at, ended_at, status, energy_wh, cost_minor, currency, currency_decimals, raw, charge_point_id, connector_id, soc_before, soc_after) "
-                + "select gen_random_uuid(), id, ?, 'Z-DEF', ?, ?, 'COMPLETED', ?, 3500, 'XAF', 0, '{}', ?, ?, ?, ? from countries where code = 'GA'",
-                transaction, now.plusMinutes(startMinutes), now.plusMinutes(endMinutes), energyWh, chargePoint, connector, socBefore, socAfter);
-    }
-
     private void aCaseWithALinkedHelper() throws Exception {
         secondLinkedDriver();
         serve(evidence("ev-" + UUID.randomUUID(), "cust-1", "cust-2", true, "ref-S"));
@@ -26,8 +18,8 @@ class SuspensionCaseScoreTest extends AbstractEvidenceTest {
     @Test
     void twoCarsAtTheSameTimeFlagTheCaseWithItsReason() throws Exception {
         aCaseWithALinkedHelper();
-        charge("S1", -120, 60, "CP-1", 1, 20, 90, 20000);
-        charge("S2", -60, 30, "CP-2", 1, 30, 70, 15000);
+        charge("Z-DEF", "S1", -120, 60, "CP-1", 1, 20, 90, 20000);
+        charge("Z-DEF", "S2", -60, 30, "CP-2", 1, 30, 70, 15000);
 
         sync();
 
@@ -40,7 +32,7 @@ class SuspensionCaseScoreTest extends AbstractEvidenceTest {
     @Test
     void aQuietAccountIsNotFlaggedAndShowsNoReasons() throws Exception {
         aCaseWithALinkedHelper();
-        charge("S3", -120, -60, "CP-1", 1, 20, 90, 20000);
+        charge("Z-DEF", "S3", -120, -60, "CP-1", 1, 20, 90, 20000);
 
         sync();
 
@@ -59,5 +51,42 @@ class SuspensionCaseScoreTest extends AbstractEvidenceTest {
         send(get("/api/v1/charging/suspension-cases"), admin).andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].score").doesNotExist())
                 .andExpect(jsonPath("$.items[0].flagged").value(false));
+    }
+
+    @Test
+    void theGlobalViewScoresACaseWithoutPickingACountry() throws Exception {
+        aCaseWithALinkedHelper();
+        charge("Z-DEF", "G1", -120, 60, "CP-1", 1, 20, 90, 20000);
+        charge("Z-DEF", "G2", -60, 30, "CP-2", 1, 30, 70, 15000);
+
+        sync();
+
+        send(get("/api/v1/charging/suspension-cases"), root).andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].flagged").value(true));
+    }
+
+    @Test
+    void aSessionNeverClosedIsNotTreatedAsRunningForever() throws Exception {
+        aCaseWithALinkedHelper();
+        charge("Z-DEF", "O1", -1200, -1100, "CP-1", 1, 20, 90, 20000);
+        jdbc.update("update charging_sessions set ended_at = null where transaction_id = 'O1'");
+        charge("Z-DEF", "O2", -60, 30, "CP-2", 1, 30, 70, 15000);
+
+        sync();
+
+        send(get("/api/v1/charging/suspension-cases"), admin).andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].flagged").value(false));
+    }
+
+    @Test
+    void aShortHistoryDoesNotMakeOrdinaryChargingLookExcessive() throws Exception {
+        aCaseWithALinkedHelper();
+        charge("Z-DEF", "H1", -4320, -4260, "CP-1", 1, 20, 90, 24000);
+        charge("Z-DEF", "N1", -60, 30, "CP-1", 1, 30, 70, 10000);
+
+        sync();
+
+        send(get("/api/v1/charging/suspension-cases"), admin).andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].score").value(0));
     }
 }

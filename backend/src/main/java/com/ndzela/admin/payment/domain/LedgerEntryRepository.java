@@ -14,6 +14,8 @@ import java.util.UUID;
 public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID>, JpaSpecificationExecutor<LedgerEntry> {
     List<LedgerEntry> findAllByContractIdOrderByCreatedAtAscIdAsc(UUID contractId);
 
+    boolean existsByContractId(UUID contractId);
+
     Optional<LedgerEntry> findByRequestId(UUID requestId);
 
     List<LedgerEntry> findAllByRequestIdIn(Collection<UUID> requestIds);

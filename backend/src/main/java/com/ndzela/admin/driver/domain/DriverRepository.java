@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DriverRepository extends JpaRepository<Driver, UUID>, JpaSpecificationExecutor<Driver> {
+    java.util.List<Driver> findAllByStatusAndSuspensionCause(DriverStatus status, SuspensionCause cause);
+
     boolean existsByCountryIdAndIdNumberAndIdNot(UUID countryId, String idNumber, UUID id);
 
     boolean existsByCountryIdAndLicenceNumberAndIdNot(UUID countryId, String licenceNumber, UUID id);

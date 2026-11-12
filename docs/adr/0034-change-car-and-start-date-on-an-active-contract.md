@@ -1,0 +1,14 @@
+# ADR-0034: An active contract can move to another car and its start date can be corrected
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Amends:** [contracts.md](../business/contracts.md) ("Updating a contract", "removing the vehicle terminates the contract")
+
+**Context.** Staff could not change a driver's car in "Modifier le chauffeur" once the driver and contract existed. The only way was to remove the car (which terminates the contract) and assign another (which opens a new contract with a new number and a new 1 248-day period), losing the continuity of the contract and its payment history. The start date, always the creation date, could not be corrected either.
+
+**Decision.**
+1. **Change of car on the same contract.** `PUT /drivers/{id}/vehicle {vehicleId}` (permissions `drivers:update` and `contracts:update`) ends the open assignment (reason "Changement de véhicule"), frees the old car, reserves the new available one, opens a new assignment and points the active contract to the new car, in one transaction. The printed parties are refreshed, the contract `revision` is incremented. **The number, the dates, the daily rent, the total price and the deposit stay as signed**, even if the new car's own rent differs (the rule "the rent cannot change per contract" holds; the arrears calculation keeps one rent per contract and no history is rewritten). Audit: `DRIVER_VEHICLE_CHANGED`, `CONTRACT_VEHICLE_CHANGED`. Errors: `VEHICLE_NOT_AVAILABLE`, `VEHICLE_UNCHANGED`, `DRIVER_HAS_NO_VEHICLE`, `NO_ACTIVE_CONTRACT`.
+2. **Correction of the start date.** `PUT /drivers/{id}/contract/start-date {startDate}` (`contracts:update`, served by the payment feature because it reads the ledger) moves the start; the end date follows (1 248 billable days). It is allowed only **while no ledger entry (payment, fee, waiver, reversal) and no incident exists on the contract** (`CONTRACT_HAS_ACTIVITY`), and the date must be **between today and 90 days ahead** in the country's timezone (`START_DATE_OUT_OF_RANGE`). The driver's arrears figures are recomputed. Audit: `CONTRACT_RESCHEDULED`; the revision is incremented.
+3. The edit screen offers both: "Changer de véhicule" in step 3 and "Date de début" in step 4, shown only to holders of `contracts:update` for a driver with an active contract.
+
+**Consequences.** (+) A car swap (breakdown, accident) no longer cuts the contract. (-) The car of a contract is no longer fixed, so the contract's rent may differ from the new car's rent; staff see this in the vehicle list. Past rent days are never repriced. Changing the rent with the car would need a rent-periods table and a new ADR.
+
+**Alternatives.** Close and reopen the contract (rejected: loses continuity and restarts the 1 248 days). Reprice from the change date (rejected for now: touches the account calculator, progress, the driver app and the PDF).

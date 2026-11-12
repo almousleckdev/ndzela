@@ -6,6 +6,7 @@ import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.dto.ReasonRequest;
 import com.ndzela.admin.security.model.CurrentActor;
 import com.ndzela.admin.driver.api.dto.AssignVehicleRequest;
+import com.ndzela.admin.driver.api.dto.ChangeVehicleRequest;
 import com.ndzela.admin.driver.api.dto.CreateDriverRequest;
 import com.ndzela.admin.driver.api.dto.DriverResponse;
 import com.ndzela.admin.driver.api.dto.SuspendRequest;
@@ -143,6 +144,12 @@ public class DriverController {
     @PreAuthorize("hasAuthority('drivers:update')")
     public DriverResponse assignVehicle(@PathVariable UUID id, @Valid @RequestBody AssignVehicleRequest request) {
         return drivers.assignVehicle(id, request.vehicleId(), request.deposit());
+    }
+
+    @PutMapping("/{id}/vehicle")
+    @PreAuthorize("hasAuthority('drivers:update') and hasAuthority('contracts:update')")
+    public DriverResponse changeVehicle(@PathVariable UUID id, @Valid @RequestBody ChangeVehicleRequest request) {
+        return drivers.changeVehicle(id, request.vehicleId());
     }
 
     @PostMapping("/{id}/vehicle/remove")

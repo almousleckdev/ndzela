@@ -14,18 +14,20 @@ interface ContractStepProps {
   existing?: Contract;
   updateExisting?: boolean;
   onToggleUpdate?: (value: boolean) => void;
+  // The start date can be corrected until a payment, a waiver or an incident is recorded
+  startDate?: string;
+  onStartDateChange?: (value: string) => void;
 }
 
 const day = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
 // Step 4.
-export function ContractStep({ form, existing, updateExisting, onToggleUpdate }: ContractStepProps) {
+export function ContractStep({ form, existing, updateExisting, onToggleUpdate, startDate, onStartDateChange }: ContractStepProps) {
   const { register, formState, watch } = form;
 
   if (existing) {
     const rows: [string, string][] = [
       ["Numéro", existing.contractNumber],
-      ["Début", day(existing.startDate)],
       ["Fin prévue", day(existing.endDate)],
       ["Loyer journalier", formatFcfa(existing.dailyRent)],
       ["Prix total du véhicule", formatFcfa(existing.totalPrice)],
@@ -38,6 +40,8 @@ export function ContractStep({ form, existing, updateExisting, onToggleUpdate }:
             <div key={label} className="flex justify-between gap-4 px-4 py-2.5 text-sm"><dt className="text-slate-500">{label}</dt><dd className="text-right font-medium text-slate-900">{value}</dd></div>
           ))}
         </dl>
+        <FormField label="Date de début" type="date" min={new Date().toISOString().slice(0, 10)} value={startDate ?? existing.startDate} onChange={(event) => onStartDateChange?.(event.target.value)}
+          hint={`Début actuel : ${day(existing.startDate)}. Modifiable seulement tant qu'aucun paiement, abandon de loyer ou incident n'est enregistré ; la date de fin suit (1 248 jours ouvrés).`} />
         <Checkbox label="Mettre à jour le contrat avec ces informations" description="Les informations du chauffeur et du véhicule imprimées dans le contrat sont remplacées par les valeurs actuelles. Le numéro, les dates et le loyer ne changent pas."
           checked={Boolean(updateExisting)} onChange={(event) => onToggleUpdate?.(event.target.checked)} />
         {updateExisting && (
