@@ -164,9 +164,25 @@ class IdTagLinkTest extends AbstractDriverTest {
         zella.customer("Z-ONE", "cust-1", email, phone, "Almousleck", "ATALIB AG");
         lookup().andExpect(status().isOk());
         zella.customer("Z-TWO", "cust-2", email, phone, "Almousleck", "ATALIB AG");
-        lookup().andExpect(jsonPath("$.stored").value(0));
+        lookup().andExpect(status().isOk());
 
         assertEquals(1, rows("select count(*) from id_tags where status = 'LINKED'"));
+        assertEquals(1, rows("select count(*) from id_tags where status = 'SUGGESTED'"));
+    }
+
+    @Test
+    void aDriverAlreadyLinkedGetsTheSecondAccountOfAGoogleSignInLinkedToo() throws Exception {
+        zella.customer("Z-ONE", "cust-1", "old@example.com", phone, "Almousleck", "ATALIB AG");
+        lookup().andExpect(status().isOk());
+        assertEquals(1, rows("select count(*) from id_tags where status = 'LINKED'"));
+
+        zella.customer("Z-TWO", "cust-2", email, "+24100000001", "Almousleck", "ATALIB AG");
+        zella.emailProvenByProvider("cust-2");
+        session("1", "Z-TWO", "now()");
+        lookup().andExpect(status().isOk());
+
+        assertEquals(2, rows("select count(*) from id_tags where status = 'LINKED'"));
+        sessions().andExpect(jsonPath("$.items[0].holder.driverName").value("ATALIB AG Almousleck"));
     }
 
     @Test

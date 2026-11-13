@@ -22,8 +22,8 @@ public interface IdTagRepository extends JpaRepository<IdTag, UUID> {
 
     boolean existsByDriverIdAndStatusAndIdNot(UUID driverId, IdTagStatus status, UUID id);
 
-    /** The drivers that must not be looked up again: refused by staff, or linked with their idTag known (a linked driver without one waits for the first charge). */
-    @org.springframework.data.jpa.repository.Query("select distinct t.driverId from IdTag t where t.status = com.ndzela.admin.charging.domain.IdTagStatus.UNLINKED or (t.status = com.ndzela.admin.charging.domain.IdTagStatus.LINKED and t.idTag is not null)")
+    /** The drivers that must not be looked up again: refused by staff. Linked drivers are looked up too, because they may sign in to Zella with Google or Apple and get a second account. */
+    @org.springframework.data.jpa.repository.Query("select distinct t.driverId from IdTag t where t.status = com.ndzela.admin.charging.domain.IdTagStatus.UNLINKED")
     List<UUID> decidedDriverIds();
 
     /** Links Zella has not been told about, and unlinks it still holds. */

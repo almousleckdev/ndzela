@@ -95,9 +95,9 @@ public class IdTagLinkService {
             if (driver == null) {
                 continue;
             }
-            long proven = result.matches().stream().filter(ZellaMatch::matchedBoth).count();
+            long proven = result.matches().stream().filter(ZellaMatch::provenByProvider).count();
             for (ZellaMatch match : result.matches()) {
-                boolean unambiguous = result.matches().size() == 1 || (proven == 1 && match.matchedBoth());
+                boolean unambiguous = result.matches().size() == 1 || (proven == 1 && match.provenByProvider());
                 if (upsert(driver, match, unambiguous)) {
                     stored++;
                 }
@@ -116,7 +116,7 @@ public class IdTagLinkService {
         if (match.idTag() != null && tags.findByIdTag(match.idTag()).isPresent()) {
             return false;
         }
-        boolean free = unambiguous && !tags.existsByDriverIdAndStatusAndIdNot(driver.id(), IdTagStatus.LINKED, new UUID(0L, 0L));
+        boolean free = unambiguous && (match.provenByProvider() || !tags.existsByDriverIdAndStatusAndIdNot(driver.id(), IdTagStatus.LINKED, new UUID(0L, 0L)));
         IdTag created = IdTag.builder().idTag(match.idTag()).customerId(match.customerId()).driverId(driver.id()).firstName(match.firstName()).lastName(match.lastName())
                 .status(free ? IdTagStatus.LINKED : IdTagStatus.SUGGESTED).matchedOn(matchedOn).decidedBy(SYSTEM).decidedAt(OffsetDateTime.now()).build();
         tags.save(created);
@@ -137,7 +137,7 @@ public class IdTagLinkService {
             existing.setFirstName(match.firstName());
             existing.setLastName(match.lastName());
         }
-        if (existing.getStatus() == IdTagStatus.SUGGESTED && unambiguous && !tags.existsByDriverIdAndStatusAndIdNot(driver.id(), IdTagStatus.LINKED, existing.getId())) {
+        if (existing.getStatus() == IdTagStatus.SUGGESTED && unambiguous && (match.provenByProvider() || !tags.existsByDriverIdAndStatusAndIdNot(driver.id(), IdTagStatus.LINKED, existing.getId()))) {
             existing.setMatchedOn(matchedOn);
             decide(existing, IdTagStatus.LINKED, SYSTEM, "ID_TAG_LINKED", driver, "automatic, " + matchedOn + ", customer " + match.customerId());
             changed = true;
