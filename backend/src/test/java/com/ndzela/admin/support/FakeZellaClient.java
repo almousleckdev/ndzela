@@ -24,6 +24,7 @@ public class FakeZellaClient extends ZellaClient {
 
     private final List<Customer> customers = new CopyOnWriteArrayList<>();
     private final List<List<ZellaDriver>> asked = new CopyOnWriteArrayList<>();
+    private final java.util.Set<String> provenEmails = new java.util.concurrent.CopyOnWriteArraySet<>();
     private final List<String> linked = new CopyOnWriteArrayList<>();
     private final List<String> calls = new CopyOnWriteArrayList<>();
     private volatile boolean down;
@@ -38,6 +39,10 @@ public class FakeZellaClient extends ZellaClient {
 
     public FakeZellaClient(ZellaProperties props) {
         super(null, props, null);
+    }
+
+    public void emailProvenByProvider(String customerId) {
+        provenEmails.add(customerId);
     }
 
     @Override
@@ -59,6 +64,8 @@ public class FakeZellaClient extends ZellaClient {
                 boolean phone = c.phone().equals(d.phoneE164());
                 if (email && phone) {
                     matches.add(new ZellaMatch(c.customerId(), c.idTag(), Set.of("email", "phone"), "FULL", c.firstName(), c.lastName()));
+                } else if (email && provenEmails.contains(c.customerId())) {
+                    matches.add(new ZellaMatch(c.customerId(), c.idTag(), Set.of("email"), "FULL", c.firstName(), c.lastName()));
                 } else if (email || phone) {
                     matches.add(new ZellaMatch(c.customerId(), c.idTag(), Set.of(email ? "email" : "phone"), "PARTIAL", null, null));
                 }
@@ -219,6 +226,7 @@ public class FakeZellaClient extends ZellaClient {
 
     public void clear() {
         customers.clear();
+        provenEmails.clear();
         asked.clear();
         linked.clear();
         calls.clear();

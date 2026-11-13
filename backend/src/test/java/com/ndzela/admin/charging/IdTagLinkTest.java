@@ -129,6 +129,21 @@ class IdTagLinkTest extends AbstractDriverTest {
     }
 
     @Test
+    void theAccountWhoseEmailGoogleProvedLinksEvenWhenAnotherAccountMatchesThePhone() throws Exception {
+        zella.customer("Z-ABC", "cust-1", email, "+24100000000", "Someone", "Else");
+        zella.customer("Z-DEF", "cust-2", "other@example.com", phone, "Another", "One");
+        zella.emailProvenByProvider("cust-1");
+        session("1", "Z-ABC", "now()");
+
+        lookup().andExpect(jsonPath("$.stored").value(2));
+
+        sessions().andExpect(jsonPath("$.items[0].holder.driverName").value("ATALIB AG Almousleck"));
+        assertEquals(1, rows("select count(*) from id_tags where status = 'LINKED' and customer_id = 'cust-1'"));
+        assertEquals(1, rows("select count(*) from id_tags where status = 'SUGGESTED' and customer_id = 'cust-2'"));
+        assertEquals("email", jdbc.queryForObject("select matched_on from id_tags where customer_id = 'cust-1'", String.class));
+    }
+
+    @Test
     void anUnlinkedAccountIsNeverLinkedAgainByItself() throws Exception {
         zella.customer("Z-ABC", "cust-1", email, phone, "Almousleck", "ATALIB AG");
         session("1", "Z-ABC", "now()");
