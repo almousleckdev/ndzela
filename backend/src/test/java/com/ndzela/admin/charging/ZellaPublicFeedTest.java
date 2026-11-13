@@ -47,7 +47,8 @@ class ZellaPublicFeedTest extends AbstractZellaFeedTest {
         sync();
 
         send(get("/api/v1/charging/sessions?kind=PUBLIC"), manager).andExpect(status().isOk())
-                .andExpect(jsonPath("$.items[0].payment.state").value("CHARGED")).andExpect(jsonPath("$.items[0].payment.total").value(6000));
+                .andExpect(jsonPath("$.items[0].payment.state").value("CHARGED")).andExpect(jsonPath("$.items[0].payment.total").value(6000))
+                .andExpect(jsonPath("$.items[0].payment.method").value("WALLET"));
     }
 
     @Test

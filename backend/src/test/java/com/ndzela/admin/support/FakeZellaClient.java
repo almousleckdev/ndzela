@@ -162,7 +162,7 @@ public class FakeZellaClient extends ZellaClient {
 
     /** A session of someone who is not a NDZela driver: no customer, no idTag. */
     public static ZellaFeedItem publicCharge(String transactionId, String stationId, String sessionState, String startedAt, String stoppedAt, String energyKwh, long total, String updatedAt) {
-        return new ZellaFeedItem(transactionId, null, null, sessionState, "CHARGED", "WALLET", total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
+        return new ZellaFeedItem(transactionId, null, null, sessionState, "CHARGED", null, total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
                 stationId, 1, OffsetDateTime.parse(startedAt), stoppedAt == null ? null : OffsetDateTime.parse(stoppedAt), new java.math.BigDecimal(energyKwh), null, null, null, 350L, "{}");
     }
 

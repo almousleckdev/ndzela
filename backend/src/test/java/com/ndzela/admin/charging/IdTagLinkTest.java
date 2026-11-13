@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// Who charged: a Zella customer is linked to a driver by e-mail and phone together; one of them is only a suggestion.
+// Who charged: a Zella customer is linked to a driver by e-mail, phone or both; two different customers each matching one field are only suggestions.
 class IdTagLinkTest extends AbstractDriverTest {
     private String vehicle;
     private String driver;
@@ -42,6 +42,11 @@ class IdTagLinkTest extends AbstractDriverTest {
     private void session(String transaction, String idTag, String startedAt) {
         jdbc.update("insert into charging_sessions (id, country_id, transaction_id, id_tag, started_at, ended_at, status, energy_wh, cost_minor, currency, currency_decimals, raw) "
                 + "select gen_random_uuid(), id, ?, ?, " + startedAt + ", " + startedAt + ", 'COMPLETED', 10000, 3500, 'XAF', 0, '{}' from countries where code = 'GA'", transaction, idTag);
+    }
+
+    private void twoCompetingCustomers() {
+        zella.customer("Z-ABC", "cust-1", email, "+24100000000", "x", "y");
+        zella.customer("Z-DEF", "cust-2", "other@example.com", phone, "z", "w");
     }
 
     private ResultActions lookup() throws Exception {
@@ -83,19 +88,43 @@ class IdTagLinkTest extends AbstractDriverTest {
     }
 
     @Test
-    void oneMatchingFieldIsASuggestionStaffConfirmOrRefuse() throws Exception {
+    void theEmailAloneLinksTheDriver() throws Exception {
         zella.customer("Z-ABC", "cust-1", email, "+24100000000", "Someone", "Else");
         session("1", "Z-ABC", "now()");
 
         lookup().andExpect(jsonPath("$.stored").value(1));
+
+        sessions().andExpect(jsonPath("$.items[0].holder.driverName").value("ATALIB AG Almousleck"));
+        assertEquals("email", jdbc.queryForObject("select matched_on from id_tags", String.class));
+        assertEquals(1, auditRows("ID_TAG_LINKED"));
+        assertEquals(0, auditRows("ID_TAG_SUGGESTED"));
+    }
+
+    @Test
+    void thePhoneAloneLinksTheDriver() throws Exception {
+        zella.customer("Z-ABC", "cust-1", "other@example.com", phone, "Someone", "Else");
+        session("1", "Z-ABC", "now()");
+
+        lookup().andExpect(jsonPath("$.stored").value(1));
+
+        sessions().andExpect(jsonPath("$.items[0].holder.driverName").value("ATALIB AG Almousleck"));
+        assertEquals("phone", jdbc.queryForObject("select matched_on from id_tags", String.class));
+    }
+
+    @Test
+    void twoDifferentCustomersMatchingOneFieldEachAreSuggestionsStaffConfirmOrRefuse() throws Exception {
+        zella.customer("Z-ABC", "cust-1", email, "+24100000000", "Someone", "Else");
+        zella.customer("Z-DEF", "cust-2", "other@example.com", phone, "Another", "One");
+        session("1", "Z-ABC", "now()");
+
+        lookup().andExpect(jsonPath("$.stored").value(2));
         sessions().andExpect(jsonPath("$.items[0].holder").doesNotExist());
-        send(get("/api/v1/charging/id-tags?status=SUGGESTED"), admin).andExpect(jsonPath("$[0].matchedOn").value("email")).andExpect(jsonPath("$[0].zellaName").value(""))
-                .andExpect(jsonPath("$[0].driverName").value("ATALIB AG Almousleck"));
+        assertEquals(2, rows("select count(*) from id_tags where status = 'SUGGESTED'"));
 
         String tag = tagId("SUGGESTED");
         postJson("/api/v1/charging/id-tags/" + tag + "/confirm", "{}", manager).andExpect(status().isNoContent());
-        sessions().andExpect(jsonPath("$.items[0].holder.driverName").value("ATALIB AG Almousleck"));
-        assertEquals(1, auditRows("ID_TAG_SUGGESTED"));
+        assertEquals(1, rows("select count(*) from id_tags where status = 'LINKED'"));
+        assertEquals(2, auditRows("ID_TAG_SUGGESTED"));
         assertEquals(1, auditRows("ID_TAG_LINKED"));
     }
 
@@ -127,7 +156,7 @@ class IdTagLinkTest extends AbstractDriverTest {
 
     @Test
     void onlyStaffWithTheLinkPermissionOfTheCountryCanReviewThem() throws Exception {
-        zella.customer("Z-ABC", "cust-1", email, "+24100000000", "Almousleck", "ATALIB AG");
+        twoCompetingCustomers();
         lookup().andExpect(status().isOk());
         String tag = tagId("SUGGESTED");
 
@@ -178,12 +207,13 @@ class IdTagLinkTest extends AbstractDriverTest {
 
     @Test
     void aSuggestionIsSentToZellaOnlyOnceStaffConfirmIt() throws Exception {
-        zella.customer("Z-ABC", "cust-1", email, "+24100000000", "x", "y");
+        twoCompetingCustomers();
         lookup().andExpect(status().isOk());
         assertEquals(java.util.List.of(), zella.calls());
 
         postJson("/api/v1/charging/id-tags/" + tagId("SUGGESTED") + "/confirm", "{}", manager).andExpect(status().isNoContent());
-        assertEquals(java.util.List.of("PUT cust-1"), zella.calls());
+        assertEquals(1, zella.calls().size());
+        assertEquals(true, zella.calls().get(0).startsWith("PUT cust-"));
     }
 
     @Test

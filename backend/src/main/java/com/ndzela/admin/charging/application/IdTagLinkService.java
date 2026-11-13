@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-// Finds which Zella customer is which NDZela driver. Only e-mail and phone together link by themselves; one of them is a suggestion for staff.
+// Finds which Zella customer is which NDZela driver. E-mail, phone or both link by themselves when they point to one Zella customer; two different customers matching a driver are suggestions for staff.
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -95,8 +95,9 @@ public class IdTagLinkService {
             if (driver == null) {
                 continue;
             }
+            boolean unambiguous = result.matches().size() == 1;
             for (ZellaMatch match : result.matches()) {
-                if (upsert(driver, match)) {
+                if (upsert(driver, match, unambiguous)) {
                     stored++;
                 }
             }
@@ -105,16 +106,16 @@ public class IdTagLinkService {
     }
 
     // True when a row was created or improved (linked, or its idTag arrived)
-    private boolean upsert(DriverRef driver, ZellaMatch match) {
+    private boolean upsert(DriverRef driver, ZellaMatch match, boolean unambiguous) {
         String matchedOn = match.matchedBoth() ? "email+phone" : String.join("+", match.matchedOn().stream().sorted().toList());
         IdTag existing = tags.findByCustomerId(match.customerId()).orElse(null);
         if (existing != null) {
-            return refresh(existing, driver, match, matchedOn);
+            return refresh(existing, driver, match, matchedOn, unambiguous);
         }
         if (match.idTag() != null && tags.findByIdTag(match.idTag()).isPresent()) {
             return false;
         }
-        boolean free = match.matchedBoth() && !tags.existsByDriverIdAndStatusAndIdNot(driver.id(), IdTagStatus.LINKED, new UUID(0L, 0L));
+        boolean free = unambiguous && !tags.existsByDriverIdAndStatusAndIdNot(driver.id(), IdTagStatus.LINKED, new UUID(0L, 0L));
         IdTag created = IdTag.builder().idTag(match.idTag()).customerId(match.customerId()).driverId(driver.id()).firstName(match.firstName()).lastName(match.lastName())
                 .status(free ? IdTagStatus.LINKED : IdTagStatus.SUGGESTED).matchedOn(matchedOn).decidedBy(SYSTEM).decidedAt(OffsetDateTime.now()).build();
         tags.save(created);
@@ -122,7 +123,7 @@ public class IdTagLinkService {
         return true;
     }
 
-    private boolean refresh(IdTag existing, DriverRef driver, ZellaMatch match, String matchedOn) {
+    private boolean refresh(IdTag existing, DriverRef driver, ZellaMatch match, String matchedOn, boolean unambiguous) {
         if (!existing.getDriverId().equals(driver.id())) {
             return false;
         }
@@ -135,7 +136,7 @@ public class IdTagLinkService {
             existing.setFirstName(match.firstName());
             existing.setLastName(match.lastName());
         }
-        if (existing.getStatus() == IdTagStatus.SUGGESTED && match.matchedBoth() && !tags.existsByDriverIdAndStatusAndIdNot(driver.id(), IdTagStatus.LINKED, existing.getId())) {
+        if (existing.getStatus() == IdTagStatus.SUGGESTED && unambiguous && !tags.existsByDriverIdAndStatusAndIdNot(driver.id(), IdTagStatus.LINKED, existing.getId())) {
             existing.setMatchedOn(matchedOn);
             decide(existing, IdTagStatus.LINKED, SYSTEM, "ID_TAG_LINKED", driver, "automatic, " + matchedOn + ", customer " + match.customerId());
             changed = true;
