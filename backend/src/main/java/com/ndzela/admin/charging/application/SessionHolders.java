@@ -32,22 +32,23 @@ public class SessionHolders {
 
     /** The idTags that belong to a NDZela driver. */
     public Set<String> driverIdTags() {
-        return tags.findAllByStatusOrderByUpdatedAtDesc(IdTagStatus.LINKED).stream().map(IdTag::getIdTag).filter(Objects::nonNull).collect(Collectors.toSet());
+        return driverOfIdTag().keySet();
+    }
+
+    // The idTag on each link, plus the ones a linked customer charged with earlier (Zella replaces a customer's idTag when the platform still holds an open charge on the old one)
+    private Map<String, UUID> driverOfIdTag() {
+        Map<String, UUID> driverOf = new HashMap<>();
+        tags.ownersFromPayments().forEach(o -> driverOf.put(o.getIdTag(), o.getDriverId()));
+        tags.findAllByStatusOrderByUpdatedAtDesc(IdTagStatus.LINKED).stream().filter(t -> t.getIdTag() != null).forEach(t -> driverOf.put(t.getIdTag(), t.getDriverId()));
+        return driverOf;
     }
 
     public List<SessionRow> mark(List<SessionRow> rows) {
-        List<String> idTags = rows.stream().map(SessionRow::idTag).filter(Objects::nonNull).distinct().toList();
-        if (idTags.isEmpty()) {
+        Map<String, UUID> driverOf = driverOfIdTag();
+        if (rows.stream().noneMatch(r -> r.idTag() != null && driverOf.containsKey(r.idTag()))) {
             return rows;
         }
-        Map<String, UUID> driverOf = new HashMap<>();
-        for (IdTag tag : tags.findAllByIdTagInAndStatus(idTags, IdTagStatus.LINKED)) {
-            driverOf.put(tag.getIdTag(), tag.getDriverId());
-        }
-        if (driverOf.isEmpty()) {
-            return rows;
-        }
-        List<UUID> driverIds = driverOf.values().stream().distinct().toList();
+        List<UUID> driverIds = rows.stream().map(r -> r.idTag() == null ? null : driverOf.get(r.idTag())).filter(Objects::nonNull).distinct().toList();
         Map<UUID, DriverRef> drivers = driverIds.stream().map(directory::find).flatMap(java.util.Optional::stream).collect(Collectors.toMap(DriverRef::id, d -> d));
         List<HeldVehicle> held = directory.held(driverIds);
         Map<UUID, VehicleResponse> cars = vehicles.responsesByIds(held.stream().map(HeldVehicle::vehicleId).distinct().toList());

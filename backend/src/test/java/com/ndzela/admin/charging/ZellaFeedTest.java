@@ -37,6 +37,17 @@ class ZellaFeedTest extends AbstractZellaFeedTest {
     }
 
     @Test
+    void aSessionWithAnIdTagZellaHasSinceReplacedStillShowsTheDriver() throws Exception {
+        jdbc.update("insert into charging_sessions (id, country_id, transaction_id, id_tag, started_at, ended_at, status, energy_wh, cost_minor, currency, currency_decimals, raw) "
+                + "select gen_random_uuid(), id, '8', 'Z-OLD', now(), now(), 'COMPLETED', 10000, 3500, 'XAF', 0, '{}' from countries where code = 'GA'");
+        zella.serveFeed(null, "", new ZellaFeedPage(List.of(FakeZellaClient.paidWithTag("8", "cust-1", "Z-OLD", "CHARGED", 4000, "2026-11-05T10:00:00Z")), "c1", false));
+
+        sync();
+
+        sessions().andExpect(jsonPath("$.items[0].holder.driverName").value("ATALIB AG Almousleck"));
+    }
+
+    @Test
     void aNewerStateReplacesTheOldOneAndAnOlderOneIsIgnored() throws Exception {
         session("7");
         zella.serveFeed(null, "", new ZellaFeedPage(List.of(paid("7", "cust-1", "PENDING", 4000, "2026-11-05T10:00:00Z")), "c1", true));

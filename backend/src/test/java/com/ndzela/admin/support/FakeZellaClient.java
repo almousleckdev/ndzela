@@ -191,7 +191,11 @@ public class FakeZellaClient extends ZellaClient {
     }
 
     public static ZellaFeedItem paid(String transactionId, String customerId, String state, long total, String updatedAt) {
-        return new ZellaFeedItem(transactionId, customerId, "Z-ABC", "COMPLETED", state, "WALLET", total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
+        return paidWithTag(transactionId, customerId, "Z-ABC", state, total, updatedAt);
+    }
+
+    public static ZellaFeedItem paidWithTag(String transactionId, String customerId, String idTag, String state, long total, String updatedAt) {
+        return new ZellaFeedItem(transactionId, customerId, idTag, "COMPLETED", state, "WALLET", total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
                 null, null, null, null, null, null, null, null, null, null);
     }
 

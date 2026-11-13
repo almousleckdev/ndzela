@@ -29,4 +29,14 @@ public interface IdTagRepository extends JpaRepository<IdTag, UUID> {
     /** Links Zella has not been told about, and unlinks it still holds. */
     @org.springframework.data.jpa.repository.Query("select t from IdTag t where (t.status = com.ndzela.admin.charging.domain.IdTagStatus.LINKED and t.zellaNotified = false) or (t.status <> com.ndzela.admin.charging.domain.IdTagStatus.LINKED and t.zellaNotified = true)")
     List<IdTag> pendingZellaSync();
+
+    /** Every idTag a linked customer charged with, from the payment feed: Zella may have replaced the one on the link since. */
+    @org.springframework.data.jpa.repository.Query("select distinct p.idTag as idTag, t.driverId as driverId from SessionPayment p, IdTag t where t.customerId = p.customerId and t.status = com.ndzela.admin.charging.domain.IdTagStatus.LINKED and p.idTag is not null")
+    List<IdTagOwner> ownersFromPayments();
+
+    interface IdTagOwner {
+        String getIdTag();
+
+        UUID getDriverId();
+    }
 }
