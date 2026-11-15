@@ -1,6 +1,6 @@
 # Importing the old NDZELA platform
 
-**Status (2026-10-14): all 44 active riders and 59 former riders were imported into the LOCAL platform and checked. Nothing is imported in production. The backend has no import or back-dating code: the tool in `tools/legacy-migration` uses the normal API plus checked SQL.**
+**Status (2026-11-15): the import into PRODUCTION (`api.ndzela.com`) is done and checked: 45 active riders and 59 former riders (archive profiles). One rider was skipped on purpose (his car is already assigned in production). The backend has no import or back-dating code: the tool in `tools/legacy-migration` uses the normal API plus checked SQL.** The local import of 2026-10-14 (44 + 59) came first. See "Production import (2026-11-15)" at the end.
 
 ## The old platform (read-only facts)
 A single-page app on Vercel (`my-ndzela-admin`), data in **Firebase** (Firestore, Firebase sign-in, file storage). 44 drivers, 48 vehicles, about 11 000 rent rows (`loyers`), 9 000 mobile-money transactions (`transactions`, PVit), 556 stops (`arrets`), 856 charging recharges and 271 regularisations (prepaid charging cards), 4 managers. The contract is not a record of its own: it is stored on the driver (`numeroContrat`, `dateDebut`, `dureeJours`, `loyerJournalier`, `caution`). **Security finding:** every driver's password is stored readable in the database, and the database keys are public in the site's code; shut the old platform down (or lock its database) after the import, and never migrate those passwords.
@@ -57,3 +57,19 @@ The old screen counts, for each active rider, every billable day from the contra
 
 ## Next
 Check the local dashboard against the old platform; decide what to do with the money kept aside; collect photos and documents; then the production import (the same tools, pointed at production on purpose, after a database backup, with `silence_history.py` in the same step), and shut the old platform down.
+
+## Production import (2026-11-15)
+**Result.** 45 active riders (contract, vehicle, ledger, stops and half days) and 59 archive profiles in production; about 13 000 ledger lines for the active riders and 3 941 for the archive; the original contract numbers and start dates kept. Arrears match the old "Gestion des impayés" screen exactly: **29 riders, 11 critical (3 days or more), 18 warnings, 1 771 000 FCFA**. `verify_local.py` (pointed at production): unpaid days, credit, overdue and total paid days equal the independent calculation for all 46 active contracts; the on-time/late split differs for 43 because the independent port predates ADR-0029 (rent due the same day at noon), the platform's own rule is the reference.
+
+**How production is reached (no secret is ever used to forge a token).**
+- `prod_session.py` signs a super admin in for real (password, email code, authenticator code), typed by a person in a terminal, and keeps only the session cookie in a mode-600 file. The tools renew their 15-minute token from it (`target_api.Production`). One login per account: signing in elsewhere ends the session.
+- The database is reached through `railway connect Postgres --tunnel-only` (an encrypted tunnel, no public TCP proxy); the tools use it when `LEGACY_DB_PORT` and `PGPASSWORD` are set. `import_local.py --production` refuses to run without the cookie file, the admin email and the tunnel.
+- A `pg_dump` of production was taken first (run the server's own `pg_dump` through `railway ssh`, the local client is older than the server).
+
+**Order that was followed.** Backup, read-only pre-check (`prod_precheck.py`), pause the arrears job (`APP_ARREARS_JOB_ENABLED=false` on the `api` service), import active riders, import archive profiles, catch-up import of the riders whose old data changed since the first export (`--refresh --only`), `silence_history.py` (restricted to the contracts this import created, so a real production driver's arrears are never silenced), remove the variable, check.
+
+**Decisions of this run.** Old centre `NDZELA` maps to the production centre `NDZELA GABON`; `INTRAV` was created. Vehicles are reused by plate (spaces and dashes ignored). A rider whose vehicle is already assigned to someone else is skipped and listed (`NDZ-57559923`: assign a car by hand). Not imported: prepaid charging cards (52, balances 3 707 829), 856 recharges, 271 regularisations (the platform has no prepaid balance), old passwords (a random one per rider, shown once in `~/ndzela-backups/passwords-prod.txt`; drivers use "forgot password"), `tauxPropriete` (meaning unknown), the Planning page, the computed punctuality figures. About 5 004 000 FCFA is kept aside for staff review (`surplus-prod.csv`, not in the ledger). The 4 station managers are created by hand in the dashboard (role Gestionnaire).
+
+**Lessons.** The tunnel can drop: the import stops after 2 failures in a row and finished riders are skipped on a re-run. Write secrets to the file as they are created, not at the end. The old platform keeps receiving payments until it is shut down: do a last export and a `--refresh --only` catch-up just before the cutover.
+
+**Still to do.** Final catch-up at the cutover day, then shut the old platform down and change its admin password; rotate the super admin password used for the import; close the tunnel; staff review `surplus-prod.csv` and complete the 17 records filled with "Non renseigné".
