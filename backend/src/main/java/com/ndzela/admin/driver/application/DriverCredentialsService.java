@@ -6,6 +6,7 @@ import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverContactChangedEvent;
 import com.ndzela.admin.driver.domain.DriverRepository;
+import com.ndzela.admin.driverapp.application.DriverAuthService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -22,6 +23,7 @@ import static com.ndzela.admin.driver.application.DriverAssignmentService.label;
 @RequiredArgsConstructor
 public class DriverCredentialsService {
     private final DriverRepository drivers;
+    private final DriverAuthService auth;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
 
@@ -49,6 +51,17 @@ public class DriverCredentialsService {
         audit.record("DRIVER_CONTACT_CHANGED", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(), details.toString());
         events.publishEvent(new DriverContactChangedEvent(driver.getId(), driver.getCountryId()));
         return driver;
+    }
+
+    // The password itself is never audited, logged or returned. An archive profile has no login to give a password to.
+    @Transactional
+    public void setTemporaryPassword(UUID id, String password) {
+        Driver driver = load(id);
+        if ("!".equals(driver.getPasswordHash())) {
+            throw new BusinessRuleViolationException("DRIVER_HAS_NO_LOGIN", "This archive profile has no login.");
+        }
+        auth.adminSetPassword(driver.getId(), password);
+        audit.record("DRIVER_PASSWORD_RESET", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(), "temporary password set by an administrator");
     }
 
     private Driver load(UUID id) {
