@@ -51,6 +51,7 @@ const CODE_MESSAGES: Record<string, string> = {
   DRIVER_LICENCE_TAKEN: "Un chauffeur avec ce numéro de permis existe déjà.",
   DRIVER_EMAIL_TAKEN: "Un chauffeur avec cet email existe déjà.",
   DRIVER_PHONE_TAKEN: "Un chauffeur avec ce numéro de téléphone existe déjà.",
+  DRIVER_HAS_NO_LOGIN: "Ce profil d'archive n'a pas de compte de connexion.",
   DRIVER_HAS_VEHICLE: "Ce chauffeur a déjà un véhicule.",
   DRIVER_HAS_NO_VEHICLE: "Ce chauffeur n'a pas de véhicule.",
   DRIVER_PURGE_BLOCKED: "Un autre enregistrement empêche la suppression de ce chauffeur.",

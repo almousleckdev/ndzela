@@ -61,3 +61,9 @@ export const passwordSchema = z
   })
   .refine((values) => values.password === values.confirmation, { path: ["confirmation"], message: "Les mots de passe ne correspondent pas" });
 export type PasswordValues = z.infer<typeof passwordSchema>;
+
+// A new email and/or a new primary phone (national part) for a driver who lost theirs; one of the two is enough.
+export const contactSchema = z
+  .object({ email: z.union([z.literal(""), z.email("Adresse email invalide")]), phone: nationalNumberSchema })
+  .refine((values) => values.email !== "" || values.phone.trim() !== "", { path: ["email"], message: "Indiquez un nouvel email ou un nouveau numéro" });
+export type ContactValues = z.infer<typeof contactSchema>;

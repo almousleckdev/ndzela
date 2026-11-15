@@ -45,6 +45,12 @@ export const driversService = {
 
   unlockLogin: (id: string) => apiClient<Driver>(`/drivers/${id}/unlock-login`, { method: "POST" }),
 
+  // A new email and/or phone for a driver who lost theirs (phone already international)
+  changeContact: (id: string, change: { email?: string; phone?: string }) => apiClient<Driver>(`/drivers/${id}/contact`, { method: "PUT", body: change }),
+
+  // A temporary password: the driver must change it at the next sign-in
+  resetPassword: (id: string, password: string) => apiClient<void>(`/drivers/${id}/password-reset`, { method: "POST", body: { password } }),
+
   purge: (id: string) => apiClient(`/drivers/${id}/purge`, { method: "POST", body: { confirm: true } }),
 
   remove: (id: string) => apiClient(`/drivers/${id}`, { method: "DELETE" }),
