@@ -12,6 +12,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 // The recent rent days the weekly history shows
 class DriverAccountDaysTest extends AbstractDriverPayingTest {
+    // "Today" is the country's day, not the machine's: a UTC runner is a day behind Libreville from 23:00 to midnight.
+    private static LocalDate today() {
+        return LocalDate.now(java.time.ZoneId.of("Africa/Libreville"));
+    }
+
     private List<String> field(String path) throws Exception {
         String body = asDriver("/api/v1/driver/account", token).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, path);
@@ -25,7 +30,7 @@ class DriverAccountDaysTest extends AbstractDriverPayingTest {
 
         assertTrue(days.size() >= 2);
         assertEquals(days.stream().sorted().toList(), days);
-        assertTrue(days.stream().allMatch(day -> !LocalDate.parse(day).isAfter(LocalDate.now())));
+        assertTrue(days.stream().allMatch(day -> !LocalDate.parse(day).isAfter(today())));
     }
 
     @Test
@@ -41,7 +46,7 @@ class DriverAccountDaysTest extends AbstractDriverPayingTest {
 
     @Test
     void aDriverWithNothingOwedStillGetsAnEmptyList() throws Exception {
-        jdbc.update("update contracts set start_date = current_date, end_date = current_date + 300");
+        jdbc.update("update contracts set start_date = ?, end_date = ?", java.sql.Date.valueOf(today()), java.sql.Date.valueOf(today().plusDays(300)));
 
         assertEquals(0, field("$.days[*]").size());
     }
