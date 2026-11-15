@@ -39,6 +39,8 @@ export const PERMISSIONS = {
   DRIVERS_EXPORT: "drivers:export",
   DRIVERS_DELETE: "drivers:delete",
   DRIVERS_PURGE: "drivers:purge",
+  DRIVERS_CREDENTIALS: "drivers:credentials",
+  EARNINGS_READ: "earnings:read",
   PAYMENTS_READ: "payments:read",
   PAYMENTS_CREATE: "payments:create",
   PAYMENTS_REVERSE: "payments:reverse",
