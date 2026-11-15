@@ -23,6 +23,16 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID>,
     @Query("delete from LedgerEntry e where e.driverId = :driverId")
     int deleteOfDriver(@Param("driverId") UUID driverId);
 
+    // Payments and fees that were not reversed, summed by type over a period (the earnings page)
+    @Query("select e.type, coalesce(sum(e.amount), 0) from LedgerEntry e where e.type in (com.ndzela.admin.payment.domain.LedgerEntryType.PAYMENT, com.ndzela.admin.payment.domain.LedgerEntryType.FEE) "
+            + "and e.createdAt >= :from and e.createdAt < :to and not exists (select r.id from LedgerEntry r where r.reversesEntryId = e.id) group by e.type")
+    List<Object[]> totalsByType(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    // What each driver paid over a period, reversed payments left out, with the last payment's time
+    @Query("select e.driverId, sum(e.amount), max(e.createdAt) from LedgerEntry e where e.type = com.ndzela.admin.payment.domain.LedgerEntryType.PAYMENT "
+            + "and e.createdAt >= :from and e.createdAt < :to and not exists (select r.id from LedgerEntry r where r.reversesEntryId = e.id) group by e.driverId")
+    List<Object[]> paidByDriver(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
     Optional<LedgerEntry> findByRequestId(UUID requestId);
 
     List<LedgerEntry> findAllByRequestIdIn(Collection<UUID> requestIds);

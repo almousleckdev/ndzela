@@ -60,7 +60,7 @@ export function KpiBand({ items, className }: { items: Kpi[]; className?: string
           const body = (
             <div className={cn("h-full border-b border-r border-line px-4 py-3.5", item.href && "transition-colors hover:bg-slate-50")}>
               <dt className="text-[13px] text-muted">{item.label}</dt>
-              <dd className={cn("mt-1 font-display text-[1.65rem] font-semibold leading-none tabular-nums tracking-tight", item.tone === "bad" ? "text-red-700" : "text-ink")}>{item.value}</dd>
+              <dd className={cn("mt-1 break-words font-display font-semibold leading-none tabular-nums tracking-tight", typeof item.value === "string" && item.value.length > 9 ? "text-xl" : "text-[1.65rem]", item.tone === "bad" ? "text-red-700" : "text-ink")}>{item.value}</dd>
               {item.hint && <p className="mt-1.5 text-xs text-muted">{item.hint}</p>}
             </div>
           );

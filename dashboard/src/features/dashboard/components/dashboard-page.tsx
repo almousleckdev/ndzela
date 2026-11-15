@@ -16,6 +16,7 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { chargingService } from "@/features/charging/services/charging.service";
 import { DistributionBar } from "@/features/dashboard/components/distribution-bar";
+import { TodaySessionsPanel } from "@/features/dashboard/components/today-sessions-panel";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import { RecordPaymentDialog } from "@/features/payments/components/record-payment-dialog";
 import { LEVEL_LABELS, METHOD_LABELS } from "@/features/payments/lib/payment-labels";
@@ -41,8 +42,8 @@ export function DashboardPage() {
   const payments = useAsync(() => (mayPayments ? paymentsService.summary() : Promise.resolve(null)), [mayPayments]);
   const queue = useAsync(() => (mayPayments ? paymentsService.accounts("LATE", "", 0, QUEUE_SIZE, "overdueSince,asc") : Promise.resolve(null)), [mayPayments]);
   const feed = useAsync(() => (mayPayments ? paymentsService.history({ ...NO_QUERY }, 0, FEED_SIZE) : Promise.resolve(null)), [mayPayments]);
-  const charging = useAsync(() => (mayCharging ? chargingService.summary() : Promise.resolve(null)), [mayCharging]);
-  const recharges = useAsync(() => (mayCharging ? chargingService.recharges({ from: localToday(), to: localToday() }, 0, FEED_SIZE) : Promise.resolve(null)), [mayCharging]);
+  const charging = useAsync(() => (mayCharging ? chargingService.sessionSummary() : Promise.resolve(null)), [mayCharging]);
+  const sessions = useAsync(() => (mayCharging ? chargingService.sessions({ from: localToday(), to: localToday() }, 0, FEED_SIZE) : Promise.resolve(null)), [mayCharging]);
   const drivers = useAsync(() => (mayDrivers ? driversService.stats() : Promise.resolve(null)), [mayDrivers]);
   const vehicles = useAsync(() => (mayVehicles ? vehiclesService.counts() : Promise.resolve(null)), [mayVehicles]);
   const [paying, setPaying] = useState<AccountRow | null>(null);
@@ -56,7 +57,7 @@ export function DashboardPage() {
   }
   if (mayCharging) {
     const c = charging.data;
-    kpis.push({ label: "Recharges du jour", value: c ? formatFcfa(c.fcfaToday) : "-", hint: c ? `${c.rechargesToday} recharge(s), ${c.criticalAccounts} arrivée(s) critique(s)` : undefined, href: "/charging" });
+    kpis.push({ label: "Recharges du jour", value: c ? formatFcfa(c.fcfaToday) : "-", hint: c ? `${c.sessionsToday} recharge(s) sur le réseau` : undefined, href: "/charging" });
   }
   if (mayVehicles) {
     const v = vehicles.data;
@@ -124,21 +125,7 @@ export function DashboardPage() {
                 )}
               </Panel>
             )}
-            {mayCharging && (
-              <Panel>
-                <PanelHead title="Recharges d'aujourd'hui" action={<Link href="/charging" className="text-sm font-medium text-primary-ink hover:underline">Toutes</Link>} />
-                {!recharges.data ? <div className="p-4"><Skeleton className="h-24 w-full" /></div> : recharges.data.items.length === 0 ? <p className="px-4 py-8 text-center text-sm text-muted">Aucune recharge aujourd&apos;hui.</p> : (
-                  <ul className="divide-y divide-line/70">
-                    {recharges.data.items.map((r) => (
-                      <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
-                        <div className="min-w-0"><p className="truncate font-medium text-ink">{r.vehicle}</p><p className={cn("truncate text-xs", r.critical ? "font-medium text-red-700" : "text-muted")}>{r.batteryBefore} % → {r.batteryAfter} % · {r.station}</p></div>
-                        <Money value={r.amount} muted={r.reversed} />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Panel>
-            )}
+            {mayCharging && <TodaySessionsPanel sessions={sessions.data?.items ?? null} />}
           </div>
         </div>
 

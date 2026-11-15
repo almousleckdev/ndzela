@@ -5,12 +5,14 @@ import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions";
+import { ChangeContactDialog } from "@/features/drivers/components/change-contact-dialog";
 import { DeleteDriversDialog } from "@/features/drivers/components/delete-drivers-dialog";
+import { TemporaryPasswordDialog } from "@/features/drivers/components/temporary-password-dialog";
 import { SuspendDialog } from "@/features/drivers/components/suspend-dialog";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver } from "@/features/drivers/types";
 
-export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "remove-vehicle" | "delete";
+export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "delete";
 export interface DriverAction { kind: DriverActionKind; driver: Driver }
 
 // The state-changing actions offered for a driver, according to their state and the viewer's permissions.
@@ -23,6 +25,10 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
   if (lifter && can(lifter)) items.push({ kind: "reactivate", label: "Réactiver" });
   if (can(PERMISSIONS.DRIVERS_BLOCK) && driver.status !== "BLOCKED") items.push({ kind: "block", label: "Bloquer", destructive: true });
   if (can(PERMISSIONS.DRIVERS_UNLOCK) && driver.loginLocked) items.push({ kind: "unlock-login", label: "Débloquer la connexion" });
+  if (can(PERMISSIONS.DRIVERS_CREDENTIALS)) {
+    items.push({ kind: "change-contact", label: "Modifier l'email ou le téléphone" });
+    items.push({ kind: "reset-password", label: "Nouveau mot de passe" });
+  }
   if (can(PERMISSIONS.DRIVERS_UPDATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Retirer le véhicule" });
   if (can(PERMISSIONS.DRIVERS_DELETE) || can(PERMISSIONS.DRIVERS_PURGE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
   return items;
@@ -63,6 +69,24 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
   }
 
   if (kind === "delete") return <DeleteDriversDialog drivers={[driver]} onClose={onClose} onDone={() => onDone(kind)} />;
+
+  // These two keep their dialog open when the server refuses, so the admin can correct and try again.
+  const attempt = async (run: () => Promise<unknown>, success: string) => {
+    try {
+      await run();
+      addToast({ title: "Succès", description: success, type: "success" });
+      onDone(kind);
+    } catch (error) {
+      addToast({ title: "Erreur", description: getErrorMessage(error, "L'action a échoué."), type: "error" });
+    }
+  };
+  if (kind === "change-contact") {
+    return <ChangeContactDialog driverName={name} currentEmail={driver.personal.email} currentPhone={driver.personal.phonePrimary} phoneCode={driver.country?.phoneCode ?? null} onClose={onClose}
+      onConfirm={(change) => attempt(() => driversService.changeContact(driver.id, change), "Coordonnées mises à jour.")} />;
+  }
+  if (kind === "reset-password") {
+    return <TemporaryPasswordDialog driverName={name} onClose={onClose} onConfirm={(password) => attempt(() => driversService.resetPassword(driver.id, password), "Mot de passe provisoire enregistré.")} />;
+  }
 
   const isUnlock = kind === "unlock-login";
   const confirm = async () => {

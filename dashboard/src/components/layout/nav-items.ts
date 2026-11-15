@@ -1,4 +1,4 @@
-import { BatteryCharging, Car, Contact, Inbox, FileClock, History, KeyRound, LayoutDashboard, TriangleAlert, Users, Wallet, type LucideIcon } from "lucide-react";
+import { BatteryCharging, Car, Coins, Contact, Inbox, FileClock, History, KeyRound, LayoutDashboard, TriangleAlert, Users, Wallet, type LucideIcon } from "lucide-react";
 import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions";
 
 export interface NavItem {
@@ -25,6 +25,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Suivi paiements", href: "/finance/payments", icon: Wallet, permission: PERMISSIONS.PAYMENTS_READ },
       { label: "Gérer impayés", href: "/finance/arrears", icon: TriangleAlert, permission: PERMISSIONS.PAYMENTS_READ, badge: "arrears" },
       { label: "Historique", href: "/finance/history", icon: FileClock, permission: PERMISSIONS.PAYMENTS_READ },
+      { label: "Total encaissé", href: "/finance/earnings", icon: Coins, permission: PERMISSIONS.EARNINGS_READ },
     ],
   },
   { label: "Énergie", items: [{ label: "Recharges", href: "/charging", icon: BatteryCharging, permission: PERMISSIONS.CHARGING_READ }] },

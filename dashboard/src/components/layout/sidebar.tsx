@@ -29,8 +29,8 @@ export function Sidebar() {
     <>
       {mobileOpen && <div className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden />}
       <aside aria-label="Navigation principale"
-        className={cn("fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col bg-sidebar text-slate-300 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 lg:transition-[width]",
-          mobileOpen && "translate-x-0", collapsed ? "lg:w-[68px]" : "lg:w-64")}>
+        className={cn("fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col bg-sidebar text-slate-300 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 lg:transition-[width]",
+          mobileOpen && "translate-x-0", collapsed ? "lg:w-[68px]" : "lg:w-56")}>
         <SidebarBody collapsed={collapsed && !mobileOpen} pathname={pathname} onToggle={toggleCollapsed} onClose={() => setMobileOpen(false)} />
       </aside>
     </>

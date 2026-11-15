@@ -213,3 +213,32 @@ export interface PatternCase {
   reasons: string[];
   suspendedDrivers: string[];
 }
+
+// "Total encaissé": what was collected over a period, per month; a month is "yyyy-MM".
+export interface EarningsMonth {
+  month: string;
+  collected: number;
+  fees: number;
+  net: number;
+}
+
+export interface Earnings {
+  collected: number;
+  fees: number;
+  net: number;
+  payingDrivers: number;
+  collectedCurrent: number;
+  collectedFormer: number;
+  months: EarningsMonth[];
+}
+
+// One driver's total paid; former = archived
+export interface EarningsDriver {
+  driverId: string;
+  name: string;
+  status: string;
+  former: boolean;
+  contractNumber: string | null;
+  totalPaid: number;
+  lastPayment: string | null;
+}

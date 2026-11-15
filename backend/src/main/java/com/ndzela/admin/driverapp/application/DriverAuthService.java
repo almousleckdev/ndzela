@@ -118,9 +118,19 @@ public class DriverAuthService {
     // Sets a new password after the identity was proven by e-mail code
     @Transactional
     public void setPassword(UUID driverId, String newPassword) {
+        applyPassword(driverId, newPassword, false);
+    }
+
+    // A temporary password chosen by an administrator: the driver must replace it at the next sign-in
+    @Transactional
+    public void adminSetPassword(UUID driverId, String temporaryPassword) {
+        applyPassword(driverId, temporaryPassword, true);
+    }
+
+    private void applyPassword(UUID driverId, String newPassword, boolean mustChange) {
         Driver driver = drivers.findForUpdate(driverId).orElseThrow();
         driver.setPasswordHash(encoder.encode(newPassword));
-        driver.setMustChangePassword(false);
+        driver.setMustChangePassword(mustChange);
         driver.setFailedLoginAttempts(0);
         driver.setLoginLockedUntil(null);
         driver.setSessionId(OpaqueTokens.generate());
