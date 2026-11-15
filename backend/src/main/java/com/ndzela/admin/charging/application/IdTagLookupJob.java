@@ -2,6 +2,7 @@ package com.ndzela.admin.charging.application;
 
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.country.application.CountryService;
+import com.ndzela.admin.driver.domain.DriverContactChangedEvent;
 import com.ndzela.admin.driver.domain.DriverCreatedEvent;
 import com.ndzela.admin.tenant.TenantHolder;
 import com.ndzela.admin.tenant.model.TenantContext;
@@ -46,13 +47,24 @@ public class IdTagLookupJob {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onDriverCreated(DriverCreatedEvent event) {
-        if (!event.countryId().equals(zellaCountry())) {
+        lookup(event.driverId(), event.countryId());
+    }
+
+    // A new email or phone may now match the driver's Zella account.
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onDriverContactChanged(DriverContactChangedEvent event) {
+        lookup(event.driverId(), event.countryId());
+    }
+
+    private void lookup(UUID driverId, UUID countryId) {
+        if (!countryId.equals(zellaCountry())) {
             return;
         }
         try {
-            TenantHolder.callAs(TenantContext.country(event.countryId()), () -> links.lookupDriver(event.driverId()));
+            TenantHolder.callAs(TenantContext.country(countryId), () -> links.lookupDriver(driverId));
         } catch (RuntimeException e) {
-            log.warn("Zella lookup of a new driver failed, the job will retry", e);
+            log.warn("Zella lookup of a driver failed, the job will retry", e);
         }
     }
 
