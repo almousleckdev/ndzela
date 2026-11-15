@@ -40,5 +40,6 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0033](0033-arrears-suspension-in-both-apps.md) | Three unpaid days suspend the driver in NDZela and in Zella; paying everything restores both | Accepted |
 | [0034](0034-change-car-and-start-date-on-an-active-contract.md) | An active contract can move to another car and its start date can be corrected | Accepted |
 | [0035](0035-purging-a-driver-with-their-money-and-half-days-for-today.md) | A driver can be erased with their money; half days can be granted for today and the coming week | Accepted |
+| [0036](0036-admin-sets-a-temporary-driver-password.md) | An admin sets a temporary password for a driver and changes their email and phone | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.
