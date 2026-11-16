@@ -48,7 +48,7 @@ public class AccountService {
     public AccountState refresh(DriverRef driver, ContractResponse contract, Instant now) {
         AccountState state = state(driver.countryId(), contract, now);
         OffsetDateTime since = state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zoneOf(driver.countryId())).toOffsetDateTime();
-        driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), since, state.unpaid(), state.paidOnTime() + state.paidLate(), state.awaitingDays(), state.awaitingAmount());
+        driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), since, state.unpaid(), state.paidOnTime() + state.paidLate(), state.awaitingDays(), state.awaitingAmount(), state.graceDays(), state.graceAmount());
         return state;
     }
 

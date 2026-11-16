@@ -66,7 +66,7 @@ public class DriverArrearsService {
     }
 
     @Transactional
-    public void apply(UUID id, ArrearsLevel level, BigDecimal overdueAmount, OffsetDateTime since, int unpaidDays, int paidDays, int awaitingDays, BigDecimal awaitingAmount) {
+    public void apply(UUID id, ArrearsLevel level, BigDecimal overdueAmount, OffsetDateTime since, int unpaidDays, int paidDays, int awaitingDays, BigDecimal awaitingAmount, int graceDays, BigDecimal graceAmount) {
         Driver driver = drivers.findById(id).orElseThrow(() -> new ResourceNotFoundException("Driver not found."));
         driver.setArrearsLevel(level);
         driver.setOverdueAmount(overdueAmount);
@@ -75,6 +75,8 @@ public class DriverArrearsService {
         driver.setPaidDays(paidDays);
         driver.setAwaitingDays(awaitingDays);
         driver.setAwaitingAmount(awaitingAmount);
+        driver.setGraceDays(graceDays);
+        driver.setGraceAmount(graceAmount);
         drivers.save(driver);
     }
 

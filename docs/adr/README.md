@@ -43,5 +43,6 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0036](0036-admin-sets-a-temporary-driver-password.md) | An admin sets a temporary password for a driver and changes their email and phone | Accepted |
 | [0037](0037-staff-payments-may-choose-the-days.md) | A staff payment may choose which days it pays | Accepted |
 | [0038](0038-rent-is-due-the-next-day-at-noon.md) | Rent is due the next day at noon (replaces 0029) | Accepted |
+| [0039](0039-yesterdays-rent-is-owed-from-midnight.md) | Yesterday's rent is owed from midnight, late after noon | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

@@ -61,7 +61,7 @@ This is the contract's article 7 by day (the earlier 24/48/72-hour timing is dro
 Decided: the suspension is **automatic and enforced by the backend**; a suspended driver only reaches the payment flow; the admin driver-list colours come from the same server-side state.
 
 ### Rent awaiting its deadline (2026-10-14, ADR-0019 addendum)
-Yesterday's rent is *awaiting* until its deadline (12:00). It is shown in "À régler avant midi" and counted in "À recouvrer (hier inclus)" but does not change the level. Riders who will reach 3 unpaid days at noon are counted as *at risk* and announced by a banner. The list is sorted by unpaid days, most first; archived (`INACTIVE`) riders are excluded. The job runs every minute and the pages refresh every 15 s.
+**Owed from midnight (2026-11-16, [ADR-0039](../adr/0039-yesterdays-rent-is-owed-from-midnight.md)).** A rent day that has ended (yesterday's) is **owed from 00:00**, as on the old platform: staff screens (Suivi paiements, Gérer impayés, the driver card, the Chauffeurs list, the exports and the totals) count it in "Jours impayés" and "Montant dû". It is only **late after 12:00**: the level, the penalty, the suspension, the emails and the driver app keep following the late days (`unpaid_days`, `overdue_amount`); yesterday's rent is stored apart (`grace_days`, `grace_amount`, V60). "Loyer du jour" is today's rent, due tomorrow before 12:00. Riders who will reach 3 unpaid days at noon (late days plus yesterday's rent) are counted as *at risk* and announced by a banner. The list is sorted by unpaid days, most first; archived (`INACTIVE`) riders are excluded. The job runs every minute and the pages refresh every 15 s.
 
 ### Decisions from the latest answers
 

@@ -34,7 +34,7 @@ public record DriverResponse(
                 d.getStatus(), onLeave, d.getStatusReason(),
                 new DriverFilesView(d.getPhotoFile() != null, d.getLicenceFile() != null, d.getIdFile() != null, d.getAddressProofFile() != null, d.getResidenceCertificateFile() != null),
                 d.isMustChangePassword(), vehicle, contract,
-                new DriverArrearsView(d.getArrearsLevel(), d.getOverdueAmount().setScale(0, java.math.RoundingMode.HALF_UP), d.getOverdueSince(), d.getUnpaidDays(), d.getPaidDays(), daysLeft(d, contract)),
+                new DriverArrearsView(d.getArrearsLevel(), d.getOverdueAmount().add(d.getGraceAmount()).setScale(0, java.math.RoundingMode.HALF_UP), d.getOverdueSince(), d.getUnpaidDays() + d.getGraceDays(), d.getPaidDays(), daysLeft(d, contract)),
                 d.getCountry() == null ? null : CountryResponse.from(d.getCountry()),
                 d.getLoginLockedUntil() != null && d.getLoginLockedUntil().isAfter(OffsetDateTime.now()), d.getCreatedAt());
     }

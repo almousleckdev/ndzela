@@ -20,7 +20,7 @@ public final class ContractProgressCalculator {
     public static ContractProgress of(ContractResponse contract, AccountState state, LocalDate today) {
         int elapsed = elapsedDays(contract, today);
         BigDecimal received = state.paidAmount().add(state.waivedAmount());
-        return new ContractProgress(contract.billableDays(), elapsed, Math.max(0, contract.billableDays() - elapsed), state.paidOnTime() + state.paidLate(), state.unpaid(),
+        return new ContractProgress(contract.billableDays(), elapsed, Math.max(0, contract.billableDays() - elapsed), state.paidOnTime() + state.paidLate(), state.unpaid() + state.graceDays(),
                 whole(contract.totalPrice()), whole(state.paidAmount()), whole(contract.totalPrice().subtract(received).max(BigDecimal.ZERO)), whole(contract.deposit()));
     }
 

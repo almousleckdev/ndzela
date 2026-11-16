@@ -66,7 +66,7 @@ public class ArrearsEvaluator {
         }
         var zone = accounts.zoneOf(driver.countryId());
         driverArrears.apply(driver.id(), state.level(), state.overdueAmount(), state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime(), state.unpaid(), state.paidOnTime() + state.paidLate(),
-                state.awaitingDays(), state.awaitingAmount());
+                state.awaitingDays(), state.awaitingAmount(), state.graceDays(), state.graceAmount());
 
         ArrearsLevel highestNew = ArrearsLevel.NONE;
         // The 1st unpaid day is the reminder, the 2nd the urgent step, the 3rd the suspension; each is recorded once for the day that reached it.

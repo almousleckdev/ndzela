@@ -36,14 +36,14 @@ public interface DriverRepository extends JpaRepository<Driver, UUID>, JpaSpecif
     Optional<Driver> findForUpdate(@Param("id") UUID id);
 
     // The follow-up concerns drivers who have a contract: inactive (archived) drivers are left out
-    @Query("select coalesce(sum(d.overdueAmount), 0) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE")
+    @Query("select coalesce(sum(d.overdueAmount + d.graceAmount), 0) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE")
     java.math.BigDecimal totalOverdue();
 
-    @Query("select coalesce(sum(d.awaitingAmount), 0) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE")
+    @Query("select coalesce(sum(d.awaitingAmount - d.graceAmount), 0) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE")
     java.math.BigDecimal totalAwaiting();
 
-    // Drivers who reach three unpaid days when their awaiting rent becomes late
-    @Query("select count(d) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE and d.unpaidDays < 3 and d.unpaidDays + d.awaitingDays >= 3")
+    // Drivers who reach three unpaid days at noon, when yesterday's rent becomes late
+    @Query("select count(d) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE and d.unpaidDays < 3 and d.unpaidDays + d.graceDays >= 3")
     long countAtRisk();
 
     @Query("select d.arrearsLevel, count(d) from Driver d where d.status <> com.ndzela.admin.driver.domain.DriverStatus.INACTIVE group by d.arrearsLevel")

@@ -9,13 +9,22 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record DriverRef(UUID id, UUID countryId, String firstName, String lastName, String email, String phone, DriverStatus status,
-                        ArrearsLevel level, BigDecimal overdueAmount, OffsetDateTime overdueSince, int unpaidDays, int paidDays, int awaitingDays, BigDecimal awaitingAmount) {
+                        ArrearsLevel level, BigDecimal overdueAmount, OffsetDateTime overdueSince, int unpaidDays, int paidDays, int awaitingDays, BigDecimal awaitingAmount, int graceDays, BigDecimal graceAmount) {
     public String fullName() {
         return lastName + " " + firstName;
     }
 
     public static DriverRef from(Driver d) {
         return new DriverRef(d.getId(), d.getCountryId(), d.getFirstName(), d.getLastName(), d.getEmail(), d.getPhonePrimary(), d.getStatus(),
-                d.getArrearsLevel(), d.getOverdueAmount(), d.getOverdueSince(), d.getUnpaidDays(), d.getPaidDays(), d.getAwaitingDays(), d.getAwaitingAmount());
+                d.getArrearsLevel(), d.getOverdueAmount(), d.getOverdueSince(), d.getUnpaidDays(), d.getPaidDays(), d.getAwaitingDays(), d.getAwaitingAmount(), d.getGraceDays(), d.getGraceAmount());
+    }
+
+    // What staff see as owed: the late days plus yesterday's rent
+    public int owedDays() {
+        return unpaidDays + graceDays;
+    }
+
+    public BigDecimal owedAmount() {
+        return overdueAmount.add(graceAmount);
     }
 }
