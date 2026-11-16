@@ -1,6 +1,6 @@
 # ADR-0029: Rent is due the same day at noon and can be paid from midnight
 
-**Status:** Accepted · **Date:** 2026-11-06
+**Status:** Superseded by [ADR-0038](0038-rent-is-due-the-next-day-at-noon.md) (the deadline is the next day at noon again; the rest stands) · **Date:** 2026-11-06
 
 **Context.** The rent of day D was due D+1 at 12:00. A driver whose contract was signed on 04/11 saw nothing to pay on 05/11 and only one unpaid day on 06/11, and could not pay a day before its deadline. The product owner wants the deadline on the day itself.
 

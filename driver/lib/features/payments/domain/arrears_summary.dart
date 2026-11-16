@@ -23,7 +23,7 @@ class ArrearsSummary {
   // The numbers of unpaid days that can be paid, oldest first
   final List<PaymentOption> options;
 
-  // When the oldest rent day still to settle is due, noon of that day
+  // When the oldest rent day still to settle is due: noon of the next day
   final DateTime? settleBy;
 
   bool get isLate => unpaidDays > 0;

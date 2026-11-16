@@ -7,7 +7,7 @@ import '../../../../core/platform/app_icons.dart';
 import '../../../../core/widgets/adaptive/platform_icon.dart';
 import '../../domain/arrears_summary.dart';
 
-// Tells the driver by when the rent has to be paid: today's rent is open from midnight and due at noon, a late one is due now.
+// Tells the driver by when the rent has to be paid: a rent is open from midnight of its day and due the next day at noon, a late one is due now.
 class DueBanner extends StatelessWidget {
   const DueBanner({super.key, required this.arrears, required this.now});
 

@@ -26,21 +26,22 @@ class PaymentSelectionOpenDaysTest extends AbstractAccountCalculatorTest {
 
     @Test
     void withTwoDaysToSettleTheDriverPaysTheFirstOrBothTogether() {
-        AccountState unpaidTwo = stateAt("2026-10-02T08:00:00");
-        assertEquals(1, unpaidTwo.unpaid());
-        assertEquals(List.of(23000, 46000), amounts(unpaidTwo));
+        AccountState twoOpen = stateAt("2026-10-02T08:00:00");
+        assertEquals(0, twoOpen.unpaid());
+        assertEquals(2, twoOpen.awaitingDays());
+        assertEquals(List.of(23000, 46000), amounts(twoOpen));
 
-        AccountState twoUnpaid = stateAt("2026-10-02T13:00:00");
-        assertEquals(2, twoUnpaid.unpaid());
-        assertEquals(List.of(23000, 46000), amounts(twoUnpaid));
+        AccountState oneUnpaidOneOpen = stateAt("2026-10-02T13:00:00");
+        assertEquals(1, oneUnpaidOneOpen.unpaid());
+        assertEquals(List.of(23000, 46000), amounts(oneUnpaidOneOpen));
     }
 
     @Test
     void withThreeDaysToSettleOnlyPayingThemAllIsOffered() {
-        AccountState threeUnpaid = stateAt("2026-10-03T13:00:00");
+        AccountState threeUnpaid = stateAt("2026-10-04T13:00:00");
         assertEquals(List.of(69000), amounts(threeUnpaid));
 
-        AccountState twoUnpaidAndOneOpen = stateAt("2026-10-03T08:00:00");
+        AccountState twoUnpaidAndOneOpen = stateAt("2026-10-03T13:00:00");
         assertEquals(2, twoUnpaidAndOneOpen.unpaid());
         assertEquals(1, twoUnpaidAndOneOpen.awaitingDays());
         List<PaymentOption> options = PaymentSelection.options(twoUnpaidAndOneOpen);

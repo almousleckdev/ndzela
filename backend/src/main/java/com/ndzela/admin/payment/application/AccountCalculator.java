@@ -22,8 +22,10 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -37,8 +39,12 @@ public final class AccountCalculator {
     public static AccountState compute(AccountInput in) {
         Set<UUID> reversed = new HashSet<>();
         in.entries().stream().filter(e -> e.type() == LedgerEntryType.REVERSAL && e.reverses() != null).forEach(e -> reversed.add(e.reverses()));
-        List<AccountEntry> credits = in.entries().stream().filter(e -> (e.type() == LedgerEntryType.PAYMENT || e.type() == LedgerEntryType.WAIVER) && !reversed.contains(e.id()))
+        List<AccountEntry> allCredits = in.entries().stream().filter(e -> (e.type() == LedgerEntryType.PAYMENT || e.type() == LedgerEntryType.WAIVER) && !reversed.contains(e.id()))
                 .sorted(Comparator.comparing(AccountEntry::at)).toList();
+        // A payment that chose its days settles those days alone; the other credits settle the rest oldest first.
+        Map<LocalDate, Instant> chosen = new HashMap<>();
+        allCredits.stream().filter(e -> !e.selectedDays().isEmpty()).forEach(e -> e.selectedDays().forEach(d -> chosen.putIfAbsent(d, e.at())));
+        List<AccountEntry> credits = allCredits.stream().filter(e -> e.selectedDays().isEmpty()).toList();
 
         List<AccountCharge> charges = new ArrayList<>();
         List<AccountCharge> awaiting = new ArrayList<>();
@@ -81,10 +87,13 @@ public final class AccountCalculator {
         int late = 0;
         int unpaid = 0;
         for (AccountCharge charge : charges) {
-            cumulative = cumulative.add(charge.amount());
-            Instant settled = settlementTime(credits, cumulative);
+            Instant picked = chosen.get(charge.day());
+            if (picked == null) {
+                cumulative = cumulative.add(charge.amount());
+            }
+            Instant settled = picked != null ? picked : settlementTime(credits, cumulative);
             if (settled != null) {
-                covered = cumulative;
+                covered = picked != null ? covered : cumulative;
             } else {
                 overdue = overdue.add(charge.amount());
                 unpaidCharges.add(charge);
@@ -112,6 +121,9 @@ public final class AccountCalculator {
         List<AccountCharge> awaitingUnpaid = new ArrayList<>();
         BigDecimal ahead = cumulative;
         for (AccountCharge charge : awaiting) {
+            if (chosen.containsKey(charge.day())) {
+                continue;
+            }
             ahead = ahead.add(charge.amount());
             if (settlementTime(credits, ahead) == null) {
                 awaitingDays++;
@@ -120,7 +132,7 @@ public final class AccountCalculator {
             }
         }
         return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(unpaid), penaltyDays, onTime, late, unpaid,
-                awaitingDays, awaitingAmount, List.copyOf(unpaidCharges), creditsOf(credits, LedgerEntryType.PAYMENT), creditsOf(credits, LedgerEntryType.WAIVER), List.copyOf(awaitingUnpaid));
+                awaitingDays, awaitingAmount, List.copyOf(unpaidCharges), creditsOf(allCredits, LedgerEntryType.PAYMENT), creditsOf(allCredits, LedgerEntryType.WAIVER), List.copyOf(awaitingUnpaid));
     }
 
     private static BigDecimal creditsOf(List<AccountEntry> credits, LedgerEntryType type) {
@@ -145,8 +157,9 @@ public final class AccountCalculator {
         return in.dailyRent();
     }
 
+    // The rent of a day is due the next day at noon (Saturday's on Sunday), though it can be paid from midnight of its own day
     static Instant dueAt(LocalDate day, ZoneId zone) {
-        return day.atTime(DEADLINE).atZone(zone).toInstant();
+        return day.plusDays(1).atTime(DEADLINE).atZone(zone).toInstant();
     }
 
     // When the credits first covered the given cumulative charges, or null when they never did.

@@ -77,7 +77,7 @@ class BalanceCard extends StatelessWidget {
                       ? '${arrears.unpaidDays} jours de retard'
                       : '1 jour de retard')
                 : (toPay
-                      ? 'Le loyer du jour est ouvert : payez avant 12:00.'
+                      ? 'Un loyer est ouvert : payez avant son échéance, à 12:00.'
                       : 'Aucun loyer en retard. Merci !'),
             style: AppTextStyles.label.copyWith(color: onBrand),
           ),

@@ -9,6 +9,7 @@ import com.ndzela.admin.driver.application.model.DriverRef;
 import com.ndzela.admin.driver.domain.ArrearsLevel;
 import com.ndzela.admin.payment.api.dto.AccountDayView;
 import com.ndzela.admin.payment.api.dto.AccountDetail;
+import com.ndzela.admin.payment.api.dto.PayableDayView;
 import com.ndzela.admin.payment.api.dto.AccountRow;
 import com.ndzela.admin.payment.api.dto.ContractProgress;
 import com.ndzela.admin.payment.api.dto.EntryResponse;
@@ -98,7 +99,7 @@ public class AccountQueryService {
         Instant now = Instant.now();
         if (contract == null) {
             return new AccountDetail(driverId, driver.fullName(), driver.status().name(), null, null, null, ArrearsLevel.NONE, BigDecimal.ZERO, BigDecimal.ZERO, null,
-                    0, 0, 0, List.of(), entries, PaymentWeek.closesAt(now, zone), true, null);
+                    0, 0, 0, List.of(), entries, PaymentWeek.closesAt(now, zone), true, null, List.of());
         }
         AccountState state = accounts.state(driver.countryId(), contract, now);
         List<AccountDayView> days = state.days().stream().sorted(Comparator.comparing(AccountDay::day).reversed()).limit(LAST_DAYS_SHOWN)
@@ -106,7 +107,8 @@ public class AccountQueryService {
         OffsetDateTime overdueSince = state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime();
         return new AccountDetail(driverId, driver.fullName(), driver.status().name(), contract.id(), contract.contractNumber(), contract.dailyRent(), state.level(),
                 state.overdueAmount(), state.credit(), overdueSince, state.paidOnTime(), state.paidLate(), state.unpaid(), days, entries,
-                PaymentWeek.closesAt(now, zone), PaymentWeek.settled(state), ContractProgressCalculator.of(contract, state, LocalDate.ofInstant(now, zone)));
+                PaymentWeek.closesAt(now, zone), PaymentWeek.settled(state), ContractProgressCalculator.of(contract, state, LocalDate.ofInstant(now, zone)),
+                ChosenDays.of(state).stream().map(p -> new PayableDayView(p.day(), p.due().atZone(zone).toOffsetDateTime(), p.rent(), p.penalty(), p.total(), p.due().isBefore(now))).toList());
     }
 
     // The rent days of the last `weeks` weeks (the current one included), oldest first; empty without an active contract.

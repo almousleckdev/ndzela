@@ -122,15 +122,17 @@ class ArrearsJobTest extends AbstractArrearsTest {
     @Test
     void riderWhoReachesThreeDaysAtNoonIsAtRiskBeforeAndSuspendedAfter() throws Exception {
         arrears.evaluateAll(dueOfRentDay(3).minusSeconds(6 * 3600));
+        // Before the third deadline, that day's rent is open, and so is the next day's unless it is a Sunday
+        int open = dueOfRentDay(3).atZone(ZONE).getDayOfWeek() == java.time.DayOfWeek.SUNDAY ? 1 : 2;
         send(get("/api/v1/payments/summary"), manager).andExpect(jsonPath("$.red").value(0)).andExpect(jsonPath("$.atRisk").value(1))
-                .andExpect(jsonPath("$.totalOverdue").value(46000)).andExpect(jsonPath("$.totalAwaiting").value(23000));
+                .andExpect(jsonPath("$.totalOverdue").value(46000)).andExpect(jsonPath("$.totalAwaiting").value(23000 * open));
         assertEquals("DARK_YELLOW", level());
         assertEquals("ACTIVE", jdbc.queryForObject("select status from drivers", String.class));
-        send(get("/api/v1/payments/accounts?filter=DARK_YELLOW"), manager).andExpect(jsonPath("$.items[0].awaitingDays").value(1)).andExpect(jsonPath("$.items[0].awaitingAmount").value(23000));
+        send(get("/api/v1/payments/accounts?filter=DARK_YELLOW"), manager).andExpect(jsonPath("$.items[0].awaitingDays").value(open)).andExpect(jsonPath("$.items[0].awaitingAmount").value(23000 * open));
 
         arrears.evaluateAll(dueOfRentDay(3).plusSeconds(60));
         send(get("/api/v1/payments/summary"), manager).andExpect(jsonPath("$.red").value(1)).andExpect(jsonPath("$.atRisk").value(0))
-                .andExpect(jsonPath("$.totalOverdue").value(69000)).andExpect(jsonPath("$.totalAwaiting").value(0));
+                .andExpect(jsonPath("$.totalOverdue").value(69000)).andExpect(jsonPath("$.totalAwaiting").value(23000 * (open - 1)));
         assertEquals("SUSPENDED", jdbc.queryForObject("select status from drivers", String.class));
     }
 

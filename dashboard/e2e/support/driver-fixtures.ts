@@ -21,7 +21,7 @@ export const driver = {
 
 export const account = {
   driverId: "driver-1", driverName: "Khatim Rachid Cedric", driverStatus: "ACTIVE", contractId: "contract-1", contractNumber: "NDZ-60749194", dailyRent: 23000,
-  level: "YELLOW", overdueAmount: 69000, credit: 0, overdueSince: null, paidOnTime: 8, paidLate: 1, unpaid: 3, days: [], entries: [],
+  level: "YELLOW", overdueAmount: 69000, credit: 0, overdueSince: null, paidOnTime: 8, paidLate: 1, unpaid: 3, days: [], entries: [], payableDays: [],
   weekClosesAt: "2026-10-25T12:00:00+01:00", weekSettled: false,
   progress: { totalDays: 1248, elapsedDays: 12, daysLeft: 1236, paidDays: 9, unpaidDays: 3, totalPrice: 28704000, paidAmount: 207000, remainingAmount: 28497000, deposit: 500000 },
 };

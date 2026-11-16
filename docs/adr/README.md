@@ -33,7 +33,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0026](0026-charging-accounts-linked-to-drivers.md) | Charging accounts (idTags) are linked to drivers by e-mail and phone, looked up in the Zella app | Accepted |
 | [0027](0027-refresh-token-reuse-window.md) | A rotated refresh token still works for 30 seconds, so a lost answer does not end a session | Accepted |
 | [0028](0028-public-sessions-from-the-zella-feed.md) | Sessions of other Zella customers reach NDZela as "Public", without identity | Accepted |
-| [0029](0029-rent-is-due-the-same-day-at-noon.md) | Rent is due the same day at noon and can be paid from midnight | Accepted |
+| [0029](0029-rent-is-due-the-same-day-at-noon.md) | Rent is due the same day at noon and can be paid from midnight | Superseded by 0038 |
 | [0030](0030-receipt-qr-opens-a-public-payment-page.md) | The QR code of a receipt opens a public payment page on the website | Accepted |
 | [0031](0031-deleting-sessions-and-recharges-and-the-zella-wallet.md) | Admins can delete sessions and recharges; recharges are paid from the Zella Wallet | Accepted |
 | [0032](0032-public-sessions-keep-their-zella-payment.md) | Public sessions keep what was paid through Zella, still without identity | Accepted |
@@ -41,5 +41,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0034](0034-change-car-and-start-date-on-an-active-contract.md) | An active contract can move to another car and its start date can be corrected | Accepted |
 | [0035](0035-purging-a-driver-with-their-money-and-half-days-for-today.md) | A driver can be erased with their money; half days can be granted for today and the coming week | Accepted |
 | [0036](0036-admin-sets-a-temporary-driver-password.md) | An admin sets a temporary password for a driver and changes their email and phone | Accepted |
+| [0037](0037-staff-payments-may-choose-the-days.md) | A staff payment may choose which days it pays | Accepted |
+| [0038](0038-rent-is-due-the-next-day-at-noon.md) | Rent is due the next day at noon (replaces 0029) | Accepted |
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

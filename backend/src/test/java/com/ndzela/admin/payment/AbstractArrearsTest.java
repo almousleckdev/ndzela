@@ -37,14 +37,14 @@ abstract class AbstractArrearsTest extends AbstractDriverTest {
         while (day.getDayOfWeek() == DayOfWeek.SUNDAY) {
             day = day.plusDays(1);
         }
-        firstDue = day.atTime(12, 0).atZone(ZONE).toInstant();
+        firstDue = day.plusDays(1).atTime(12, 0).atZone(ZONE).toInstant(); // a rent is due the next day at noon
     }
 
     protected void evaluateAt(long hoursAfterFirstDeadline) {
         arrears.evaluateAll(firstDue.plusSeconds(hoursAfterFirstDeadline * 3600));
     }
 
-    // The deadline of the k-th rent day (Sunday is skipped); an hour later that day counts as unpaid.
+    // The deadline (next day at noon) of the k-th rent day (Sunday is skipped); an hour later that day counts as unpaid.
     protected Instant dueOfRentDay(int k) {
         LocalDate day = LocalDate.now(ZONE);
         for (int counted = 0; counted < k; ) {
@@ -53,7 +53,7 @@ abstract class AbstractArrearsTest extends AbstractDriverTest {
                 counted++;
             }
         }
-        return day.atTime(12, 0).atZone(ZONE).toInstant();
+        return day.plusDays(1).atTime(12, 0).atZone(ZONE).toInstant();
     }
 
     protected void evaluateWhenUnpaidDaysAre(int k) {

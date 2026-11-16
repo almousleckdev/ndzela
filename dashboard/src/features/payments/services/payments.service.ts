@@ -15,7 +15,9 @@ export interface AccountDates {
 
 export interface RecordPaymentInput {
   driverId: string;
-  amount: number;
+  // Either an amount (oldest days first) or the days to pay (the server computes the amount)
+  amount?: number;
+  days?: string[];
   method: PaymentMethod;
   reference?: string;
   // Generated once per form

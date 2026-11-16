@@ -14,7 +14,9 @@ import com.ndzela.admin.payment.api.dto.RecordPaymentRequest;
 import com.ndzela.admin.payment.api.dto.WaiverRequest;
 import com.ndzela.admin.payment.application.model.AccountState;
 import com.ndzela.admin.payment.domain.LedgerEntry;
+import com.ndzela.admin.payment.application.ChosenDays.PayableDay;
 import com.ndzela.admin.payment.domain.LedgerEntryDay;
+import com.ndzela.admin.payment.domain.LedgerEntryDayKind;
 import com.ndzela.admin.payment.domain.LedgerEntryDayRepository;
 import com.ndzela.admin.payment.domain.LedgerEntryRepository;
 import com.ndzela.admin.payment.domain.LedgerEntryType;
@@ -32,6 +34,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 // Records what drivers pay and the corrections (reversals, waivers).
 @Service
@@ -71,14 +74,21 @@ public class PaymentService {
         if (ledger.existsActivePayment(request.method(), reference)) {
             throw new BusinessRuleViolationException("PAYMENT_REFERENCE_ALREADY_USED", "This transaction reference has already been recorded.");
         }
-        LedgerEntry draft = entry(driver, contract, LedgerEntryType.PAYMENT, request.amount())
+        List<PayableDay> picked = request.hasDays() ? ChosenDays.pick(accounts.state(driver.countryId(), contract, Instant.now()), request.days()) : List.of();
+        BigDecimal amount = picked.isEmpty() ? request.amount() : picked.stream().map(PayableDay::total).reduce(BigDecimal.ZERO, BigDecimal::add);
+        LedgerEntry draft = entry(driver, contract, LedgerEntryType.PAYMENT, amount).selectedDays(picked.isEmpty() ? null : picked.stream().map(PayableDay::day).toList())
                 .method(request.method()).reference(reference).requestId(request.requestId()).recordedBy(recordedBy).build();
         Instant paidAt = draft.getCreatedAt().toInstant();
         AccountState before = accounts.state(driver.countryId(), contract, paidAt);
         LedgerEntry entry = save(draft);
-        saveSettledDays(entry, before, accounts.state(driver.countryId(), contract, paidAt));
+        if (picked.isEmpty()) {
+            saveSettledDays(entry, before, accounts.state(driver.countryId(), contract, paidAt));
+        } else {
+            saveChosenDays(entry, picked);
+        }
         audit.record("PAYMENT_RECORDED", "DRIVER", driver.id().toString(), driver.fullName(), driver.countryId(),
-                request.amount().toPlainString() + " " + request.method() + (entry.getReference() == null ? "" : ", ref " + entry.getReference()));
+                amount.toPlainString() + " " + request.method() + (entry.getReference() == null ? "" : ", ref " + entry.getReference())
+                        + (picked.isEmpty() ? "" : ", days " + picked.stream().map(day -> day.day().toString()).collect(Collectors.joining(","))));
         return result(entry, driver, contract);
     }
 
@@ -86,6 +96,18 @@ public class PaymentService {
     private void saveSettledDays(LedgerEntry entry, AccountState before, AccountState after) {
         PaymentDayAllocator.allocate(before, after, entry.getCreatedAt().toInstant()).forEach(day -> days.save(LedgerEntryDay.builder().ledgerEntryId(entry.getId())
                 .businessDay(day.day()).kind(day.kind()).amount(day.amount()).paidOnTime(day.onTime()).build()));
+    }
+
+    // The days staff chose, as the receipt and the history show them
+    private void saveChosenDays(LedgerEntry entry, List<PayableDay> picked) {
+        Instant paidAt = entry.getCreatedAt().toInstant();
+        picked.forEach(day -> {
+            days.save(LedgerEntryDay.builder().ledgerEntryId(entry.getId()).businessDay(day.day()).kind(LedgerEntryDayKind.RENT).amount(day.rent()).paidOnTime(!paidAt.isAfter(day.due())).build());
+            if (day.penalty().signum() > 0) {
+                days.save(LedgerEntryDay.builder().ledgerEntryId(entry.getId()).businessDay(day.day()).kind(LedgerEntryDayKind.PENALTY).amount(day.penalty())
+                        .paidOnTime(!paidAt.isAfter(day.due().plus(AccountCalculator.URGENT))).build());
+            }
+        });
     }
 
     // The aggregator's fee the driver paid on top of a payment

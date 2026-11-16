@@ -75,6 +75,16 @@ export interface ContractProgress {
   deposit: number;
 }
 
+// A rent day staff may pay on its own; amount is the rent plus its penalty.
+export interface PayableDay {
+  day: string;
+  dueAt: string;
+  rent: number;
+  penalty: number;
+  amount: number;
+  late: boolean;
+}
+
 export interface AccountDetail {
   driverId: string;
   driverName: string;
@@ -96,6 +106,7 @@ export interface AccountDetail {
   weekSettled: boolean;
   // Null without an active contract.
   progress: ContractProgress | null;
+  payableDays: PayableDay[];
 }
 
 export interface PaymentResult {

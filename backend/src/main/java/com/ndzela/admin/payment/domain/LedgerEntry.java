@@ -3,11 +3,14 @@ package com.ndzela.admin.payment.domain;
 import com.ndzela.admin.tenant.TenantOwned;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 // One immutable ledger row; the database refuses updates and deletes.
@@ -54,6 +57,10 @@ public class LedgerEntry extends TenantOwned {
 
     @Column(name = "request_id", updatable = false)
     private UUID requestId;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "selected_days", updatable = false)
+    private List<LocalDate> selectedDays;
 
     @Column(name = "recorded_by", nullable = false, updatable = false)
     private String recordedBy;

@@ -22,13 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AccountCalculatorChargesTest extends AbstractAccountCalculatorTest {
     @Test
     void aPenaltyIsAChargeThatMustBePaidAndIsOnlyDueAfterFortyEightHours() {
-        AccountState before = stateAt("2026-10-03T11:59:00");
+        AccountState before = stateAt("2026-10-04T11:59:00");
         assertTrue(before.penaltyDays().isEmpty());
-        AccountState due = stateAt("2026-10-03T12:00:00");
+        AccountState due = stateAt("2026-10-04T12:00:00");
         assertEquals(List.of(LocalDate.of(2026, 10, 1)), due.penaltyDays().subList(0, 1));
 
-        AccountEntry penalty = new AccountEntry(UUID.randomUUID(), LedgerEntryType.PENALTY, new BigDecimal("5000"), at("2026-10-03T12:05:00"), null, LocalDate.of(2026, 10, 1));
-        AccountState charged = stateAt("2026-10-03T13:00:00", List.of(), new ArrayList<>(List.of(payment("2026-10-01T13:00:00", 23000), penalty)));
+        AccountEntry penalty = new AccountEntry(UUID.randomUUID(), LedgerEntryType.PENALTY, new BigDecimal("5000"), at("2026-10-04T12:05:00"), null, LocalDate.of(2026, 10, 1));
+        AccountState charged = stateAt("2026-10-04T13:00:00", List.of(), new ArrayList<>(List.of(payment("2026-10-01T13:00:00", 23000), penalty)));
         assertEquals(0, new BigDecimal("51000").compareTo(charged.overdueAmount()), "two unpaid days plus the penalty");
         assertTrue(charged.penaltyDays().stream().noneMatch(d -> d.equals(LocalDate.of(2026, 10, 1))), "no second penalty for the same day");
     }
@@ -41,7 +41,7 @@ class AccountCalculatorChargesTest extends AbstractAccountCalculatorTest {
 
     @Test
     void theStatisticsCountOnTimeLateAndUnpaid() {
-        AccountState state = stateAt("2026-10-06T13:00:00", payment("2026-10-01T09:00:00", 23000), payment("2026-10-05T09:00:00", 23000));
+        AccountState state = stateAt("2026-10-07T13:00:00", payment("2026-10-01T09:00:00", 23000), payment("2026-10-05T09:00:00", 23000));
         assertEquals(1, state.paidOnTime());
         assertEquals(1, state.paidLate());
         assertEquals(3, state.unpaid());
@@ -50,8 +50,8 @@ class AccountCalculatorChargesTest extends AbstractAccountCalculatorTest {
 
     @Test
     void aDaysPenaltyIsSettledTogetherWithItsRent() {
-        AccountEntry penalty = new AccountEntry(UUID.randomUUID(), LedgerEntryType.PENALTY, new BigDecimal("5000"), at("2026-10-03T13:00:00"), null, LocalDate.of(2026, 10, 1));
-        AccountState state = stateAt("2026-10-03T13:00:00", List.of(), new ArrayList<>(List.of(payment("2026-10-03T13:00:00", 28000), penalty)));
+        AccountEntry penalty = new AccountEntry(UUID.randomUUID(), LedgerEntryType.PENALTY, new BigDecimal("5000"), at("2026-10-04T13:00:00"), null, LocalDate.of(2026, 10, 1));
+        AccountState state = stateAt("2026-10-04T13:00:00", List.of(), new ArrayList<>(List.of(payment("2026-10-04T13:00:00", 28000), penalty)));
 
         assertEquals(2, state.unpaid());
         assertEquals(List.of(LocalDate.of(2026, 10, 2), LocalDate.of(2026, 10, 3)), state.unpaidCharges().stream().map(c -> c.day()).toList());

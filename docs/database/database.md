@@ -62,6 +62,8 @@ Dev database credentials in `docker-compose.yml` are for local use only. Product
 
 **V36 (payment attempt days):** `payment_intents.days_requested` (nullable int, the number of days the driver chose).
 
+**V59 (chosen days):** `ledger_entries.selected_days DATE[]` (nullable): the rent days a staff payment was meant to pay; null for an oldest-first payment. Read by `AccountCalculator` ([ADR-0037](../adr/0037-staff-payments-may-choose-the-days.md)).
+
 **V35 (days settled by a payment):** `ledger_entry_days (id, country_id, ledger_entry_id → ledger_entries, business_day, kind RENT|PENALTY, amount, paid_on_time)`, unique per (entry, day, kind), append-only (a trigger refuses UPDATE and DELETE like `ledger_entries`). Written in the payment's own transaction by `PaymentDayAllocator`; a snapshot for receipts and history, balances still come from `AccountCalculator`.
 
 **V32 (recharge from a session, live power):** `charging_entries.session_id` (nullable FK to `charging_sessions`, indexed; a session is "paid" while a non-cancelled `RECHARGE` points at it, enforced by the service under a lock per session) and `charging_sessions.power_kw` (the latest power reading, kept only while the session runs).

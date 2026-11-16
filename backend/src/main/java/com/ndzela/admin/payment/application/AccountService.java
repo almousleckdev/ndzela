@@ -57,6 +57,7 @@ public class AccountService {
     }
 
     static AccountEntry entry(LedgerEntry e) {
-        return new AccountEntry(e.getId(), e.getType(), e.getAmount(), e.getCreatedAt().toInstant(), e.getReversesEntryId(), e.getBusinessDay());
+        return new AccountEntry(e.getId(), e.getType(), e.getAmount(), e.getCreatedAt().toInstant(), e.getReversesEntryId(), e.getBusinessDay(),
+                e.getSelectedDays() == null ? List.of() : e.getSelectedDays());
     }
 }

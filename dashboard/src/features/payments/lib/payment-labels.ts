@@ -57,3 +57,6 @@ export const DAY_STATUS_CLASS: Record<DayStatus, string> = {
   PAID_LATE: "bg-amber-100 text-amber-800",
   UNPAID: "bg-red-100 text-red-700",
 };
+
+// "2026-10-05" as "lun. 5 oct."
+export const formatRentDay = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });

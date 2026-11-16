@@ -195,7 +195,7 @@ void main() {
       expect(open.daysToSettle, 1);
     });
 
-    testWidgets('says to pay before noon of that day', (tester) async {
+    testWidgets('says to pay before the deadline, at noon', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light(),
