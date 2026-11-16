@@ -133,6 +133,7 @@ app:
   zella:
     base-url: ${ZELLA_BASE_URL:}                     # the Zella Charging app's partner API; empty: no lookup
     api-key: ${ZELLA_API_KEY:}                       # our key for it (X-Api-Key), bound to one country; never in a frontend or the app
+    partner-key: ${ZELLA_PARTNER_KEY:}               # the key the Zella app sends to read a linked driver's contract and car (X-Api-Key); empty: refused
     country-code: ${ZELLA_COUNTRY:GA}                # the country the key and its drivers belong to
     lookup-enabled: ${ZELLA_LOOKUP_ENABLED:true}
     lookup-interval: ${ZELLA_LOOKUP_INTERVAL:PT15M}  # between two lookups of the drivers not matched yet

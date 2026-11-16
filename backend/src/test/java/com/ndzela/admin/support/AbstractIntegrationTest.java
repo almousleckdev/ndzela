@@ -53,6 +53,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("app.ocpp.sync-enabled", () -> "false");
         registry.add("app.cors-allowed-origins", () -> "https://dashboard.ndzela.test");
         registry.add("app.public-site.allowed-origins", () -> "https://ndzela.test");
+        registry.add("app.zella.partner-key", () -> "partner-test-key");
         registry.add("app.ocpp.api-key", () -> "test-key");
         registry.add("app.pvit.reconcile-enabled", () -> "false");
         registry.add("app.pvit.sandbox-amount", () -> "");
