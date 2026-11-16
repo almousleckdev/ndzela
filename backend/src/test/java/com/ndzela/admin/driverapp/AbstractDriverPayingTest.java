@@ -54,6 +54,18 @@ abstract class AbstractDriverPayingTest extends AbstractDriverAppTest {
         throw new IllegalStateException("no start date gives " + unpaid + " unpaid days");
     }
 
+    // Late days only: the ones the all-or-nothing rule counts
+    protected void withLateDays(int late) throws Exception {
+        for (int back = 1; back <= 14; back++) {
+            java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Africa/Libreville"));
+            jdbc.update("update contracts set start_date = ?, end_date = ?", today.minusDays(back), today.plusDays(300));
+            if ((Integer) JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.unpaidDays") == late) {
+                return;
+            }
+        }
+        throw new IllegalStateException("no start date gives " + late + " late days");
+    }
+
     protected ResultActions start(String days) throws Exception {
         return mvc.perform(post("/api/v1/driver/payments").header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"operator\":\"AIRTEL_MONEY\",\"phoneNumber\":\"074111111\"" + (days == null ? "" : ",\"days\":" + days) + ",\"amount\":1}"));

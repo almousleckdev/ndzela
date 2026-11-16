@@ -10,7 +10,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-// A good driver pays the day that is open since midnight; the 1-2 / 3 rule counts every day to settle: unpaid or open
+// A good driver pays the day that is open since midnight; the all-or-nothing rule starts at 3 late days; open days do not count
 class PaymentSelectionOpenDaysTest extends AbstractAccountCalculatorTest {
     private static List<Integer> amounts(AccountState state) {
         return PaymentSelection.options(state).stream().map(o -> o.amount().intValue()).toList();
@@ -37,17 +37,17 @@ class PaymentSelectionOpenDaysTest extends AbstractAccountCalculatorTest {
     }
 
     @Test
-    void withThreeDaysToSettleOnlyPayingThemAllIsOffered() {
+    void withThreeLateDaysOnlyPayingThemAllIsOffered() {
         AccountState threeUnpaid = stateAt("2026-10-04T13:00:00");
         assertEquals(List.of(69000), amounts(threeUnpaid));
+    }
 
+    @Test
+    void twoLateDaysPlusAnOpenDayLetTheDriverChooseOneTwoOrThree() {
         AccountState twoUnpaidAndOneOpen = stateAt("2026-10-03T13:00:00");
         assertEquals(2, twoUnpaidAndOneOpen.unpaid());
         assertEquals(1, twoUnpaidAndOneOpen.awaitingDays());
-        List<PaymentOption> options = PaymentSelection.options(twoUnpaidAndOneOpen);
-        assertEquals(1, options.size());
-        assertEquals(69000, options.get(0).amount().intValue());
-        assertEquals(3, options.get(0).days());
+        assertEquals(List.of(23000, 46000, 69000), amounts(twoUnpaidAndOneOpen));
     }
 
     @Test

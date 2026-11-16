@@ -15,3 +15,7 @@ With [ADR-0038](0038-rent-is-due-the-next-day-at-noon.md) the rent of day D is d
 ## Consequences
 - Positive: the staff screens match the old platform at every hour; the 12:00 rules are unchanged.
 - Negative: the list still sorts by the late count, so a driver can sit one place off the displayed count between 00:00 and 12:00; the displayed day count and the level can differ in that window (for example 3 days shown, level not yet RED).
+
+## Addendum (2026-11-16): the driver app counts late days only
+
+The driver app's "pay everything at once" rule and its lock were fed by the displayed count (late + yesterday's rent), so a driver with 2 late days saw 3 and could not pay one or two. They now use **late days only**: `PaymentSelection.options` offers a single all-days option only from 3 late days (`unpaid() >= 3`), and `GET /driver/account` returns the late-day count as `unpaidDays` and `locked`. Open days stay payable as part of the chosen N. Staff screens still show the owed count.

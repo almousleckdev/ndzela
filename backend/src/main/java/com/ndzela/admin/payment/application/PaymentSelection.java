@@ -11,7 +11,7 @@ import java.util.List;
 
 // Which numbers of unpaid days a driver may pay, oldest first, and what each costs
 public final class PaymentSelection {
-    // From this many days to settle (unpaid, or open since midnight) everything must be paid at once
+    // From this many late days everything must be paid at once; days still open do not count
     static final int ALL_REQUIRED_FROM = 3;
 
     private PaymentSelection() {}
@@ -20,7 +20,7 @@ public final class PaymentSelection {
         List<AccountCharge> toSettle = new ArrayList<>(state.unpaidCharges());
         toSettle.addAll(state.awaitingCharges());
         List<PaymentOption> options = optionsFor(toSettle, state.credit());
-        return options.size() >= ALL_REQUIRED_FROM ? List.of(options.get(options.size() - 1)) : options;
+        return state.unpaid() >= ALL_REQUIRED_FROM && !options.isEmpty() ? List.of(options.get(options.size() - 1)) : options;
     }
 
     // When the oldest day still to settle is due: past for a late day, noon today for a day open since midnight

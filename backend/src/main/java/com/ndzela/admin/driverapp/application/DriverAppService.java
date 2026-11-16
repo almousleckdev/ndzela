@@ -105,7 +105,8 @@ public class DriverAppService {
         Driver driver = drivers.findById(driverId).orElseThrow();
         AccountDetail account = accounts.account(driverId);
         PayableDays payable = accounts.payable(driverId);
-        return new DriverAccountResponse(account.unpaid(), account.overdueAmount().setScale(0, RoundingMode.HALF_UP), driver.getCountry().getCurrencyCode(), props.driverApp().locks(account.unpaid()),
+        int lateDays = (int) account.payableDays().stream().filter(com.ndzela.admin.payment.api.dto.PayableDayView::late).count();
+        return new DriverAccountResponse(lateDays, account.overdueAmount().setScale(0, RoundingMode.HALF_UP), driver.getCountry().getCurrencyCode(), props.driverApp().locks(lateDays),
                 driver.getStatus() == com.ndzela.admin.driver.domain.DriverStatus.SUSPENDED, account.weekClosesAt(), account.weekSettled(),
                 payable.settleBy() == null ? null : payable.settleBy().atOffset(java.time.ZoneOffset.UTC), payable.options(),
                 accounts.weekHistory(driverId, HISTORY_WEEKS).stream().map(DriverDayResponse::from).toList());

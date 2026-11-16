@@ -33,14 +33,26 @@ class DriverPaymentDaysTest extends AbstractDriverPayingTest {
     }
 
     @Test
-    void threeUnpaidDaysMustAllBePaidAtOnce() throws Exception {
-        withUnpaidDays(3);
+    void threeLateDaysMustAllBePaidAtOnce() throws Exception {
+        withLateDays(3);
+        int toSettle = JsonPath.<List<Object>>read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.options").size();
+        assertEquals(1, toSettle);
 
         start("1").andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INVALID_PAYMENT_DAYS"));
         start("2").andExpect(status().isUnprocessableEntity());
-        start("3").andExpect(status().isAccepted());
+        String all = JsonPath.read(asDriver("/api/v1/driver/account", token).andReturn().getResponse().getContentAsString(), "$.options[0].days").toString();
+        start(all).andExpect(status().isAccepted());
 
-        assertEquals(0, RENT.multiply(BigDecimal.valueOf(3)).compareTo(intentAmount()));
+        assertEquals(0, RENT.multiply(BigDecimal.valueOf(Integer.parseInt(all))).compareTo(intentAmount()));
+    }
+
+    @Test
+    void twoLateDaysAreNeverLockedEvenWithAnOpenDay() throws Exception {
+        withLateDays(2);
+
+        asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.unpaidDays").value(2)).andExpect(jsonPath("$.locked").value(false))
+                .andExpect(jsonPath("$.options[0].days").value(1));
+        start("1").andExpect(status().isAccepted());
     }
 
     @Test
@@ -138,8 +150,8 @@ class DriverPaymentDaysTest extends AbstractDriverPayingTest {
         asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.options.length()").value(2)).andExpect(jsonPath("$.options[0].days").value(1))
                 .andExpect(jsonPath("$.options[1].amount").value(46000));
 
-        withUnpaidDays(3);
-        asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.options.length()").value(1)).andExpect(jsonPath("$.options[0].days").value(3));
+        withLateDays(3);
+        asDriver("/api/v1/driver/account", token).andExpect(jsonPath("$.options.length()").value(1));
     }
 
     @Test
