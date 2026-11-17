@@ -84,9 +84,9 @@ public class AccountQueryService {
             int total = c == null ? 0 : c.billableDays();
             return new AccountRow(d.id(), d.fullName(), d.phone(), d.status().name(),
                     c == null ? null : c.id(), c == null ? null : c.contractNumber(), c == null ? null : c.dailyRent(),
-                    v == null ? null : v.fleetNumber() + " · " + v.plate(), d.level(), whole(d.owedAmount()), d.overdueSince(), lastPayment.get(d.id()),
+                    v == null ? null : v.fleetNumber() + " · " + v.plate(), d.level(), whole(d.overdueAmount()), d.overdueSince(), lastPayment.get(d.id()),
                     ranged ? whole(collected.getOrDefault(d.id(), BigDecimal.ZERO)) : null,
-                    d.paidDays(), d.owedDays(), elapsed, total, Math.max(0, total - elapsed), d.awaitingDays() - d.graceDays(), whole(d.awaitingAmount().subtract(d.graceAmount())));
+                    d.paidDays(), d.unpaidDays(), elapsed, total, Math.max(0, total - elapsed), d.awaitingDays(), whole(d.awaitingAmount()));
         });
     }
 
@@ -106,7 +106,7 @@ public class AccountQueryService {
                 .map(d -> new AccountDayView(d.day(), d.dueAt(), d.amount(), d.status(), d.settledAt())).toList();
         OffsetDateTime overdueSince = state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime();
         return new AccountDetail(driverId, driver.fullName(), driver.status().name(), contract.id(), contract.contractNumber(), contract.dailyRent(), state.level(),
-                state.overdueAmount().add(state.graceAmount()), state.credit(), overdueSince, state.paidOnTime(), state.paidLate(), state.unpaid() + state.graceDays(), days, entries,
+                state.overdueAmount(), state.credit(), overdueSince, state.paidOnTime(), state.paidLate(), state.unpaid(), days, entries,
                 PaymentWeek.closesAt(now, zone), PaymentWeek.settled(state), ContractProgressCalculator.of(contract, state, LocalDate.ofInstant(now, zone)),
                 ChosenDays.of(state).stream().map(p -> new PayableDayView(p.day(), p.due().atZone(zone).toOffsetDateTime(), p.rent(), p.penalty(), p.total(), p.due().isBefore(now))).toList());
     }

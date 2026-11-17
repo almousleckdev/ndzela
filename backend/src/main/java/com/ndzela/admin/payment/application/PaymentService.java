@@ -171,9 +171,9 @@ public class PaymentService {
 
     private PaymentResult result(LedgerEntry entry, DriverRef driver, ContractResponse contract) {
         if (contract == null) {
-            return new PaymentResult(queries.toResponse(entry, driver), driver.level(), driver.owedAmount(), BigDecimal.ZERO);
+            return new PaymentResult(queries.toResponse(entry, driver), driver.level(), driver.overdueAmount(), BigDecimal.ZERO);
         }
         AccountState state = accounts.refresh(driver, contract, Instant.now());
-        return new PaymentResult(queries.toResponse(entry, driver), state.level(), state.overdueAmount().add(state.graceAmount()), state.credit());
+        return new PaymentResult(queries.toResponse(entry, driver), state.level(), state.overdueAmount(), state.credit());
     }
 }

@@ -11,22 +11,19 @@ import java.util.List;
 
 // Which numbers of unpaid days a driver may pay, oldest first, and what each costs
 public final class PaymentSelection {
-    // From this many late days everything must be paid at once; days still open do not count
+    // Only late days are offered; from this many of them everything must be paid at once
     static final int ALL_REQUIRED_FROM = 3;
 
     private PaymentSelection() {}
 
     public static List<PaymentOption> options(AccountState state) {
-        List<AccountCharge> toSettle = new ArrayList<>(state.unpaidCharges());
-        toSettle.addAll(state.awaitingCharges());
-        List<PaymentOption> options = optionsFor(toSettle, state.credit());
-        return state.unpaid() >= ALL_REQUIRED_FROM && !options.isEmpty() ? List.of(options.get(options.size() - 1)) : options;
+        List<PaymentOption> options = optionsFor(state.unpaidCharges(), state.credit());
+        return options.size() >= ALL_REQUIRED_FROM ? List.of(options.get(options.size() - 1)) : options;
     }
 
-    // When the oldest day still to settle is due: past for a late day, noon today for a day open since midnight
+    // When the oldest late day fell due
     public static java.time.Instant settleBy(AccountState state) {
-        return java.util.stream.Stream.concat(state.unpaidCharges().stream(), state.awaitingCharges().stream())
-                .map(AccountCharge::due).min(java.util.Comparator.naturalOrder()).orElse(null);
+        return state.unpaidCharges().stream().map(AccountCharge::due).min(java.util.Comparator.naturalOrder()).orElse(null);
     }
 
     private static List<PaymentOption> optionsFor(List<AccountCharge> charges, BigDecimal credit) {

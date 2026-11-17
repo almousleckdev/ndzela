@@ -1,6 +1,6 @@
 # ADR-0039: Yesterday's rent is owed from midnight, late after noon
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0040](0040-only-late-rent-is-shown-and-payable.md)
 - **Date:** 2026-11-16
 
 ## Context

@@ -161,14 +161,6 @@ public class Driver extends TenantOwned {
     @Column(name = "awaiting_amount", nullable = false)
     private java.math.BigDecimal awaitingAmount = java.math.BigDecimal.ZERO;
 
-    // Yesterday's rent, owed from 00:00 though late only after noon; shown with the unpaid days, never used by the rules
-    @Column(name = "grace_days", nullable = false)
-    private int graceDays;
-
-    @Builder.Default
-    @Column(name = "grace_amount", nullable = false)
-    private java.math.BigDecimal graceAmount = java.math.BigDecimal.ZERO;
-
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 

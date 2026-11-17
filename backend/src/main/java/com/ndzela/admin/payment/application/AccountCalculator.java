@@ -131,11 +131,8 @@ public final class AccountCalculator {
                 awaitingUnpaid.add(charge);
             }
         }
-        List<AccountCharge> grace = awaitingUnpaid.stream().filter(charge -> charge.day().isBefore(today)).toList();
-        BigDecimal graceAmount = grace.stream().map(AccountCharge::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new AccountState(days, overdue, totalCredit.subtract(covered).max(BigDecimal.ZERO), oldest, levelOf(unpaid), penaltyDays, onTime, late, unpaid,
-                awaitingDays, awaitingAmount, List.copyOf(unpaidCharges), creditsOf(allCredits, LedgerEntryType.PAYMENT), creditsOf(allCredits, LedgerEntryType.WAIVER), List.copyOf(awaitingUnpaid),
-                grace.size(), graceAmount);
+                awaitingDays, awaitingAmount, List.copyOf(unpaidCharges), creditsOf(allCredits, LedgerEntryType.PAYMENT), creditsOf(allCredits, LedgerEntryType.WAIVER), List.copyOf(awaitingUnpaid));
     }
 
     private static BigDecimal creditsOf(List<AccountEntry> credits, LedgerEntryType type) {

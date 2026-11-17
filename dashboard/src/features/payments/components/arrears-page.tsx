@@ -63,8 +63,8 @@ function ArrearsContent() {
         )} />
       <KpiBand items={[
         { label: "Total impayé", value: s ? formatFcfa(s.totalOverdue) : "-", tone: s && s.totalOverdue > 0 ? "bad" : undefined },
-        { label: "Loyer du jour (avant demain 12 h)", value: s ? formatFcfa(s.totalAwaiting) : "-" },
-        { label: "À recouvrer (aujourd'hui inclus)", value: s ? formatFcfa(s.totalOverdue + s.totalAwaiting) : "-" },
+        { label: "À régler avant midi", value: s ? formatFcfa(s.totalAwaiting) : "-" },
+        { label: "À recouvrer (hier inclus)", value: s ? formatFcfa(s.totalOverdue + s.totalAwaiting) : "-" },
         { label: "Chauffeurs en retard", value: s?.late ?? "-" },
         { label: "Rappel · 1 jour", value: s?.yellow ?? "-" },
         { label: "Urgent · 2 jours", value: s?.darkYellow ?? "-", tone: s && s.darkYellow > 0 ? "bad" : undefined },
