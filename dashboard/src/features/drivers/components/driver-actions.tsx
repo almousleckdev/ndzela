@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions";
+import { AllowDaysDialog } from "@/features/drivers/components/allow-days-dialog";
 import { CloseContractDialog } from "@/features/drivers/components/close-contract-dialog";
 import { ChangeContactDialog } from "@/features/drivers/components/change-contact-dialog";
 import { DeleteDriversDialog } from "@/features/drivers/components/delete-drivers-dialog";
@@ -32,9 +33,7 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
     items.push({ kind: "reset-password", label: "Nouveau mot de passe" });
   }
   if (can(PERMISSIONS.DRIVERS_UPDATE) && can(PERMISSIONS.CONTRACTS_TERMINATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Clôturer le contrat" });
-  if (can(PERMISSIONS.DRIVERS_PARTIAL_PAYMENT) && (driver.partialPaymentAllowed || driver.arrears.unpaidDays >= 3)) {
-    items.push({ kind: "partial-payment", label: driver.partialPaymentAllowed ? "Retirer le paiement partiel" : "Autoriser le paiement partiel" });
-  }
+  if (can(PERMISSIONS.DRIVERS_PARTIAL_PAYMENT) && driver.arrears.unpaidDays >= 3) items.push({ kind: "partial-payment", label: "Autoriser le paiement partiel" });
   if (can(PERMISSIONS.DRIVERS_DELETE) || can(PERMISSIONS.DRIVERS_PURGE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
   return items;
 }
@@ -74,22 +73,7 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
   }
 
   if (kind === "partial-payment") {
-    const allowed = !driver.partialPaymentAllowed;
-    return (
-      <ConfirmDialog isOpen onClose={onClose} title={allowed ? "Autoriser le paiement partiel ?" : "Retirer le paiement partiel ?"}
-        description={allowed ? `${name} pourra payer un ou deux jours seulement dans l'application, même avec 3 jours ou plus en retard. L'autorisation s'arrête quand il n'a plus de retard.` : `${name} devra de nouveau tout payer d'un coup.`}
-        confirmText={allowed ? "Autoriser" : "Retirer"} cancelText="Annuler"
-        onConfirm={async () => {
-          try {
-            await driversService.allowPartialPayment(driver.id, allowed);
-            addToast({ title: "Succès", description: allowed ? "Paiement partiel autorisé." : "Paiement partiel retiré.", type: "success" });
-            onDone(kind);
-          } catch (error) {
-            addToast({ title: "Erreur", description: getErrorMessage(error, "L'action a échoué."), type: "error" });
-            onClose();
-          }
-        }} />
-    );
+    return <AllowDaysDialog driverId={driver.id} driverName={name} onClose={onClose} onSaved={() => { addToast({ title: "Succès", description: "Jours autorisés mis à jour.", type: "success" }); onDone(kind); }} />;
   }
 
   if (kind === "block" || kind === "deactivate") {

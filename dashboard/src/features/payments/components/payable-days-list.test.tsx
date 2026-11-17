@@ -6,9 +6,9 @@ import { PayableDaysList } from "@/features/payments/components/payable-days-lis
 import type { PayableDay } from "@/features/payments/types";
 
 const DAYS: PayableDay[] = [
-  { day: "2026-10-01", dueAt: "2026-10-01T12:00:00+01:00", rent: 23000, penalty: 5000, amount: 28000, late: true },
-  { day: "2026-10-02", dueAt: "2026-10-02T12:00:00+01:00", rent: 23000, penalty: 0, amount: 23000, late: true },
-  { day: "2026-10-03", dueAt: "2026-10-03T12:00:00+01:00", rent: 23000, penalty: 0, amount: 23000, late: true },
+  { day: "2026-10-01", dueAt: "2026-10-01T12:00:00+01:00", rent: 23000, penalty: 5000, amount: 28000, late: true, allowed: false },
+  { day: "2026-10-02", dueAt: "2026-10-02T12:00:00+01:00", rent: 23000, penalty: 0, amount: 23000, late: true, allowed: false },
+  { day: "2026-10-03", dueAt: "2026-10-03T12:00:00+01:00", rent: 23000, penalty: 0, amount: 23000, late: true, allowed: false },
 ];
 
 function Harness({ onPick }: { onPick?: (days: string[]) => void }) {

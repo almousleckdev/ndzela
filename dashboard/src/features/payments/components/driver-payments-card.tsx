@@ -11,14 +11,13 @@ import { formatDateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
+import { DaysHistory } from "@/features/payments/components/days-history";
 import { ContractProgressBlock } from "@/features/payments/components/contract-progress-block";
 import { RecordPaymentDialog } from "@/features/payments/components/record-payment-dialog";
 import { IncidentDialog } from "@/features/payments/components/incident-dialog";
 import { WaiverDialog } from "@/features/payments/components/waiver-dialog";
-import { DAY_STATUS_CLASS, DAY_STATUS_LABELS, ENTRY_TYPE_LABELS, LEVEL_BADGE, LEVEL_LABELS, METHOD_LABELS } from "@/features/payments/lib/payment-labels";
+import { ENTRY_TYPE_LABELS, LEVEL_BADGE, LEVEL_LABELS, METHOD_LABELS } from "@/features/payments/lib/payment-labels";
 import { paymentsService } from "@/features/payments/services/payments.service";
-
-const day = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 
 // The driver's payment status
 export function DriverPaymentsCard({ driverId, contractStart, onChanged }: { driverId: string; contractStart?: string; onChanged: () => void }) {
@@ -58,16 +57,7 @@ export function DriverPaymentsCard({ driverId, contractStart, onChanged }: { dri
 
           <div>
             <h3 className="mb-2 text-sm font-semibold text-slate-900">Derniers jours</h3>
-            {a.days.length === 0 ? <p className="text-sm text-slate-500">Aucun loyer échu pour l&apos;instant.</p> : (
-              <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                {a.days.slice(0, 14).map((d) => (
-                  <li key={d.day} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-1.5 text-sm">
-                    <span>{day(d.day)}{d.settledAt && <span className="ml-2 text-xs text-slate-500">payé le {formatDateTime(d.settledAt)}</span>}</span>
-                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", DAY_STATUS_CLASS[d.status])}>{DAY_STATUS_LABELS[d.status]}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <DaysHistory days={a.days} />
           </div>
 
           <div>

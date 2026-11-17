@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +42,7 @@ public class PaymentIntentStore {
     private final SecureRandom random = new SecureRandom();
 
     @Transactional
-    public PaymentIntent createPending(UUID driverId, UUID contractId, String operatorCode, String phone, BigDecimal amount, String currency, int days) {
+    public PaymentIntent createPending(UUID driverId, UUID contractId, String operatorCode, String phone, BigDecimal amount, String currency, int days, List<LocalDate> chosen) {
         intents.findFirstByDriverIdAndStatus(driverId, PaymentIntentStatus.PENDING).ifPresent(existing -> {
             if (existing.getCreatedAt().plus(props.pvit().expireAfter()).isBefore(OffsetDateTime.now())) {
                 close(existing, PaymentIntentStatus.EXPIRED, "No answer from the operator.");
@@ -51,7 +52,7 @@ public class PaymentIntentStore {
         });
         try {
             return intents.saveAndFlush(PaymentIntent.builder().driverId(driverId).contractId(contractId).reference(newReference()).operatorCode(operatorCode)
-                    .customerPhone(phone).amount(amount).daysRequested(days).currencyCode(currency).status(PaymentIntentStatus.PENDING).build());
+                    .customerPhone(phone).amount(amount).daysRequested(days).selectedDays(chosen.isEmpty() ? null : chosen).currencyCode(currency).status(PaymentIntentStatus.PENDING).build());
         } catch (DataIntegrityViolationException e) {
             throw inProgress();
         }
@@ -83,7 +84,8 @@ public class PaymentIntentStore {
         PaymentMethod method = methodOf(intent.getOperatorCode());
         // A reference already taken must not stop money PVit holds from being recorded: ours is unique.
         String reference = ledger.existsActivePayment(method, providerReference) ? intent.getReference() : providerReference;
-        payments.record(new RecordPaymentRequest(intent.getDriverId(), paid, method, reference, intent.getId()), AUTOMATIC);
+        List<LocalDate> days = intent.getSelectedDays() != null && payments.daysStillPayable(intent.getDriverId(), intent.getSelectedDays()) ? intent.getSelectedDays() : null;
+        payments.record(new RecordPaymentRequest(intent.getDriverId(), paid, method, reference, intent.getId(), days), AUTOMATIC);
         if (paid.compareTo(intent.getAmount().setScale(0, RoundingMode.HALF_UP)) < 0) {
             audit.record("PAYMENT_UNDERPAID", "DRIVER", intent.getDriverId().toString(), intent.getReference(), intent.getCountryId(), "asked " + intent.getAmount().toPlainString() + ", confirmed " + paid.toPlainString());
         }

@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.time.temporal.TemporalAdjusters;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -48,7 +49,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AccountQueryService {
-    private static final int LAST_DAYS_SHOWN = 60;
 
     private final LedgerEntryRepository ledger;
     private final DriverArrearsService driverArrears;
@@ -58,6 +58,7 @@ public class AccountQueryService {
     private final CountryService countryService;
     private final PaymentQueryService history;
     private final PaymentPeriod period;
+    private final AllowedDaysService allowedDays;
 
     @Transactional(readOnly = true)
     public PageResponse<AccountRow> accounts(String filter, String q, LocalDate lateFrom, LocalDate lateTo, LocalDate paidFrom, LocalDate paidTo,
@@ -102,13 +103,14 @@ public class AccountQueryService {
                     0, 0, 0, List.of(), entries, PaymentWeek.closesAt(now, zone), true, null, List.of());
         }
         AccountState state = accounts.state(driver.countryId(), contract, now);
-        List<AccountDayView> days = state.days().stream().sorted(Comparator.comparing(AccountDay::day).reversed()).limit(LAST_DAYS_SHOWN)
+        List<AccountDayView> days = state.days().stream().sorted(Comparator.comparing(AccountDay::day).reversed())
                 .map(d -> new AccountDayView(d.day(), d.dueAt(), d.amount(), d.status(), d.settledAt())).toList();
+        Set<LocalDate> allowed = allowedDays.of(driverId);
         OffsetDateTime overdueSince = state.oldestUnpaidDueAt() == null ? null : state.oldestUnpaidDueAt().atZone(zone).toOffsetDateTime();
         return new AccountDetail(driverId, driver.fullName(), driver.status().name(), contract.id(), contract.contractNumber(), contract.dailyRent(), state.level(),
                 state.overdueAmount(), state.credit(), overdueSince, state.paidOnTime(), state.paidLate(), state.unpaid(), days, entries,
                 PaymentWeek.closesAt(now, zone), PaymentWeek.settled(state), ContractProgressCalculator.of(contract, state, LocalDate.ofInstant(now, zone)),
-                ChosenDays.of(state).stream().map(p -> new PayableDayView(p.day(), p.due().atZone(zone).toOffsetDateTime(), p.rent(), p.penalty(), p.total(), p.due().isBefore(now))).toList());
+                ChosenDays.of(state).stream().map(p -> new PayableDayView(p.day(), p.due().atZone(zone).toOffsetDateTime(), p.rent(), p.penalty(), p.total(), p.due().isBefore(now), allowed.contains(p.day()))).toList());
     }
 
     // The rent days of the last `weeks` weeks (the current one included), oldest first; empty without an active contract.
@@ -139,7 +141,7 @@ public class AccountQueryService {
             return new PayableDays(null, List.of(), null);
         }
         AccountState state = accounts.state(driver.countryId(), contract, Instant.now());
-        return new PayableDays(contract.id(), PaymentSelection.options(state, driver.partialPaymentAllowed()), PaymentSelection.settleBy(state));
+        return new PayableDays(contract.id(), PaymentSelection.options(state, allowedDays.of(driverId)), PaymentSelection.settleBy(state));
     }
 
     @Transactional(readOnly = true)

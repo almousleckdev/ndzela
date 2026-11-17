@@ -68,6 +68,11 @@ public class PaymentIntent extends TenantOwned {
     @Column(name = "days_requested", updatable = false)
     private Integer daysRequested;
 
+    // The days staff allowed this payment to settle (null: the oldest ones)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.ARRAY)
+    @Column(name = "selected_days", updatable = false)
+    private java.util.List<java.time.LocalDate> selectedDays;
+
     @Column(name = "failure_reason")
     private String failureReason;
 

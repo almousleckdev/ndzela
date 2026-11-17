@@ -37,6 +37,7 @@ export const paymentsService = {
   accountsExportPath: (filter: AccountFilter, q: string, dates: AccountDates, format: ExportFormat) =>
     `/payments/accounts/export?${queryString({ filter, q: q.trim(), format, ...dates })}`,
 
+  allowDays: (driverId: string, days: string[]) => apiClient<AccountDetail>(`/payments/accounts/${driverId}/allowed-days`, { method: "PUT", body: { days } }),
   account: (driverId: string) => apiClient<AccountDetail>(`/payments/accounts/${driverId}`),
 
   history: (query: HistoryQuery, page: number, size: number, sort?: string) => apiClient<Page<LedgerEntry>>(`/payments/history?${queryString({ ...historyParams(query), sort, page, size })}`),

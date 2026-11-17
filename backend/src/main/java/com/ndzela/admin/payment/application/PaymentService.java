@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -99,6 +100,18 @@ public class PaymentService {
     }
 
     // The days staff chose, as the receipt and the history show them
+    // Whether every chosen day can still be paid (staff may have paid one meanwhile); never throws
+    @Transactional(readOnly = true)
+    public boolean daysStillPayable(UUID driverId, List<LocalDate> days) {
+        try {
+            DriverRef driver = driverArrears.get(driverId);
+            ChosenDays.pick(accounts.state(driver.countryId(), activeContract(driver), Instant.now()), days);
+            return true;
+        } catch (BusinessRuleViolationException e) {
+            return false;
+        }
+    }
+
     private void saveChosenDays(LedgerEntry entry, List<PayableDay> picked) {
         Instant paidAt = entry.getCreatedAt().toInstant();
         picked.forEach(day -> {

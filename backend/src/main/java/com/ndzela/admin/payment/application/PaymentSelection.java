@@ -6,8 +6,11 @@ import com.ndzela.admin.payment.application.model.AccountState;
 import com.ndzela.admin.payment.application.model.PaymentOption;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 // Which numbers of unpaid days a driver may pay, oldest first, and what each costs
 public final class PaymentSelection {
@@ -17,13 +20,30 @@ public final class PaymentSelection {
     private PaymentSelection() {}
 
     public static List<PaymentOption> options(AccountState state) {
-        return options(state, false);
+        return options(state, Set.of());
     }
 
-    // partialAllowed: staff let this driver pay some of their late days even from 3 of them
-    public static List<PaymentOption> options(AccountState state, boolean partialAllowed) {
+    // allowed: late days staff let this driver pay alone; they replace "everything at once" from 3 late days
+    public static List<PaymentOption> options(AccountState state, Set<LocalDate> allowed) {
         List<PaymentOption> options = optionsFor(state.unpaidCharges(), state.credit());
-        return !partialAllowed && options.size() >= ALL_REQUIRED_FROM ? List.of(options.get(options.size() - 1)) : options;
+        if (options.size() < ALL_REQUIRED_FROM) {
+            return options;
+        }
+        List<PaymentOption> picked = allowedOptions(state, allowed);
+        return picked.isEmpty() ? List.of(options.get(options.size() - 1)) : picked;
+    }
+
+    // One option per allowed day, oldest first: paying the first k of them
+    private static List<PaymentOption> allowedOptions(AccountState state, Set<LocalDate> allowed) {
+        List<ChosenDays.PayableDay> days = ChosenDays.of(state).stream()
+                .filter(day -> allowed.contains(day.day()) && state.unpaidCharges().stream().anyMatch(charge -> charge.day().equals(day.day()))).sorted(Comparator.comparing(ChosenDays.PayableDay::day)).toList();
+        List<PaymentOption> options = new ArrayList<>();
+        BigDecimal running = state.credit().negate();
+        for (int i = 0; i < days.size(); i++) {
+            running = running.add(days.get(i).total());
+            options.add(new PaymentOption(i + 1, running.max(BigDecimal.ZERO), days.subList(0, i + 1).stream().map(ChosenDays.PayableDay::day).toList()));
+        }
+        return options;
     }
 
     // When the oldest late day fell due

@@ -46,7 +46,7 @@ public class PaymentIntentService {
         Country country = country();
         String phone = ProviderPhone.forProvider(country.getPhoneCode(), rawPhone);
         PaymentDue due = dueOf(driverId, days);
-        PaymentIntent intent = store.createPending(driverId, due.contractId(), operatorCode, phone, due.toCollect(), country.getCurrencyCode(), due.days());
+        PaymentIntent intent = store.createPending(driverId, due.contractId(), operatorCode, phone, due.toCollect(), country.getCurrencyCode(), due.days(), due.chosen());
         try {
             PvitPaymentStarted started = pvit.startPayment(new PvitPaymentRequest(intent.getReference(), intent.getAmount(), operatorCode, phone, "Loyer " + CountryBrand.ofCountry(country.getCode()).name()));
             store.markStarted(intent.getId(), started.providerReference());
@@ -80,7 +80,7 @@ public class PaymentIntentService {
         }
         PaymentOption chosen = PaymentSelection.choose(payable.options(), days);
         BigDecimal amount = chosen.amount().setScale(0, RoundingMode.HALF_UP);
-        return new PaymentDue(payable.contractId(), props.pvit().sandbox() ? props.pvit().sandboxAmount() : amount, chosen.days(), payable.options());
+        return new PaymentDue(payable.contractId(), props.pvit().sandbox() ? props.pvit().sandboxAmount() : amount, chosen.days(), payable.options(), chosen.chosen());
     }
 
     // Who receives the money

@@ -83,6 +83,8 @@ export interface PayableDay {
   penalty: number;
   amount: number;
   late: boolean;
+  // Staff let a driver with 3+ late days pay this day alone
+  allowed: boolean;
 }
 
 export interface AccountDetail {

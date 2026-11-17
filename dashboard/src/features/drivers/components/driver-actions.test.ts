@@ -8,9 +8,9 @@ vi.mock("@/features/drivers/services/drivers.service", () => ({ driversService: 
 vi.mock("@/lib/api/api-client", () => ({ apiClient: vi.fn() }));
 vi.mock("@/features/drivers/components/close-contract-dialog", () => ({ CloseContractDialog: () => null }));
 
-const driver = { status: "ACTIVE", loginLocked: false, vehicle: null, partialPaymentAllowed: false, arrears: { unpaidDays: 0 } } as unknown as Driver;
+const driver = { status: "ACTIVE", loginLocked: false, vehicle: null, arrears: { unpaidDays: 0 } } as unknown as Driver;
 const withCar = { ...driver, vehicle: {} } as unknown as Driver;
-const late = (days: number, allowed = false) => ({ ...driver, partialPaymentAllowed: allowed, arrears: { unpaidDays: days } }) as unknown as Driver;
+const late = (days: number) => ({ ...driver, arrears: { unpaidDays: days } }) as unknown as Driver;
 const holding = (...held: Permission[]) => (permission: Permission) => held.includes(permission);
 
 describe("availableActions: helping a driver get back in", () => {
@@ -55,11 +55,5 @@ describe("availableActions: partial payment for a driver with 3 late days or mor
   it("is not offered below 3 late days, nor without the permission", () => {
     expect(availableActions(late(2), permission).map((action) => action.kind)).not.toContain("partial-payment");
     expect(availableActions(late(5), holding(PERMISSIONS.DRIVERS_UPDATE)).map((action) => action.kind)).not.toContain("partial-payment");
-  });
-
-  it("offers to withdraw it once granted, even below 3 days", () => {
-    const labels = availableActions(late(1, true), permission).map((action) => action.label);
-
-    expect(labels).toEqual(["Retirer le paiement partiel"]);
   });
 });
