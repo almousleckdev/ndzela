@@ -169,6 +169,9 @@ public class DriverService {
     @Transactional
     public DriverResponse removeVehicle(UUID id, String reason) {
         Driver driver = load(id);
+        if (driver.getUnpaidDays() > 0 || driver.getOverdueAmount().signum() > 0) {
+            throw new BusinessRuleViolationException("CONTRACT_HAS_ARREARS", "The late rent must be paid before the contract can be closed.");
+        }
         assignmentService.unassign(driver, reason);
         return queries.response(driver);
     }

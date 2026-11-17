@@ -161,7 +161,7 @@ public class DriverController {
     }
 
     @PostMapping("/{id}/vehicle/remove")
-    @PreAuthorize("hasAuthority('drivers:update')")
+    @PreAuthorize("hasAuthority('drivers:update') and hasAuthority('contracts:terminate')")
     public DriverResponse removeVehicle(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {
         return drivers.removeVehicle(id, request.reason());
     }

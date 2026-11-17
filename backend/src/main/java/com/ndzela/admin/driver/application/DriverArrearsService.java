@@ -75,6 +75,9 @@ public class DriverArrearsService {
         driver.setPaidDays(paidDays);
         driver.setAwaitingDays(awaitingDays);
         driver.setAwaitingAmount(awaitingAmount);
+        if (unpaidDays == 0) {
+            driver.setPartialPaymentAllowed(false);
+        }
         drivers.save(driver);
     }
 

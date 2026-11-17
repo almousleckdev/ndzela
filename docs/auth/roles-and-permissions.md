@@ -21,6 +21,7 @@ Source of truth for the catalogue: Flyway migrations (`V1`, `V3`, `V4`, `V6`). T
 | `charging` | read, create, reverse, export, manage | Implemented (read: finance roles and VIEWER; create: GESTIONNAIRE, CAISSIER; reverse: ADMIN; export: ADMIN, COMPTABLE; manage stations: GESTIONNAIRE, ADMIN) |
 | `contracts` | read, print, update | Implemented (GESTIONNAIRE, ADMIN, COMPTABLE: read and print; VIEWER: read; GESTIONNAIRE and ADMIN also update) |
 | `drivers` | read, create, update, suspend, block, export, delete, unlock | Implemented (GESTIONNAIRE: read, create, update, delete; ADMIN: read, suspend, block, unlock; COMPTABLE, VIEWER read). `unlock` clears a login-attempt lockout only, never the `DriverStatus` set by suspend/block. |
+| `contracts` (terminate), `drivers` (partial_payment) | contracts: terminate; drivers: partial_payment | Implemented, V62 (2026-11-17, [ADR-0041](../adr/0041-contract-closing-and-partial-payment-exception.md)). `contracts:terminate` (SUPER_ADMIN, GESTIONNAIRE) closes a contract (with `drivers:update`), only when no late rent is owed. `drivers:partial_payment` (SUPER_ADMIN, ADMIN) lets a driver with 3 or more late days pay only some of them in the app. Both are assignable to any role. |
 | `training_centers` | manage | Implemented (GESTIONNAIRE) |
 | `countries` | read | Implemented (granted to every role by migration V7; lists countries for the super admin's selector) |
 

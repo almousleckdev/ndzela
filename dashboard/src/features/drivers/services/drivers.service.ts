@@ -49,6 +49,7 @@ export const driversService = {
   changeContact: (id: string, change: { email?: string; phone?: string }) => apiClient<Driver>(`/drivers/${id}/contact`, { method: "PUT", body: change }),
 
   // A temporary password: the driver must change it at the next sign-in
+  allowPartialPayment: (id: string, allowed: boolean) => apiClient<Driver>(`/drivers/${id}/partial-payment`, { method: "PUT", body: { allowed } }),
   resetPassword: (id: string, password: string) => apiClient<void>(`/drivers/${id}/password-reset`, { method: "POST", body: { password } }),
 
   purge: (id: string) => apiClient(`/drivers/${id}/purge`, { method: "POST", body: { confirm: true } }),

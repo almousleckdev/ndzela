@@ -107,3 +107,5 @@ Draft/active/completed/terminated/transferred; termination triggers listed in ar
 ## Permissions (Proposed)
 
 `contracts:read`, `contracts:create` (through the driver wizard: **gestionnaire**), `contracts:update`, `contracts:terminate`, `contracts:print`.
+
+**Closing a contract (2026-11-17, [ADR-0041](../adr/0041-contract-closing-and-partial-payment-exception.md)).** A contract is closed from the driver's page ("Clôturer le contrat", `contracts:terminate`) only when **no late rent is owed**: the dialog lists the debt and offers Encaisser; the server refuses with `CONTRACT_HAS_ARREARS` otherwise. Closing frees the car and keeps the history.

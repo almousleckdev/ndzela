@@ -17,8 +17,13 @@ public final class PaymentSelection {
     private PaymentSelection() {}
 
     public static List<PaymentOption> options(AccountState state) {
+        return options(state, false);
+    }
+
+    // partialAllowed: staff let this driver pay some of their late days even from 3 of them
+    public static List<PaymentOption> options(AccountState state, boolean partialAllowed) {
         List<PaymentOption> options = optionsFor(state.unpaidCharges(), state.credit());
-        return options.size() >= ALL_REQUIRED_FROM ? List.of(options.get(options.size() - 1)) : options;
+        return !partialAllowed && options.size() >= ALL_REQUIRED_FROM ? List.of(options.get(options.size() - 1)) : options;
     }
 
     // When the oldest late day fell due

@@ -45,6 +45,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0038](0038-rent-is-due-the-next-day-at-noon.md) | Rent is due the next day at noon (replaces 0029) | Accepted |
 | [0039](0039-yesterdays-rent-is-owed-from-midnight.md) | Yesterday's rent is owed from midnight, late after noon | Superseded by 0040 |
 | [0040](0040-only-late-rent-is-shown-and-payable.md) | Only late rent is shown and payable: nothing before 12:00 | Accepted |
+| [0041](0041-contract-closing-and-partial-payment-exception.md) | Contracts close only when paid; staff can lift the all-or-nothing rule for one driver | Accepted |
 | [0040](0040-zella-reads-a-linked-drivers-contract-and-car.md) | The Zella app reads a linked driver's contract and car | Accepted |
 ||||||| 9158784 (feat: count yesterday's rent as owed from 00:00, late after 12:00)
 

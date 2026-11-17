@@ -40,6 +40,7 @@ export const PERMISSIONS = {
   DRIVERS_DELETE: "drivers:delete",
   DRIVERS_PURGE: "drivers:purge",
   DRIVERS_CREDENTIALS: "drivers:credentials",
+  DRIVERS_PARTIAL_PAYMENT: "drivers:partial_payment",
   EARNINGS_READ: "earnings:read",
   PAYMENTS_READ: "payments:read",
   PAYMENTS_CREATE: "payments:create",
@@ -57,6 +58,7 @@ export const PERMISSIONS = {
   CONTRACTS_READ: "contracts:read",
   CONTRACTS_PRINT: "contracts:print",
   CONTRACTS_UPDATE: "contracts:update",
+  CONTRACTS_TERMINATE: "contracts:terminate",
   TRAINING_CENTERS_MANAGE: "training_centers:manage",
   INQUIRIES_READ: "inquiries:read",
   INQUIRIES_MANAGE: "inquiries:manage",
@@ -106,13 +108,14 @@ const RESOURCE_LABELS: Record<string, string> = {
   audit: "Historique",
   vehicles: "Véhicules",
   drivers: "Chauffeurs",
+  contracts: "Contrats",
   incidents: "Demi-journées et arrêts",
   training_centers: "Centres de formation",
   inquiries: "Candidatures et messages du site",
 };
 
 // Business resources first, platform administration last.
-const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries", "audit", "vehicles", "drivers", "incidents", "training_centers", "inquiries"];
+const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries", "audit", "vehicles", "drivers", "contracts", "incidents", "training_centers", "inquiries"];
 
 const ACTION_LABELS: Record<string, string> = {
   read: "Consulter",
@@ -131,6 +134,8 @@ const ACTION_LABELS: Record<string, string> = {
   delete: "Supprimer",
   purge: "Supprimer avec l'argent enregistré",
   declare: "Déclarer et annuler",
+  terminate: "Clôturer un contrat (loyers payés)",
+  partial_payment: "Autoriser le paiement partiel (3 jours ou plus)",
 };
 
 // Resources whose permissions are guarded by the anti-escalation rule (mirrors the backend AccessPolicy).

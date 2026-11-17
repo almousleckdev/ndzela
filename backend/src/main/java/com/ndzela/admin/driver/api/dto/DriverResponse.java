@@ -26,6 +26,7 @@ public record DriverResponse(
         CountryResponse country,
         // Locked out of logging in by repeated failed attempts (drivers:unlock clears it); separate from `status`.
         boolean loginLocked,
+        boolean partialPaymentAllowed,
         OffsetDateTime createdAt
 ) {
     public static DriverResponse from(Driver d, VehicleResponse vehicle, boolean onLeave, ContractResponse contract) {
@@ -36,7 +37,7 @@ public record DriverResponse(
                 d.isMustChangePassword(), vehicle, contract,
                 new DriverArrearsView(d.getArrearsLevel(), d.getOverdueAmount().setScale(0, java.math.RoundingMode.HALF_UP), d.getOverdueSince(), d.getUnpaidDays(), d.getPaidDays(), daysLeft(d, contract)),
                 d.getCountry() == null ? null : CountryResponse.from(d.getCountry()),
-                d.getLoginLockedUntil() != null && d.getLoginLockedUntil().isAfter(OffsetDateTime.now()), d.getCreatedAt());
+                d.getLoginLockedUntil() != null && d.getLoginLockedUntil().isAfter(OffsetDateTime.now()), d.isPartialPaymentAllowed(), d.getCreatedAt());
     }
 
     // The rent days left until the contract ends (Sundays are rest days), counted in the country's own time.

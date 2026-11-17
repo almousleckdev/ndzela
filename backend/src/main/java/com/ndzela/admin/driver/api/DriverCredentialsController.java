@@ -2,8 +2,10 @@ package com.ndzela.admin.driver.api;
 
 import com.ndzela.admin.driver.api.dto.ChangeContactRequest;
 import com.ndzela.admin.driver.api.dto.DriverResponse;
+import com.ndzela.admin.driver.api.dto.PartialPaymentRequest;
 import com.ndzela.admin.driver.api.dto.TemporaryPasswordRequest;
 import com.ndzela.admin.driver.application.DriverCredentialsService;
+import com.ndzela.admin.driver.application.DriverPartialPaymentService;
 import com.ndzela.admin.driver.application.DriverQueryService;
 
 import jakarta.validation.Valid;
@@ -27,11 +29,18 @@ import java.util.UUID;
 public class DriverCredentialsController {
     private final DriverCredentialsService credentials;
     private final DriverQueryService queries;
+    private final DriverPartialPaymentService partialPayments;
 
     @PutMapping("/{id}/contact")
     @PreAuthorize("hasAuthority('drivers:credentials')")
     public DriverResponse changeContact(@PathVariable UUID id, @Valid @RequestBody ChangeContactRequest request) {
         return queries.response(credentials.changeContact(id, request.email(), request.phone()));
+    }
+
+    @PutMapping("/{id}/partial-payment")
+    @PreAuthorize("hasAuthority('drivers:partial_payment')")
+    public DriverResponse allowPartialPayment(@PathVariable UUID id, @Valid @RequestBody PartialPaymentRequest request) {
+        return queries.response(partialPayments.allow(id, request.allowed()));
     }
 
     @PostMapping("/{id}/password-reset")

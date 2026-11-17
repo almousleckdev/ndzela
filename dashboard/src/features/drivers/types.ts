@@ -75,6 +75,8 @@ export interface Driver {
   country: Country | null;
   // Locked out of logging in by repeated failed attempts; cleared by drivers:unlock, separate from `status`.
   loginLocked: boolean;
+  // Staff let this driver pay only some of their late days in the app
+  partialPaymentAllowed: boolean;
   createdAt: string;
 }
 

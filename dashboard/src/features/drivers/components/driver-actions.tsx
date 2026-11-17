@@ -4,7 +4,9 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ReasonDialog } from "@/components/ui/reason-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
+import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions";
+import { CloseContractDialog } from "@/features/drivers/components/close-contract-dialog";
 import { ChangeContactDialog } from "@/features/drivers/components/change-contact-dialog";
 import { DeleteDriversDialog } from "@/features/drivers/components/delete-drivers-dialog";
 import { TemporaryPasswordDialog } from "@/features/drivers/components/temporary-password-dialog";
@@ -12,7 +14,7 @@ import { SuspendDialog } from "@/features/drivers/components/suspend-dialog";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver } from "@/features/drivers/types";
 
-export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "delete";
+export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "partial-payment" | "delete";
 export interface DriverAction { kind: DriverActionKind; driver: Driver }
 
 // The state-changing actions offered for a driver, according to their state and the viewer's permissions.
@@ -29,7 +31,10 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
     items.push({ kind: "change-contact", label: "Modifier l'email ou le téléphone" });
     items.push({ kind: "reset-password", label: "Nouveau mot de passe" });
   }
-  if (can(PERMISSIONS.DRIVERS_UPDATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Retirer le véhicule" });
+  if (can(PERMISSIONS.DRIVERS_UPDATE) && can(PERMISSIONS.CONTRACTS_TERMINATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Clôturer le contrat" });
+  if (can(PERMISSIONS.DRIVERS_PARTIAL_PAYMENT) && (driver.partialPaymentAllowed || driver.arrears.unpaidDays >= 3)) {
+    items.push({ kind: "partial-payment", label: driver.partialPaymentAllowed ? "Retirer le paiement partiel" : "Autoriser le paiement partiel" });
+  }
   if (can(PERMISSIONS.DRIVERS_DELETE) || can(PERMISSIONS.DRIVERS_PURGE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
   return items;
 }
@@ -37,7 +42,7 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
 const REASONED = {
   deactivate: { title: "Mettre ce chauffeur inactif ?", text: "Il quitte ou arrête le travail : son véhicule redevient disponible et son contrat en cours est résilié.", button: "Mettre inactif", success: "Chauffeur inactif.", run: driversService.deactivate, destructive: false },
   block: { title: "Bloquer ce chauffeur ?", text: "Le blocage est durable : seul un administrateur pourra le lever. Son véhicule redevient disponible et son contrat en cours est résilié.", button: "Bloquer", success: "Chauffeur bloqué.", run: driversService.block, destructive: true },
-  "remove-vehicle": { title: "Retirer le véhicule ?", text: "Le véhicule redeviendra disponible et le contrat en cours sera résilié. L'historique est conservé.", button: "Retirer", success: "Véhicule retiré.", run: driversService.removeVehicle, destructive: false },
+  "remove-vehicle": { success: "Contrat clôturé.", run: driversService.removeVehicle },
 } as const;
 
 interface DriverActionDialogsProps {
@@ -50,13 +55,44 @@ interface DriverActionDialogsProps {
 // The dialogs behind the driver actions
 export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDialogsProps) {
   const { addToast } = useToast();
+  const { can } = usePermissions();
   if (!target) return null;
   const { kind, driver } = target;
   const name = `${driver.personal.lastName} ${driver.personal.firstName}`;
 
   if (kind === "suspend") return <SuspendDialog driver={driver} name={name} onClose={onClose} onDone={() => onDone(kind)} />;
 
-  if (kind === "block" || kind === "deactivate" || kind === "remove-vehicle") {
+  if (kind === "remove-vehicle") {
+    return (
+      <CloseContractDialog driverId={driver.id} driverName={name} mayCollect={can(PERMISSIONS.PAYMENTS_CREATE)} onClose={onClose}
+        onConfirm={async (reason) => {
+          await REASONED["remove-vehicle"].run(driver.id, reason);
+          addToast({ title: "Succès", description: REASONED["remove-vehicle"].success, type: "success" });
+          onDone(kind);
+        }} />
+    );
+  }
+
+  if (kind === "partial-payment") {
+    const allowed = !driver.partialPaymentAllowed;
+    return (
+      <ConfirmDialog isOpen onClose={onClose} title={allowed ? "Autoriser le paiement partiel ?" : "Retirer le paiement partiel ?"}
+        description={allowed ? `${name} pourra payer un ou deux jours seulement dans l'application, même avec 3 jours ou plus en retard. L'autorisation s'arrête quand il n'a plus de retard.` : `${name} devra de nouveau tout payer d'un coup.`}
+        confirmText={allowed ? "Autoriser" : "Retirer"} cancelText="Annuler"
+        onConfirm={async () => {
+          try {
+            await driversService.allowPartialPayment(driver.id, allowed);
+            addToast({ title: "Succès", description: allowed ? "Paiement partiel autorisé." : "Paiement partiel retiré.", type: "success" });
+            onDone(kind);
+          } catch (error) {
+            addToast({ title: "Erreur", description: getErrorMessage(error, "L'action a échoué."), type: "error" });
+            onClose();
+          }
+        }} />
+    );
+  }
+
+  if (kind === "block" || kind === "deactivate") {
     const copy = REASONED[kind];
     return (
       <ReasonDialog title={copy.title} description={`${name}. ${copy.text}`} confirmText={copy.button} destructive={copy.destructive} onClose={onClose}

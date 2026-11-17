@@ -139,7 +139,7 @@ public class AccountQueryService {
             return new PayableDays(null, List.of(), null);
         }
         AccountState state = accounts.state(driver.countryId(), contract, Instant.now());
-        return new PayableDays(contract.id(), PaymentSelection.options(state), PaymentSelection.settleBy(state));
+        return new PayableDays(contract.id(), PaymentSelection.options(state, driver.partialPaymentAllowed()), PaymentSelection.settleBy(state));
     }
 
     @Transactional(readOnly = true)

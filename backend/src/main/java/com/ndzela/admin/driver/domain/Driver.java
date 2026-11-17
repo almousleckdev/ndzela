@@ -150,6 +150,10 @@ public class Driver extends TenantOwned {
     @Column(name = "unpaid_days", nullable = false)
     private int unpaidDays;
 
+    // Staff let this driver pay only some of their late days in the app (cleared once nothing is late)
+    @Column(name = "partial_payment_allowed", nullable = false)
+    private boolean partialPaymentAllowed;
+
     @Column(name = "paid_days", nullable = false)
     private int paidDays;
 
