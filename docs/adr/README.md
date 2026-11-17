@@ -5,6 +5,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 
 | ADR | Title | Status |
 | --- | --- | --- |
+| [0042](0042-stopping-a-charge-from-both-dashboards.md) | A running charge can be stopped from the NDZela admin and from the Zella dashboard | Accepted |
 | [0001](0001-modular-monolith-package-by-feature.md) | Modular monolith, package by feature with api/application/domain layers | Accepted |
 | [0002](0002-shared-database-country-tenancy.md) | Shared database, country as tenant, application-level filter | Accepted |
 | [0003](0003-staff-single-country-global-super-admin.md) | Staff belong to one country; super admin is global with a header filter | Superseded by 0023 |

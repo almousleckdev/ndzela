@@ -60,6 +60,33 @@ public class ZellaClient {
         return ZellaEvidenceParser.parse(get("/v1/partners/ndzela/evidence", cursor, limit, null));
     }
 
+    /** Asks the Zella app to stop the charge of a network session; it answers no content, or a refusal with its own code. */
+    public void stop(String transactionId) {
+        try {
+            client.post().uri("/v1/partners/ndzela/sessions/{transactionId}/stop", transactionId).header("X-Api-Key", props.apiKey()).retrieve().toBodilessEntity();
+        } catch (RestClientResponseException e) {
+            throw refusalOf(e);
+        } catch (RestClientException e) {
+            throw new ZellaException("The Zella app could not be reached.", e);
+        }
+    }
+
+    private ZellaException refusalOf(RestClientResponseException e) {
+        if (e.getStatusCode().value() == 404) {
+            return new ZellaRefusedException("SESSION_NOT_FOUND", e);
+        }
+        String code = codeOf(e);
+        return code != null && e.getStatusCode().is4xxClientError() ? new ZellaRefusedException(code, e) : failure(e);
+    }
+
+    private String codeOf(RestClientResponseException e) {
+        try {
+            return text(mapper.readTree(e.getResponseBodyAsString()), "code");
+        } catch (JacksonException unreadable) {
+            return null;
+        }
+    }
+
     private ZellaFeedPage read(String path, String cursor, int limit, String customerId, boolean ofACustomer) {
         return page(get(path, cursor, limit, customerId), ofACustomer);
     }

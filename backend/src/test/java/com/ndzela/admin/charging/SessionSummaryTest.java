@@ -38,6 +38,15 @@ class SessionSummaryTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void yesterdayIsTotalledApartFromToday() throws Exception {
+        session("1", "now()", 5000);
+        session("2", "now() - interval '1 day'", 3000);
+
+        mvc.perform(get("/api/v1/charging/sessions/summary").header("Authorization", bearer(manager))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.fcfaToday").value(5000)).andExpect(jsonPath("$.fcfaYesterday").value(3000));
+    }
+
+    @Test
     void anotherCountryAndAnonymousCallersSeeNothing() throws Exception {
         session("1", "now()", 5000);
 

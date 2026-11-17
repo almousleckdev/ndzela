@@ -25,6 +25,7 @@ export const chargingService = {
   record: (input: RecordRechargeInput) => apiClient<Recharge>("/charging/recharges", { method: "POST", body: input }),
 
   deleteRecharge: (id: string, reason: string) => apiClient(`/charging/recharges/${id}`, { method: "DELETE", body: { reason } }),
+  stopSession: (id: string) => apiClient(`/charging/sessions/${id}/stop`, { method: "POST" }),
   deleteSession: (id: string, reason: string) => apiClient(`/charging/sessions/${id}`, { method: "DELETE", body: { reason } }),
   reverse: (id: string, reason: string) => apiClient<Recharge>(`/charging/recharges/${id}/reverse`, { method: "POST", body: { reason } }),
 

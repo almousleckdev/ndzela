@@ -63,6 +63,9 @@ const CODE_MESSAGES: Record<string, string> = {
   TRAINING_CENTER_NAME_TAKEN: "Un centre de formation avec ce nom existe déjà.",
   TRAINING_CENTER_IN_USE: "Ce centre est utilisé par des chauffeurs.",
   PHONE_INVALID: "Numéro de téléphone invalide.",
+  SESSION_NOT_ACTIVE: "Cette recharge n'est plus en cours.",
+  STOP_REFUSED: "La borne a refusé l'arrêt. Réessayez dans un instant.",
+  ZELLA_UNAVAILABLE: "L'application Zella ne répond pas. Réessayez dans un instant.",
   VALIDATION_ERROR: "Certaines données sont invalides.",
 };
 

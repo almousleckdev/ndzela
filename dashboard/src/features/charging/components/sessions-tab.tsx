@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tabs } from "@/components/ui/tabs";
 import { ReasonDialog } from "@/components/ui/reason-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/hooks/use-toast";
 import { ActiveFilters, type ActiveFilter } from "@/components/data-table/active-filters";
 import { None, Stack } from "@/components/data-table/cells";
@@ -49,6 +51,8 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
 
   const { addToast } = useToast();
   const [detail, setDetail] = useState<ChargingSessionRow | null>(null);
+  const [stopping, setStopping] = useState<ChargingSessionRow | null>(null);
+  const [stopPending, setStopPending] = useState(false);
   const [deleting, setDeleting] = useState<ChargingSessionRow | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const summary = useAsync(() => chargingService.sessionSummary(kind), [kind]);
@@ -56,9 +60,10 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
   const s = summary.data;
   const kpis: Kpi[] = [
     { label: "Recharges du jour", value: s?.sessionsToday ?? "-" },
-    { label: "FCFA du jour", value: s ? formatFcfa(s.fcfaToday) : "-" },
-    { label: "FCFA de la semaine", value: s ? formatFcfa(s.fcfaWeek) : "-" },
-    { label: "FCFA du mois", value: s ? formatFcfa(s.fcfaMonth) : "-" },
+    { label: "Encaissé aujourd'hui", value: s ? formatFcfa(s.fcfaToday) : "-" },
+    { label: "Encaissé hier", value: s ? formatFcfa(s.fcfaYesterday) : "-" },
+    { label: "Encaissé dans la semaine", value: s ? formatFcfa(s.fcfaWeek) : "-" },
+    { label: "Encaissé ce mois", value: s ? formatFcfa(s.fcfaMonth) : "-" },
   ];
 
   const columns = useMemo(() => col.columns([
@@ -86,7 +91,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
       if (holderKindOf(row) === "PUBLIC") return <Badge>Sans objet (public)</Badge>;
       return can(PERMISSIONS.CHARGING_CREATE) ? <Button size="sm" variant="outline" onClick={() => onRecord(row)}>Enregistrer le paiement</Button> : <Badge variant="warning">À enregistrer</Badge>;
     } }),
-    col.display({ id: "detail", header: () => <span className="sr-only">Détail</span>, enableHiding: false, cell: (c) => <div className="flex justify-end gap-1"><Button size="sm" variant="ghost" onClick={() => setDetail(c.row.original)}>Détail</Button>{can(PERMISSIONS.CHARGING_DELETE) && !isRunning(c.row.original) && <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-50" onClick={() => setDeleting(c.row.original)}>Supprimer</Button>}</div> }),
+    col.display({ id: "detail", header: () => <span className="sr-only">Détail</span>, enableHiding: false, cell: (c) => <div className="flex justify-end gap-1"><Button size="sm" variant="ghost" onClick={() => setDetail(c.row.original)}>Détail</Button>{can(PERMISSIONS.CHARGING_STOP) && isRunning(c.row.original) && <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-50" onClick={() => setStopping(c.row.original)}>Arrêter</Button>}{can(PERMISSIONS.CHARGING_DELETE) && !isRunning(c.row.original) && <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-50" onClick={() => setDeleting(c.row.original)}>Supprimer</Button>}</div> }),
   ]), [can, onRecord]);
 
 
@@ -129,6 +134,22 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
             summary.reload();
           }} />
       )}
+      <ConfirmDialog isOpen={stopping !== null} onClose={() => setStopping(null)} isLoading={stopPending} destructive title="Arrêter cette recharge ?"
+        description={stopping ? `La borne ${stopping.chargePointId ?? ""} va recevoir l'ordre d'arrêter la session ${stopping.transactionId}.` : ""} confirmText="Arrêter la charge" cancelText="Annuler"
+        onConfirm={async () => {
+          if (!stopping) return;
+          setStopPending(true);
+          try {
+            await chargingService.stopSession(stopping.id);
+            addToast({ title: "Succès", description: "L'arrêt a été demandé à la borne.", type: "success" });
+            list.reload();
+          } catch (failure) {
+            addToast({ title: "Erreur", description: getErrorMessage(failure, "L'arrêt a échoué."), type: "error" });
+          } finally {
+            setStopPending(false);
+            setStopping(null);
+          }
+        }} />
       {detail && <SessionDetailDialog session={detail} onClose={() => setDetail(null)} />}
     </>
   );

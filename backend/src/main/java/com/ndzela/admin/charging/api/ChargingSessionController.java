@@ -3,6 +3,7 @@ package com.ndzela.admin.charging.api;
 import com.ndzela.admin.charging.api.dto.SessionSummary;
 import com.ndzela.admin.charging.application.ChargingSessionService;
 import com.ndzela.admin.charging.application.SessionDeletionService;
+import com.ndzela.admin.charging.application.SessionStopService;
 import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.dto.ReasonRequest;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,6 +33,7 @@ import java.util.UUID;
 public class ChargingSessionController {
     private final ChargingSessionService sessions;
     private final SessionDeletionService deletion;
+    private final SessionStopService stops;
 
     @GetMapping("/api/v1/charging/sessions")
     @PreAuthorize("hasAuthority('charging:read')")
@@ -52,6 +55,13 @@ public class ChargingSessionController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {
         deletion.deleteSession(id, request.reason());
+    }
+
+    @PostMapping("/api/v1/charging/sessions/{id}/stop")
+    @PreAuthorize("hasAuthority('charging:stop')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void stop(@PathVariable UUID id) {
+        stops.stop(id);
     }
 
     @GetMapping("/api/v1/charging/sessions/export")

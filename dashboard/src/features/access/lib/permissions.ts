@@ -55,6 +55,7 @@ export const PERMISSIONS = {
   CHARGING_MANAGE: "charging:manage",
   CHARGING_LINK: "charging:link",
   CHARGING_DELETE: "charging:delete",
+  CHARGING_STOP: "charging:stop",
   CONTRACTS_READ: "contracts:read",
   CONTRACTS_PRINT: "contracts:print",
   CONTRACTS_UPDATE: "contracts:update",

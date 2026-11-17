@@ -54,6 +54,7 @@ export type HolderKind = Exclude<SessionKind, "ALL">;
 export interface SessionSummary {
   sessionsToday: number;
   fcfaToday: number;
+  fcfaYesterday: number;
   fcfaWeek: number;
   fcfaMonth: number;
 }

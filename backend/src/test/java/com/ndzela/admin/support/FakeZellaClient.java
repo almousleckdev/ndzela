@@ -94,6 +94,23 @@ public class FakeZellaClient extends ZellaClient {
         calls.add("SUSPEND " + customerId + " " + owedMinor);
     }
 
+    private volatile String stopRefusal;
+
+    public void refuseStops(String code) {
+        stopRefusal = code;
+    }
+
+    @Override
+    public void stop(String transactionId) {
+        if (down) {
+            throw new ZellaException("down", null);
+        }
+        if (stopRefusal != null) {
+            throw new com.ndzela.admin.infrastructure.zella.ZellaRefusedException(stopRefusal, null);
+        }
+        calls.add("STOP " + transactionId);
+    }
+
     @Override
     public void restore(String customerId) {
         if (down) {
@@ -234,6 +251,7 @@ public class FakeZellaClient extends ZellaClient {
         asked.clear();
         linked.clear();
         calls.clear();
+        stopRefusal = null;
         down = false;
         feedPages.clear();
         feedAsked.clear();

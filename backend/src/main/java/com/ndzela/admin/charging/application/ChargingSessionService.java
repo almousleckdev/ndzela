@@ -55,13 +55,13 @@ public class ChargingSessionService {
         return new PageResponse<>(marked, found.page(), found.size(), found.total());
     }
 
-    // Sessions started today, and the calculated amount of the day, the week (Monday to Sunday) and the month, in the country's time zone
+    // Sessions started today, and the calculated amount of the day, yesterday, the week (Monday to Sunday) and the month, in the country's time zone
     @Transactional(readOnly = true)
     public SessionSummary summary(SessionKind kind) {
         var today = TenantHolder.current().isCountry() ? LocalDate.now(countries.zoneOf(TenantHolder.current().countryId()))
                 : countries.todayByCountry().values().stream().min(LocalDate::compareTo).orElse(LocalDate.now());
         List<SessionRow> day = inPeriod(ChargingPeriod.DAY, today, kind);
-        return new SessionSummary(day.size(), total(day), total(inPeriod(ChargingPeriod.WEEK, today, kind)), total(inPeriod(ChargingPeriod.MONTH, today, kind)));
+        return new SessionSummary(day.size(), total(day), total(inPeriod(ChargingPeriod.DAY, today.minusDays(1), kind)), total(inPeriod(ChargingPeriod.WEEK, today, kind)), total(inPeriod(ChargingPeriod.MONTH, today, kind)));
     }
 
     private List<SessionRow> inPeriod(ChargingPeriod period, LocalDate reference, SessionKind kind) {
