@@ -17,10 +17,13 @@ class DriverFilters {
     private final DriverLeaveService leaveService;
     private final com.ndzela.admin.country.application.DayRanges dayRanges;
 
-    // CURRENT: riders who are not archived, FORMER: the archived (INACTIVE) ones, anything else: everyone
+    // CURRENT: riders still working, FORMER: the old (INACTIVE) ones, ARCHIVED: the ones who resigned, anything else: everyone
     Specification<Driver> scope(String scope) {
         if ("CURRENT".equals(scope)) {
-            return (root, query, cb) -> cb.notEqual(root.get("status"), DriverStatus.INACTIVE);
+            return (root, query, cb) -> cb.not(root.get("status").in(DriverStatus.INACTIVE, DriverStatus.ARCHIVED));
+        }
+        if ("ARCHIVED".equals(scope)) {
+            return (root, query, cb) -> cb.equal(root.get("status"), DriverStatus.ARCHIVED);
         }
         return "FORMER".equals(scope) ? (root, query, cb) -> cb.equal(root.get("status"), DriverStatus.INACTIVE) : (root, query, cb) -> cb.conjunction();
     }

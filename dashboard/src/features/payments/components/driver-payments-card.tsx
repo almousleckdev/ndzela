@@ -28,6 +28,24 @@ export function DriverPaymentsCard({ driverId, contractStart, onChanged }: { dri
   const [halfDay, setHalfDay] = useState(false);
   const a = account.data;
   const refresh = () => { account.reload(); onChanged(); };
+  const entries = a && (
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Dernières écritures</h3>
+              <Link href={`/finance/history/${driverId}`} className="text-xs text-primary hover:underline">Tout l&apos;historique</Link>
+            </div>
+            {a.entries.length === 0 ? <p className="text-sm text-slate-500">Aucune écriture.</p> : (
+              <ul className="divide-y divide-slate-100 text-sm">
+                {a.entries.slice(0, 6).map((e) => (
+                  <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                    <span>{ENTRY_TYPE_LABELS[e.type]}{e.method ? ` · ${METHOD_LABELS[e.method]}` : ""}{e.reversed ? " (annulé)" : ""}<span className="ml-2 text-xs text-slate-500">{formatDateTime(e.createdAt)}</span></span>
+                    <span className={cn("font-medium", e.reversed ? "text-slate-400 line-through" : "text-slate-900")}>{formatFcfa(e.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+  );
 
   return (
     <Card>
@@ -42,7 +60,10 @@ export function DriverPaymentsCard({ driverId, contractStart, onChanged }: { dri
         )}
       </div>
       {!a ? <Skeleton className="h-32 w-full" /> : !a.contractId ? (
-        <p className="text-sm text-slate-500">Pas de contrat actif : aucun loyer n&apos;est dû.</p>
+        <div className="space-y-5">
+          <p className="text-sm text-slate-500">Pas de contrat actif : aucun loyer n&apos;est dû. L&apos;historique des paiements reste consultable.</p>
+          {entries}
+        </div>
       ) : (
         <div className="space-y-5">
           {a.progress && <ContractProgressBlock progress={a.progress} />}
@@ -60,22 +81,7 @@ export function DriverPaymentsCard({ driverId, contractStart, onChanged }: { dri
             <DaysHistory days={a.days} />
           </div>
 
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-900">Dernières écritures</h3>
-              <Link href={`/finance/history/${driverId}`} className="text-xs text-primary hover:underline">Tout l&apos;historique</Link>
-            </div>
-            {a.entries.length === 0 ? <p className="text-sm text-slate-500">Aucune écriture.</p> : (
-              <ul className="divide-y divide-slate-100 text-sm">
-                {a.entries.slice(0, 6).map((e) => (
-                  <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                    <span>{ENTRY_TYPE_LABELS[e.type]}{e.method ? ` · ${METHOD_LABELS[e.method]}` : ""}{e.reversed ? " (annulé)" : ""}<span className="ml-2 text-xs text-slate-500">{formatDateTime(e.createdAt)}</span></span>
-                    <span className={cn("font-medium", e.reversed ? "text-slate-400 line-through" : "text-slate-900")}>{formatFcfa(e.amount)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {entries}
         </div>
       )}
       {paying && a && <RecordPaymentDialog driverId={driverId} driverName={a.driverName} overdueAmount={a.overdueAmount} dailyRent={a.dailyRent} onClose={() => setPaying(false)} onSaved={() => { setPaying(false); refresh(); }} />}

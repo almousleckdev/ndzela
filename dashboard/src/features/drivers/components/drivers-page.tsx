@@ -41,7 +41,7 @@ import { useCountrySelectionStore } from "@/features/tenancy/store/country-selec
 
 type Filter = "ACTIVE" | "ON_LEAVE" | "LATE" | "INACTIVE" | "SUSPENDED" | "BLOCKED";
 type Scope = NonNullable<DriverQuery["scope"]>;
-const SCOPE_TABS: { value: Scope; label: string }[] = [{ value: "CURRENT", label: "Actuels" }, { value: "FORMER", label: "Anciens" }];
+const SCOPE_TABS: { value: Scope; label: string }[] = [{ value: "CURRENT", label: "Actuels" }, { value: "FORMER", label: "Anciens" }, { value: "ARCHIVED", label: "Archivés" }];
 
 // What a choice asks the server for
 function queryOf(filter: string): Pick<DriverQuery, "status" | "onLeave" | "late"> {
@@ -66,7 +66,7 @@ function DriversContent() {
   const query = useTableQuery({ sorting: [{ id: "lastName", desc: false }] });
   const { filters, range } = query;
   const scope = (filters.scope || "CURRENT") as Scope;
-  const server = scope === "FORMER" ? { status: "ALL" as const } : queryOf(filters.status ?? "");
+  const server = scope !== "CURRENT" ? { status: "ALL" as const } : queryOf(filters.status ?? "");
   const list = useAsync(() => driversService.list({ ...server, scope, q: query.q, from: range.from, to: range.to, sort: query.sort, page: query.page, size: query.size }), [filters.status, scope, query.q, range.from, range.to, query.sort, query.page, query.size]);
   const stats = useAsync(driversService.stats, []);
   const [action, setAction] = useState<DriverAction | null>(null);
@@ -157,7 +157,7 @@ function DriversContent() {
         { label: "Suspendus", value: s?.suspended ?? "-" },
         { label: "Assignés / sans véhicule", value: s ? `${s.assigned} / ${s.withoutVehicle}` : "-" },
       ]} />
-      <Tabs tabs={SCOPE_TABS.map((tab) => ({ ...tab, label: tab.value === "FORMER" && s ? `${tab.label} (${s.inactive})` : tab.label }))} value={scope} label="Chauffeurs"
+      <Tabs tabs={SCOPE_TABS.map((tab) => ({ ...tab, label: s && tab.value === "FORMER" ? `${tab.label} (${s.inactive})` : s && tab.value === "ARCHIVED" ? `${tab.label} (${s.archived})` : tab.label }))} value={scope} label="Chauffeurs"
         onChange={(value) => { query.setFilter("status", ""); query.setFilter("scope", value); }} />
       <Panel>
         <Toolbar start={(

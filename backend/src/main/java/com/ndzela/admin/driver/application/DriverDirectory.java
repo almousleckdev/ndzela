@@ -27,7 +27,7 @@ public class DriverDirectory {
     /** Drivers still working (not archived) who are not in `excluded`, oldest first. */
     @Transactional(readOnly = true)
     public List<DriverRef> candidates(Collection<UUID> excluded, int limit) {
-        Specification<Driver> spec = (root, query, cb) -> cb.notEqual(root.get("status"), DriverStatus.INACTIVE);
+        Specification<Driver> spec = (root, query, cb) -> cb.not(root.get("status").in(DriverStatus.INACTIVE, DriverStatus.ARCHIVED));
         if (!excluded.isEmpty()) {
             spec = spec.and((root, query, cb) -> cb.not(root.get("id").in(excluded)));
         }

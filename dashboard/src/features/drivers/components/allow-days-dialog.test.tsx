@@ -34,4 +34,15 @@ describe("AllowDaysDialog", () => {
 
     await waitFor(() => expect(allowDays).toHaveBeenCalledWith("d1", []));
   });
+
+  it("allows the oldest N days when a number is picked", async () => {
+    account.mockResolvedValue({ payableDays: [day("2026-10-01", false), day("2026-10-02", false), day("2026-10-03", false)] });
+    allowDays.mockResolvedValue({});
+
+    render(<AllowDaysDialog {...props} />);
+    fireEvent.change(await screen.findByLabelText("Nombre de jours autorisés"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() => expect(allowDays).toHaveBeenCalledWith("d1", ["2026-10-01", "2026-10-02"]));
+  });
 });

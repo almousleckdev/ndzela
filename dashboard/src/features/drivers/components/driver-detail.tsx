@@ -21,6 +21,7 @@ import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { DriverActionDialogs, availableActions, type DriverAction } from "@/features/drivers/components/driver-actions";
 import { DriverAvatar } from "@/features/drivers/components/driver-avatar";
 import { DriverLeavesDialog } from "@/features/drivers/components/driver-leaves-dialog";
+import { DriverHistoryCard } from "@/features/drivers/components/driver-history-card";
 import { DriverPaymentsCard } from "@/features/payments/components/driver-payments-card";
 import { DriverFilesCard } from "@/features/drivers/components/driver-files-card";
 import { AssignVehicleDialog } from "@/features/drivers/components/assign-vehicle-dialog";
@@ -128,6 +129,8 @@ function DriverDetailContent({ id }: { id: string }) {
           <p className="text-sm text-slate-500">Aucun contrat actif : le contrat est créé quand un véhicule est affecté.</p>
         )}
       </Card>
+
+      {can(PERMISSIONS.CONTRACTS_READ) && (d.status === "ARCHIVED" || d.status === "INACTIVE" || !d.contract) && <DriverHistoryCard driverId={id} />}
 
       {can(PERMISSIONS.PAYMENTS_READ) && <DriverPaymentsCard driverId={id} contractStart={d.contract?.startDate} onChanged={() => driver.reload()} />}
 

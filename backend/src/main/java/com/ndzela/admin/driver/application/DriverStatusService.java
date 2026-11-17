@@ -64,13 +64,23 @@ public class DriverStatusService {
         return change(driver, DriverStatus.INACTIVE, reason, "DRIVER_DEACTIVATED", null, false);
     }
 
+    // A driver who resigned; the caller frees the car and checks nothing is owed
+    @Transactional
+    public Driver archive(UUID id, String reason) {
+        Driver driver = load(id);
+        if (driver.getStatus() == DriverStatus.BLOCKED || driver.getStatus() == DriverStatus.ARCHIVED) {
+            throw new BusinessRuleViolationException("DRIVER_NOT_ARCHIVABLE", "A blocked or already archived driver cannot be archived.");
+        }
+        return change(driver, DriverStatus.ARCHIVED, reason, "DRIVER_ARCHIVED", null, false);
+    }
+
     @Transactional
     public Driver reactivate(UUID id, Set<String> permissions) {
         Driver driver = load(id);
         String needed = switch (driver.getStatus()) {
             case SUSPENDED -> "drivers:suspend";
             case BLOCKED -> "drivers:block";
-            case INACTIVE -> "drivers:update";
+            case INACTIVE, ARCHIVED -> "drivers:update";
             case ACTIVE -> null;
         };
         if (needed != null && !permissions.contains(needed)) {

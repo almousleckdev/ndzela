@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class DriverExportService {
     static final int MAX_ROWS = 10_000;
     private static final Map<DriverStatus, String> STATUS = Map.of(DriverStatus.ACTIVE, "Actif", DriverStatus.SUSPENDED, "Suspendu",
-            DriverStatus.BLOCKED, "Bloqué", DriverStatus.INACTIVE, "Inactif");
+            DriverStatus.BLOCKED, "Bloqué", DriverStatus.INACTIVE, "Inactif", DriverStatus.ARCHIVED, "Archivé");
 
     private final DriverRepository drivers;
     private final VehicleAssignmentRepository assignments;

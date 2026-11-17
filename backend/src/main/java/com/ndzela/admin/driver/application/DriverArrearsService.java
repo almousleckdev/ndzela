@@ -107,7 +107,7 @@ public class DriverArrearsService {
     @Transactional(readOnly = true)
     public Page<DriverRef> page(ArrearsLevel level, boolean lateOnly, String q, java.time.LocalDate lateFrom, java.time.LocalDate lateTo, String sort, int page, int size) {
         Specification<Driver> spec = filters.spec(null, null, null, q).and(dayRanges.within("overdueSince", lateFrom, lateTo))
-                .and((root, query, cb) -> cb.notEqual(root.get("status"), DriverStatus.INACTIVE));
+                .and((root, query, cb) -> cb.not(root.get("status").in(DriverStatus.INACTIVE, DriverStatus.ARCHIVED)));
         if (level != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("arrearsLevel"), level));
         } else if (lateOnly) {
@@ -117,10 +117,10 @@ public class DriverArrearsService {
         return drivers.findAll(spec, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), order)).map(DriverRef::from);
     }
 
-    // The archived (INACTIVE) riders, whose payments are the former riders' history
+    // The old (INACTIVE) and archived riders, whose payments are the former riders' history
     @Transactional(readOnly = true)
     public List<UUID> formerIds() {
-        return drivers.findAll((root, query, cb) -> cb.equal(root.get("status"), DriverStatus.INACTIVE)).stream().map(Driver::getId).toList();
+        return drivers.findAll((root, query, cb) -> root.get("status").in(DriverStatus.INACTIVE, DriverStatus.ARCHIVED)).stream().map(Driver::getId).toList();
     }
 
     @Transactional(readOnly = true)

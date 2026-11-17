@@ -169,11 +169,25 @@ public class DriverService {
     @Transactional
     public DriverResponse removeVehicle(UUID id, String reason) {
         Driver driver = load(id);
-        if (driver.getUnpaidDays() > 0 || driver.getOverdueAmount().signum() > 0) {
-            throw new BusinessRuleViolationException("CONTRACT_HAS_ARREARS", "The late rent must be paid before the contract can be closed.");
-        }
+        requireNothingOwed(driver);
         assignmentService.unassign(driver, reason);
         return queries.response(driver);
+    }
+
+    // A driver who resigned: archived with the whole history, the contract ended and the car freed. Nothing may be owed.
+    @Transactional
+    public DriverResponse archive(UUID id, String reason) {
+        Driver driver = load(id);
+        requireNothingOwed(driver);
+        statusService.archive(id, reason);
+        assignmentService.releaseIfAny(driver, reason);
+        return queries.response(driver);
+    }
+
+    private static void requireNothingOwed(Driver driver) {
+        if (driver.getUnpaidDays() > 0 || driver.getOverdueAmount().signum() > 0) {
+            throw new BusinessRuleViolationException("CONTRACT_HAS_ARREARS", "The late rent must be paid first.");
+        }
     }
 
     private Driver load(UUID id) {

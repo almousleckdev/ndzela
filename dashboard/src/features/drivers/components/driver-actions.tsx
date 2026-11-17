@@ -15,13 +15,13 @@ import { SuspendDialog } from "@/features/drivers/components/suspend-dialog";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver } from "@/features/drivers/types";
 
-export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "partial-payment" | "delete";
+export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "archive" | "partial-payment" | "delete";
 export interface DriverAction { kind: DriverActionKind; driver: Driver }
 
 // The state-changing actions offered for a driver, according to their state and the viewer's permissions.
 export function availableActions(driver: Driver, can: (permission: Permission) => boolean): { kind: DriverActionKind; label: string; destructive?: boolean }[] {
   const items: { kind: DriverActionKind; label: string; destructive?: boolean }[] = [];
-  const liftedBy = { ACTIVE: null, SUSPENDED: PERMISSIONS.DRIVERS_SUSPEND, BLOCKED: PERMISSIONS.DRIVERS_BLOCK, INACTIVE: PERMISSIONS.DRIVERS_UPDATE } as const;
+  const liftedBy = { ACTIVE: null, SUSPENDED: PERMISSIONS.DRIVERS_SUSPEND, BLOCKED: PERMISSIONS.DRIVERS_BLOCK, INACTIVE: PERMISSIONS.DRIVERS_UPDATE, ARCHIVED: PERMISSIONS.DRIVERS_UPDATE } as const;
   if (can(PERMISSIONS.DRIVERS_SUSPEND) && (driver.status === "ACTIVE" || driver.status === "INACTIVE")) items.push({ kind: "suspend", label: "Suspendre" });
   if (can(PERMISSIONS.DRIVERS_UPDATE) && driver.status === "ACTIVE") items.push({ kind: "deactivate", label: "Mettre inactif" });
   const lifter = liftedBy[driver.status];
@@ -33,6 +33,7 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
     items.push({ kind: "reset-password", label: "Nouveau mot de passe" });
   }
   if (can(PERMISSIONS.DRIVERS_UPDATE) && can(PERMISSIONS.CONTRACTS_TERMINATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Clôturer le contrat" });
+  if (can(PERMISSIONS.DRIVERS_ARCHIVE) && driver.status !== "BLOCKED" && driver.status !== "ARCHIVED") items.push({ kind: "archive", label: "Archiver (démission)" });
   if (can(PERMISSIONS.DRIVERS_PARTIAL_PAYMENT) && driver.arrears.unpaidDays >= 3) items.push({ kind: "partial-payment", label: "Autoriser le paiement partiel" });
   if (can(PERMISSIONS.DRIVERS_DELETE) || can(PERMISSIONS.DRIVERS_PURGE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
   return items;
@@ -67,6 +68,19 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
         onConfirm={async (reason) => {
           await REASONED["remove-vehicle"].run(driver.id, reason);
           addToast({ title: "Succès", description: REASONED["remove-vehicle"].success, type: "success" });
+          onDone(kind);
+        }} />
+    );
+  }
+
+  if (kind === "archive") {
+    return (
+      <CloseContractDialog driverId={driver.id} driverName={name} mayCollect={can(PERMISSIONS.PAYMENTS_CREATE)} onClose={onClose}
+        title="Archiver ce chauffeur ?" confirmText="Archiver"
+        description={`${name} a démissionné : son contrat est clôturé, le véhicule redevient disponible et il ne peut plus se connecter. Contrat, véhicule et paiements restent consultables dans l'onglet Archivés.`}
+        onConfirm={async (reason) => {
+          await driversService.archive(driver.id, reason);
+          addToast({ title: "Succès", description: "Chauffeur archivé.", type: "success" });
           onDone(kind);
         }} />
     );

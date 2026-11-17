@@ -58,7 +58,7 @@ public class EarningsService {
         }
         Map<UUID, BigDecimal> perDriver = paidByDriver(start, end).stream().collect(Collectors.toMap(Paid::driverId, Paid::total));
         Map<UUID, DriverRef> refs = drivers.refs(perDriver.keySet());
-        BigDecimal former = perDriver.entrySet().stream().filter(e -> refs.get(e.getKey()) != null && refs.get(e.getKey()).status() == DriverStatus.INACTIVE)
+        BigDecimal former = perDriver.entrySet().stream().filter(e -> refs.get(e.getKey()) != null && refs.get(e.getKey()).status().isFormer())
                 .map(Map.Entry::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new EarningsResponse(whole(collected), whole(fees), whole(collected.subtract(fees)), perDriver.size(), whole(collected.subtract(former)), whole(former), months(zone, start, end));
     }
@@ -79,7 +79,7 @@ public class EarningsService {
             DriverRef d = refs.get(p.driverId());
             ContractResponse c = active.get(p.driverId());
             String number = c != null ? c.contractNumber() : contracts.ofDriver(p.driverId()).stream().findFirst().map(ContractResponse::contractNumber).orElse(null);
-            return new EarningsDriverRow(p.driverId(), d.fullName(), d.status().name(), d.status() == DriverStatus.INACTIVE, number, whole(p.total()), p.last());
+            return new EarningsDriverRow(p.driverId(), d.fullName(), d.status().name(), d.status().isFormer(), number, whole(p.total()), p.last());
         }).toList();
         return new PageResponse<>(items, page, size, kept.size());
     }

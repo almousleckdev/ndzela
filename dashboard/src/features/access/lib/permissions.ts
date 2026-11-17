@@ -41,6 +41,7 @@ export const PERMISSIONS = {
   DRIVERS_PURGE: "drivers:purge",
   DRIVERS_CREDENTIALS: "drivers:credentials",
   DRIVERS_PARTIAL_PAYMENT: "drivers:partial_payment",
+  DRIVERS_ARCHIVE: "drivers:archive",
   EARNINGS_READ: "earnings:read",
   PAYMENTS_READ: "payments:read",
   PAYMENTS_CREATE: "payments:create",
@@ -135,6 +136,7 @@ const ACTION_LABELS: Record<string, string> = {
   delete: "Supprimer",
   purge: "Supprimer avec l'argent enregistré",
   declare: "Déclarer et annuler",
+  archive: "Archiver un chauffeur qui démissionne",
   terminate: "Clôturer un contrat (loyers payés)",
   partial_payment: "Autoriser le paiement partiel (3 jours ou plus)",
 };

@@ -57,3 +57,21 @@ describe("availableActions: partial payment for a driver with 3 late days or mor
     expect(availableActions(late(5), holding(PERMISSIONS.DRIVERS_UPDATE)).map((action) => action.kind)).not.toContain("partial-payment");
   });
 });
+
+describe("availableActions: archiving a driver who resigned", () => {
+  it("is offered with drivers:archive, except for a blocked or already archived driver", () => {
+    const archive = (status: string, ...held: Permission[]) => availableActions({ ...driver, status } as unknown as Driver, holding(...held)).map((action) => action.kind).includes("archive");
+
+    expect(archive("ACTIVE", PERMISSIONS.DRIVERS_ARCHIVE)).toBe(true);
+    expect(archive("SUSPENDED", PERMISSIONS.DRIVERS_ARCHIVE)).toBe(true);
+    expect(archive("BLOCKED", PERMISSIONS.DRIVERS_ARCHIVE)).toBe(false);
+    expect(archive("ARCHIVED", PERMISSIONS.DRIVERS_ARCHIVE)).toBe(false);
+    expect(archive("ACTIVE", PERMISSIONS.DRIVERS_UPDATE)).toBe(false);
+  });
+
+  it("lets drivers:update bring an archived driver back", () => {
+    const labels = availableActions({ ...driver, status: "ARCHIVED" } as unknown as Driver, holding(PERMISSIONS.DRIVERS_UPDATE)).map((action) => action.label);
+
+    expect(labels).toContain("Réactiver");
+  });
+});

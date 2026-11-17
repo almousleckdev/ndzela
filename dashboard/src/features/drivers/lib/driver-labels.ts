@@ -19,9 +19,9 @@ export const RELATIONSHIP_LABELS: Record<Relationship, string> = {
   OTHER: "Autre",
 };
 
-export const DRIVER_STATUS_LABELS: Record<DriverStatus, string> = { ACTIVE: "Actif", SUSPENDED: "Suspendu", BLOCKED: "Bloqué", INACTIVE: "Inactif" };
+export const DRIVER_STATUS_LABELS: Record<DriverStatus, string> = { ACTIVE: "Actif", SUSPENDED: "Suspendu", BLOCKED: "Bloqué", INACTIVE: "Inactif", ARCHIVED: "Archivé" };
 
-export const DRIVER_STATUS_VARIANTS = { ACTIVE: "success", SUSPENDED: "warning", BLOCKED: "danger", INACTIVE: "neutral" } as const;
+export const DRIVER_STATUS_VARIANTS = { ACTIVE: "success", SUSPENDED: "warning", BLOCKED: "danger", INACTIVE: "neutral", ARCHIVED: "neutral" } as const;
 
 // The badge of a driver
 export function displayStatus(driver: Driver): { label: string; variant: "success" | "warning" | "danger" | "neutral" | "info" } {

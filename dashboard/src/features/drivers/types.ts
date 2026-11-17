@@ -2,7 +2,7 @@ import type { Country } from "@/features/auth/types";
 import type { Contract } from "@/features/contracts/types";
 import type { Vehicle } from "@/features/vehicles/types";
 
-export type DriverStatus = "ACTIVE" | "SUSPENDED" | "BLOCKED" | "INACTIVE";
+export type DriverStatus = "ACTIVE" | "SUSPENDED" | "BLOCKED" | "INACTIVE" | "ARCHIVED";
 export type Civility = "MALE" | "FEMALE";
 export type IdType = "NATIONAL_ID" | "PASSPORT";
 export type LicenceCategory = "A" | "B" | "C" | "D";
@@ -85,6 +85,7 @@ export interface DriverStats {
   suspended: number;
   blocked: number;
   inactive: number;
+  archived: number;
   assigned: number;
   withoutVehicle: number;
   late: number;
@@ -117,8 +118,8 @@ export interface LeaveInput {
 
 export interface DriverQuery {
   status: DriverStatus | "ALL";
-  // CURRENT: riders who are not archived, FORMER: the archived ones
-  scope?: "CURRENT" | "FORMER";
+  // CURRENT: riders still working, FORMER: the old ones, ARCHIVED: the ones who resigned
+  scope?: "CURRENT" | "FORMER" | "ARCHIVED";
   // true
   onLeave?: boolean;
   // true

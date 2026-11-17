@@ -67,7 +67,7 @@ public class DriverQueryService {
         long assigned = assignments.countByEndedAtIsNull();
         long late = drivers.count(filters.spec(null, null, true, null));
         return new DriverStats(total, byStatus.get(DriverStatus.ACTIVE) - onLeave, onLeave, byStatus.get(DriverStatus.SUSPENDED),
-                byStatus.get(DriverStatus.BLOCKED), byStatus.get(DriverStatus.INACTIVE), assigned, Math.max(total - assigned, 0), late);
+                byStatus.get(DriverStatus.BLOCKED), byStatus.get(DriverStatus.INACTIVE), byStatus.get(DriverStatus.ARCHIVED), assigned, Math.max(total - assigned, 0), late);
     }
 
     @Transactional(readOnly = true)

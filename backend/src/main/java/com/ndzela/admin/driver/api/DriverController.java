@@ -104,6 +104,12 @@ public class DriverController {
         return drivers.suspend(id, request.reason(), Boolean.TRUE.equals(request.releaseVehicle()));
     }
 
+    @PostMapping("/{id}/archive")
+    @PreAuthorize("hasAuthority('drivers:archive')")
+    public DriverResponse archive(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {
+        return drivers.archive(id, request.reason());
+    }
+
     @PostMapping("/{id}/deactivate")
     @PreAuthorize("hasAuthority('drivers:update')")
     public DriverResponse deactivate(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {

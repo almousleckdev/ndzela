@@ -44,7 +44,7 @@ Payments settle **whole daily rents, oldest first** ([ADR-0021](../adr/0021-day-
 
 **Receipt.** One server-drawn ticket-style PDF (80 mm wide) per confirmed or recorded payment: company, number, date and time, driver, contract, operator, masked phone, transaction, a line per rent day with the exact payment time, penalties, credit kept, fee, total, a QR code that opens the receipt's public page on the website ([ADR-0030](../adr/0030-receipt-qr-opens-a-public-payment-page.md)). **No RCCM.** Staff download it from the Transactions table ("Reçu"); a reversed payment's receipt says ANNULÉ.
 
-**Former riders** are the archived (`INACTIVE`) drivers: Chauffeurs has the tabs Actuels and Anciens, and the Transactions table a Chauffeurs filter (`scope=CURRENT|FORMER`).
+**Former riders** are the old (`INACTIVE`) and archived (`ARCHIVED`) drivers: Chauffeurs has the tabs Actuels, Anciens (`INACTIVE`) and Archivés (`ARCHIVED`), and the Transactions table a Chauffeurs filter (`scope=CURRENT|FORMER`).
 
 ## Escalation (Decided; reconciled with the contract on 2026-10-14)
 

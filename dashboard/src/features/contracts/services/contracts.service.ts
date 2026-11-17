@@ -4,6 +4,8 @@ import type { Contract, ContractTerms } from "@/features/contracts/types";
 export const contractsService = {
   preview: (vehicleId: string, deposit: number) => apiClient<ContractTerms>("/contracts/preview", { method: "POST", body: { vehicleId, deposit } }),
 
+  ofDriver: (driverId: string) => apiClient<Contract[]>(`/contracts?driverId=${driverId}`),
+
   get: (id: string) => apiClient<Contract>(`/contracts/${id}`),
 
   pdfPath: (id: string) => `/contracts/${id}/pdf`,

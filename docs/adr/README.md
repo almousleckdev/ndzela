@@ -5,7 +5,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 
 | ADR | Title | Status |
 | --- | --- | --- |
-| [0042](0042-stopping-a-charge-from-both-dashboards.md) | A running charge can be stopped from the NDZela admin and from the Zella dashboard | Accepted |
+| [0041](0041-contract-closing-and-partial-payment-exception.md) | Contracts close only when paid; staff can lift the all-or-nothing rule for one driver | Accepted |
 | [0001](0001-modular-monolith-package-by-feature.md) | Modular monolith, package by feature with api/application/domain layers | Accepted |
 | [0002](0002-shared-database-country-tenancy.md) | Shared database, country as tenant, application-level filter | Accepted |
 | [0003](0003-staff-single-country-global-super-admin.md) | Staff belong to one country; super admin is global with a header filter | Superseded by 0023 |
@@ -46,7 +46,8 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0038](0038-rent-is-due-the-next-day-at-noon.md) | Rent is due the next day at noon (replaces 0029) | Accepted |
 | [0039](0039-yesterdays-rent-is-owed-from-midnight.md) | Yesterday's rent is owed from midnight, late after noon | Superseded by 0040 |
 | [0040](0040-only-late-rent-is-shown-and-payable.md) | Only late rent is shown and payable: nothing before 12:00 | Accepted |
-| [0041](0041-contract-closing-and-partial-payment-exception.md) | Contracts close only when paid; staff can lift the all-or-nothing rule for one driver | Accepted |
+| [0042](0042-resigned-drivers-are-archived.md) | Resigned drivers are archived with their whole history | Accepted |
+| [0042](0042-stopping-a-charge-from-both-dashboards.md) | A running charge can be stopped from the NDZela admin and from the Zella dashboard | Accepted |
 | [0040](0040-zella-reads-a-linked-drivers-contract-and-car.md) | The Zella app reads a linked driver's contract and car | Accepted |
 ||||||| 9158784 (feat: count yesterday's rent as owed from 00:00, late after 12:00)
 
