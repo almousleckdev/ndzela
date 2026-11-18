@@ -18,6 +18,7 @@ import com.ndzela.admin.vehicle.domain.Vehicle;
 import com.ndzela.admin.vehicle.domain.VehicleRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +27,11 @@ import java.util.Locale;
 import java.util.UUID;
 
 // A staff member's Zella account and car, and their free charging: Zella owns the free access, we only ask for it.
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StaffAccessService {
+    private static final java.util.regex.Pattern E164 = java.util.regex.Pattern.compile("^\\+[1-9][0-9]{7,14}$");
     private static final String UNAVAILABLE = "ZELLA_UNAVAILABLE";
 
     private final UserRepository users;
@@ -92,10 +95,11 @@ public class StaffAccessService {
     }
 
     private ZellaMatch accountOf(User user) {
-        if (isBlank(user.getPhoneNumber()) || isBlank(user.getEmail())) {
+        String phone = isBlank(user.getPhoneNumber()) ? "" : user.getPhoneNumber().replaceAll("[\\s().-]", "");
+        if (!E164.matcher(phone).matches() || isBlank(user.getEmail())) {
             throw new BusinessRuleViolationException("STAFF_CONTACT_REQUIRED", "The user needs an e-mail and a phone number to be matched with their Zella account.");
         }
-        List<ZellaMatch> found = lookup(new ZellaDriver(user.getId().toString(), user.getEmail().trim().toLowerCase(Locale.ROOT), user.getPhoneNumber().trim()));
+        List<ZellaMatch> found = lookup(new ZellaDriver(user.getId().toString(), user.getEmail().trim().toLowerCase(Locale.ROOT), phone));
         if (found.size() != 1) {
             throw new BusinessRuleViolationException("ZELLA_ACCOUNT_NOT_FOUND", "No single Zella account matches this user's e-mail and phone number.");
         }
@@ -109,6 +113,7 @@ public class StaffAccessService {
         try {
             return zella.lookup(List.of(driver)).stream().flatMap(result -> result.matches().stream()).filter(ZellaMatch::matchedBoth).toList();
         } catch (ZellaException e) {
+            log.warn("Zella lookup of a staff member failed: {}", e.getMessage(), e.getCause());
             throw new BusinessRuleViolationException(UNAVAILABLE, "The Zella app is not reachable.");
         }
     }
@@ -117,6 +122,7 @@ public class StaffAccessService {
         try {
             call.run();
         } catch (ZellaException e) {
+            log.warn("Zella refused a staff access change: {}", e.getMessage(), e.getCause());
             throw new BusinessRuleViolationException(UNAVAILABLE, "The Zella app is not reachable.");
         }
     }

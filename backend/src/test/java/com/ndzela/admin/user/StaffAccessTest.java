@@ -88,6 +88,23 @@ class StaffAccessTest extends AbstractDriverTest {
     }
 
     @Test
+    void aPhoneWrittenWithSpacesIsStillMatched() throws Exception {
+        member.setPhoneNumber("+241 77 00 11 22");
+        users.save(member);
+
+        save(root, "{\"freeCharging\":true}").andExpect(status().isOk()).andExpect(jsonPath("$.linked").value(true));
+    }
+
+    @Test
+    void aPhoneWithoutTheCountryCodeIsExplained() throws Exception {
+        member.setPhoneNumber("077001122");
+        users.save(member);
+
+        save(root, "{\"freeCharging\":true}").andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("STAFF_CONTACT_REQUIRED"));
+    }
+
+    @Test
     void anAdministratorCannotGiveFreeCharging() throws Exception {
         save(admin, "{\"freeCharging\":true}").andExpect(status().isForbidden());
         send(get(url()), manager).andExpect(status().isForbidden());
