@@ -42,6 +42,15 @@ class DriverArchiveTest extends AbstractDriverTest {
     }
 
     @Test
+    void staleFiguresOfADriverWithoutAContractDoNotBlockTheArchive() throws Exception {
+        String driver = driverWithCar();
+        jdbc.update("update contracts set status = 'TERMINATED', ended_at = now()");
+        jdbc.update("update drivers set unpaid_days = 2, overdue_amount = 46000 where id = ?::uuid", driver);
+
+        postJson("/api/v1/drivers/" + driver + "/archive", REASON, admin).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ARCHIVED"));
+    }
+
+    @Test
     void anArchivedDriverIsLeftOutOfTheFollowUpAndCannotUseTheApp() throws Exception {
         String driver = driverWithCar();
         postJson("/api/v1/drivers/" + driver + "/archive", REASON, admin).andExpect(status().isOk());

@@ -7,6 +7,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions";
 import { AllowDaysDialog } from "@/features/drivers/components/allow-days-dialog";
+import { CancelDaysDialog } from "@/features/drivers/components/cancel-days-dialog";
 import { CloseContractDialog } from "@/features/drivers/components/close-contract-dialog";
 import { ChangeContactDialog } from "@/features/drivers/components/change-contact-dialog";
 import { DeleteDriversDialog } from "@/features/drivers/components/delete-drivers-dialog";
@@ -15,7 +16,7 @@ import { SuspendDialog } from "@/features/drivers/components/suspend-dialog";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver } from "@/features/drivers/types";
 
-export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "archive" | "partial-payment" | "delete";
+export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "archive" | "partial-payment" | "cancel-days" | "delete";
 export interface DriverAction { kind: DriverActionKind; driver: Driver }
 
 // The state-changing actions offered for a driver, according to their state and the viewer's permissions.
@@ -34,6 +35,7 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
   }
   if (can(PERMISSIONS.DRIVERS_UPDATE) && can(PERMISSIONS.CONTRACTS_TERMINATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Clôturer le contrat" });
   if (can(PERMISSIONS.DRIVERS_ARCHIVE) && driver.status !== "BLOCKED" && driver.status !== "ARCHIVED") items.push({ kind: "archive", label: "Archiver (démission)" });
+  if (can(PERMISSIONS.PAYMENTS_CANCEL_DAYS) && driver.vehicle) items.push({ kind: "cancel-days", label: "Annuler des jours de loyer" });
   if (can(PERMISSIONS.DRIVERS_PARTIAL_PAYMENT) && driver.arrears.unpaidDays >= 3) items.push({ kind: "partial-payment", label: "Autoriser le paiement partiel" });
   if (can(PERMISSIONS.DRIVERS_DELETE) || can(PERMISSIONS.DRIVERS_PURGE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
   return items;
@@ -64,7 +66,7 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
 
   if (kind === "remove-vehicle") {
     return (
-      <CloseContractDialog driverId={driver.id} driverName={name} mayCollect={can(PERMISSIONS.PAYMENTS_CREATE)} onClose={onClose}
+      <CloseContractDialog driverId={driver.id} driverName={name} mayCollect={can(PERMISSIONS.PAYMENTS_CREATE)} mayCancelDays={can(PERMISSIONS.PAYMENTS_CANCEL_DAYS)} onClose={onClose}
         onConfirm={async (reason) => {
           await REASONED["remove-vehicle"].run(driver.id, reason);
           addToast({ title: "Succès", description: REASONED["remove-vehicle"].success, type: "success" });
@@ -75,7 +77,7 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
 
   if (kind === "archive") {
     return (
-      <CloseContractDialog driverId={driver.id} driverName={name} mayCollect={can(PERMISSIONS.PAYMENTS_CREATE)} onClose={onClose}
+      <CloseContractDialog driverId={driver.id} driverName={name} mayCollect={can(PERMISSIONS.PAYMENTS_CREATE)} mayCancelDays={can(PERMISSIONS.PAYMENTS_CANCEL_DAYS)} onClose={onClose}
         title="Archiver ce chauffeur ?" confirmText="Archiver"
         description={`${name} a démissionné : son contrat est clôturé, le véhicule redevient disponible et il ne peut plus se connecter. Contrat, véhicule et paiements restent consultables dans l'onglet Archivés.`}
         onConfirm={async (reason) => {
@@ -84,6 +86,10 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
           onDone(kind);
         }} />
     );
+  }
+
+  if (kind === "cancel-days") {
+    return <CancelDaysDialog driverId={driver.id} driverName={name} onClose={onClose} onSaved={() => { addToast({ title: "Succès", description: "Jours de loyer mis à jour.", type: "success" }); onDone(kind); }} />;
   }
 
   if (kind === "partial-payment") {

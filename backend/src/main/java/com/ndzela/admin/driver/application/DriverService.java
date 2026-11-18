@@ -184,8 +184,10 @@ public class DriverService {
         return queries.response(driver);
     }
 
-    private static void requireNothingOwed(Driver driver) {
-        if (driver.getUnpaidDays() > 0 || driver.getOverdueAmount().signum() > 0) {
+    // Without an active contract nothing accrues any more, so figures left on the driver row are stale and do not block
+    private void requireNothingOwed(Driver driver) {
+        boolean owes = driver.getUnpaidDays() > 0 || driver.getOverdueAmount().signum() > 0;
+        if (owes && contractService.activeOf(List.of(driver.getId())).containsKey(driver.getId())) {
             throw new BusinessRuleViolationException("CONTRACT_HAS_ARREARS", "The late rent must be paid first.");
         }
     }

@@ -32,6 +32,7 @@ const CODE_MESSAGES: Record<string, string> = {
   CONTRACT_ALREADY_ACTIVE: "Ce chauffeur ou ce véhicule a déjà un contrat actif.",
   DEPOSIT_INVALID: "La caution doit être un montant entier supérieur à 0.",
   PAYMENT_REFERENCE_REQUIRED: "Indiquez la référence du paiement (obligatoire hors espèces).",
+  CONTRACT_HAS_ARREARS: "Des loyers restent à payer : encaissez-les ou annulez les jours que le chauffeur ne doit pas.",
   NO_ACTIVE_CONTRACT: "Ce chauffeur n'a pas de contrat actif.",
   ENTRY_ALREADY_REVERSED: "Cette écriture a déjà été annulée.",
   ENTRY_NOT_REVERSIBLE: "Seul un paiement ou un délai accordé peut être annulé.",

@@ -51,7 +51,7 @@ public final class AccountCalculator {
         LocalDate today = in.now().atZone(in.zone()).toLocalDate();
         LocalDate last = min(in.contractEnd(), in.endedOn() == null ? today : in.endedOn(), today);
         for (LocalDate day = in.contractStart().plusDays(1); !day.isAfter(last); day = day.plusDays(1)) {
-            if (day.getDayOfWeek() == DayOfWeek.SUNDAY || onLeave(in.leaves(), day)) {
+            if (day.getDayOfWeek() == DayOfWeek.SUNDAY || onLeave(in.leaves(), day) || in.cancelledDays().contains(day)) {
                 continue;
             }
             BigDecimal rent = rentOf(day, in);
@@ -66,7 +66,7 @@ public final class AccountCalculator {
             }
         }
         for (AccountEntry e : in.entries()) {
-            if (e.type() == LedgerEntryType.PENALTY && e.businessDay() != null) {
+            if (e.type() == LedgerEntryType.PENALTY && e.businessDay() != null && !in.cancelledDays().contains(e.businessDay())) {
                 charges.add(new AccountCharge(e.businessDay(), dueAt(e.businessDay(), in.zone()).plus(URGENT), e.amount(), true));
             }
         }

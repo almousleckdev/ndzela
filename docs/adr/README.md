@@ -47,6 +47,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0039](0039-yesterdays-rent-is-owed-from-midnight.md) | Yesterday's rent is owed from midnight, late after noon | Superseded by 0040 |
 | [0040](0040-only-late-rent-is-shown-and-payable.md) | Only late rent is shown and payable: nothing before 12:00 | Accepted |
 | [0042](0042-resigned-drivers-are-archived.md) | Resigned drivers are archived with their whole history | Accepted |
+| [0043](0043-cancelled-rent-days.md) | Staff can cancel rent days a driver does not owe | Accepted |
 | [0042](0042-stopping-a-charge-from-both-dashboards.md) | A running charge can be stopped from the NDZela admin and from the Zella dashboard | Accepted |
 | [0040](0040-zella-reads-a-linked-drivers-contract-and-car.md) | The Zella app reads a linked driver's contract and car | Accepted |
 ||||||| 9158784 (feat: count yesterday's rent as owed from 00:00, late after 12:00)

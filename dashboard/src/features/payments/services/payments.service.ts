@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api/api-client";
 import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import type { AccountDetail, PatternCase, SuspensionCase, AccountFilter, AccountRow, HistoryQuery, IncidentInput, IncidentRow, LedgerEntry, PaymentMethod, PaymentResult, PaymentSummary, TransactionQuery, TransactionRow } from "@/features/payments/types";
+import type { AccountDetail, CancelledDay, PatternCase, SuspensionCase, AccountFilter, AccountRow, HistoryQuery, IncidentInput, IncidentRow, LedgerEntry, PaymentMethod, PaymentResult, PaymentSummary, TransactionQuery, TransactionRow } from "@/features/payments/types";
 
 const historyParams = ({ driverId, type, method, q, from, to }: HistoryQuery) => ({ driverId, type: type === "ALL" ? undefined : type, method: method === "ALL" ? undefined : method, q: q?.trim(), from, to });
 
@@ -38,6 +38,9 @@ export const paymentsService = {
     `/payments/accounts/export?${queryString({ filter, q: q.trim(), format, ...dates })}`,
 
   allowDays: (driverId: string, days: string[]) => apiClient<AccountDetail>(`/payments/accounts/${driverId}/allowed-days`, { method: "PUT", body: { days } }),
+  cancelledDays: (driverId: string) => apiClient<CancelledDay[]>(`/payments/accounts/${driverId}/cancelled-days`),
+  cancelDays: (driverId: string, days: string[], reason: string) => apiClient<CancelledDay[]>(`/payments/accounts/${driverId}/cancelled-days`, { method: "POST", body: { days, reason } }),
+  restoreDay: (driverId: string, id: string) => apiClient<CancelledDay[]>(`/payments/accounts/${driverId}/cancelled-days/${id}`, { method: "DELETE" }),
   account: (driverId: string) => apiClient<AccountDetail>(`/payments/accounts/${driverId}`),
 
   history: (query: HistoryQuery, page: number, size: number, sort?: string) => apiClient<Page<LedgerEntry>>(`/payments/history?${queryString({ ...historyParams(query), sort, page, size })}`),

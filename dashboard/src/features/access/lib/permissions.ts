@@ -47,6 +47,7 @@ export const PERMISSIONS = {
   PAYMENTS_CREATE: "payments:create",
   PAYMENTS_REVERSE: "payments:reverse",
   PAYMENTS_EXPORT: "payments:export",
+  PAYMENTS_CANCEL_DAYS: "payments:cancel_days",
   ARREARS_MANAGE: "arrears:manage",
   INCIDENTS_DECLARE: "incidents:declare",
   CHARGING_READ: "charging:read",
@@ -138,6 +139,7 @@ const ACTION_LABELS: Record<string, string> = {
   declare: "Déclarer et annuler",
   archive: "Archiver un chauffeur qui démissionne",
   terminate: "Clôturer un contrat (loyers payés)",
+  cancel_days: "Annuler des jours de loyer (non dus)",
   partial_payment: "Autoriser le paiement partiel (3 jours ou plus)",
 };
 

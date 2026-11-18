@@ -76,6 +76,15 @@ export interface ContractProgress {
 }
 
 // A rent day staff may pay on its own; amount is the rent plus its penalty.
+// A rent day staff cancelled: the driver does not owe it
+export interface CancelledDay {
+  id: string;
+  day: string;
+  reason: string;
+  cancelledBy: string;
+  cancelledAt: string;
+}
+
 export interface PayableDay {
   day: string;
   dueAt: string;

@@ -10,6 +10,8 @@ import com.ndzela.admin.payment.application.model.AccountIncident;
 import com.ndzela.admin.payment.application.model.AccountInput;
 import com.ndzela.admin.payment.application.model.AccountLeave;
 import com.ndzela.admin.payment.application.model.AccountState;
+import com.ndzela.admin.payment.domain.CancelledDay;
+import com.ndzela.admin.payment.domain.CancelledDayRepository;
 import com.ndzela.admin.payment.domain.DayIncidentRepository;
 import com.ndzela.admin.payment.domain.LedgerEntry;
 import com.ndzela.admin.payment.domain.LedgerEntryRepository;
@@ -33,6 +35,7 @@ public class AccountService {
     private final DriverArrearsService driverArrears;
     private final CountryRepository countries;
     private final DayIncidentRepository incidents;
+    private final CancelledDayRepository cancelledDays;
 
     @Transactional(readOnly = true)
     public AccountState state(UUID countryId, ContractResponse contract, Instant now) {
@@ -41,7 +44,8 @@ public class AccountService {
         List<AccountLeave> leaves = leaveService.activeRanges(contract.driverId()).stream().map(r -> new AccountLeave(r[0], r[1])).toList();
         List<AccountIncident> declared = incidents.findAllByContractIdAndCancelledAtIsNull(contract.id()).stream().map(i -> new AccountIncident(i.getDay(), i.getKind())).toList();
         return AccountCalculator.compute(new AccountInput(contract.startDate(), contract.endDate(),
-                contract.endedAt() == null ? null : contract.endedAt().atZoneSameInstant(zone).toLocalDate(), contract.dailyRent(), leaves, declared, entries, zone, now));
+                contract.endedAt() == null ? null : contract.endedAt().atZoneSameInstant(zone).toLocalDate(), contract.dailyRent(), leaves, declared, entries, zone, now,
+                cancelledDays.findAllByContractIdOrderByBusinessDayAsc(contract.id()).stream().map(CancelledDay::getBusinessDay).collect(java.util.stream.Collectors.toSet())));
     }
 
     @Transactional
