@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api/api-client";
 import type { ExportFormat } from "@/components/export-menu";
+import type { StaffAccess, StaffAccessInput } from "@/features/users/staff-access";
 import type { UserSummary } from "@/features/users/types";
 
 export interface UserInput {
@@ -35,5 +36,8 @@ export const usersService = {
   unlock: (id: string) => apiClient<UserSummary>(`/users/${id}/unlock`, { method: "POST" }),
   resetMfa: (id: string) => apiClient<UserSummary>(`/users/${id}/reset-mfa`, { method: "POST" }),
   resendInvitation: (id: string) => apiClient(`/users/${id}/resend-invitation`, { method: "POST" }),
+  staffAccess: (id: string) => apiClient<StaffAccess>(`/users/${id}/staff-access`),
+  saveStaffAccess: (id: string, input: StaffAccessInput) => apiClient<StaffAccess>(`/users/${id}/staff-access`, { method: "PUT", body: input }),
+  removeStaffAccess: (id: string) => apiClient(`/users/${id}/staff-access`, { method: "DELETE" }),
   exportPath: (format: ExportFormat) => `/users/export?format=${format}`,
 };

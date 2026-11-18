@@ -8,6 +8,7 @@ export const PERMISSIONS = {
   USERS_LOCK: "users:lock",
   USERS_DELETE: "users:delete",
   USERS_EXPORT: "users:export",
+  USERS_STAFF_ACCESS: "users:staff-access",
   ROLES_READ: "roles:read",
   ROLES_CREATE: "roles:create",
   ROLES_UPDATE: "roles:update",

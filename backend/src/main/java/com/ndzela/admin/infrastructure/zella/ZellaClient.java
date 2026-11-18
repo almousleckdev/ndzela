@@ -194,6 +194,17 @@ public class ZellaClient {
         send(() -> client.delete().uri("/v1/partners/ndzela/customers/{id}/suspension", customerId).header("X-Api-Key", props.apiKey()).retrieve().toBodilessEntity());
     }
 
+    /** Gives a linked customer free charging as NDZela staff; the reason names the person and the car (idempotent). */
+    public void grantStaffAccess(String customerId, String reason) {
+        send(() -> client.put().uri("/v1/partners/ndzela/staff-access/{id}", customerId).header("X-Api-Key", props.apiKey())
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON).body(java.util.Map.of("reason", reason)).retrieve().toBodilessEntity());
+    }
+
+    /** Takes the free staff charging back; the customer pays again (idempotent). */
+    public void revokeStaffAccess(String customerId) {
+        send(() -> client.delete().uri("/v1/partners/ndzela/staff-access/{id}", customerId).header("X-Api-Key", props.apiKey()).retrieve().toBodilessEntity());
+    }
+
     /** Tells Zella the link is gone (idempotent). */
     public void unlink(String customerId) {
         send(() -> client.delete().uri("/v1/partners/ndzela/links/{id}", customerId).header("X-Api-Key", props.apiKey()).retrieve().toBodilessEntity());

@@ -120,6 +120,22 @@ public class FakeZellaClient extends ZellaClient {
     }
 
     @Override
+    public void grantStaffAccess(String customerId, String reason) {
+        if (down) {
+            throw new ZellaException("down", null);
+        }
+        calls.add("GRANT " + customerId + " " + reason);
+    }
+
+    @Override
+    public void revokeStaffAccess(String customerId) {
+        if (down) {
+            throw new ZellaException("down", null);
+        }
+        calls.add("REVOKE " + customerId);
+    }
+
+    @Override
     public void unlink(String customerId) {
         calls.add("DELETE " + customerId);
         if (down) {

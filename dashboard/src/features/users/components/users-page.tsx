@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { RequirePermission } from "@/features/access/components/require-permission";
 import { UserDetailsDialog } from "@/features/users/components/user-details-dialog";
+import { StaffAccessDialog } from "@/features/users/components/staff-access-dialog";
 import { UserFormDialog } from "@/features/users/components/user-form-dialog";
 import type { UserAction } from "@/features/users/components/user-actions-menu";
 import { UsersTable } from "@/features/users/components/users-table";
@@ -64,6 +65,7 @@ function UsersContent() {
   const roles = useFetch(rolesService.list);
   const [editing, setEditing] = useState<UserSummary | "new" | null>(null);
   const [viewing, setViewing] = useState<UserSummary | null>(null);
+  const [staffAccess, setStaffAccess] = useState<UserSummary | null>(null);
   const [confirming, setConfirming] = useState<Confirmation | null>(null);
 
   // Runs an admin action, reports the result and refreshes the list.
@@ -81,6 +83,7 @@ function UsersContent() {
     switch (action) {
       case "view": return setViewing(user);
       case "edit": return setEditing(user);
+      case "staff-access": return setStaffAccess(user);
       case "suspend":
       case "block":
       case "delete":
@@ -138,6 +141,7 @@ function UsersContent() {
           : <UsersTable users={users.data ?? []} onAction={handleAction} onBulkDeleted={users.reload} onInvite={can(PERMISSIONS.USERS_CREATE) ? () => setEditing("new") : undefined} />}
       </Panel>
 
+      {staffAccess && <StaffAccessDialog user={staffAccess} onClose={() => setStaffAccess(null)} onSaved={() => setStaffAccess(null)} />}
       {viewing && <UserDetailsDialog user={viewing} onClose={() => setViewing(null)} />}
 
       {editing && roles.data && (

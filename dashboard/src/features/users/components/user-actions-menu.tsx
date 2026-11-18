@@ -7,7 +7,7 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import type { UserSummary } from "@/features/users/types";
 
-export type UserAction = "view" | "edit" | "resend-invitation" | "reset-mfa" | "suspend" | "reactivate" | "block" | "unblock" | "delete";
+export type UserAction = "view" | "edit" | "resend-invitation" | "reset-mfa" | "staff-access" | "suspend" | "reactivate" | "block" | "unblock" | "delete";
 
 interface UserActionsMenuProps {
   user: UserSummary;
@@ -30,6 +30,7 @@ export function UserActionsMenu({ user, isSelf, onAction }: UserActionsMenuProps
   if (can(PERMISSIONS.USERS_UPDATE) && user.mfaEnabled && !isSelf) {
     safe.push({ action: "reset-mfa", label: "Réinitialiser l'authentificateur" });
   }
+  if (can(PERMISSIONS.USERS_STAFF_ACCESS)) safe.push({ action: "staff-access", label: "Voiture et recharge gratuite" });
   if (!isSelf) {
     if (can(PERMISSIONS.USERS_LOCK) && user.status === "LOCKED") safe.push({ action: "unblock", label: "Débloquer" });
     if (can(PERMISSIONS.USERS_DEACTIVATE) && user.status === "DISABLED") safe.push({ action: "reactivate", label: "Réactiver" });
