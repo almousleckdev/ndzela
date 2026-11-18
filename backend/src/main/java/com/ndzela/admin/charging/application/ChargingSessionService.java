@@ -83,7 +83,7 @@ public class ChargingSessionService {
             energy = r.energyKwh() == null ? energy : energy.add(r.energyKwh());
             amount = r.amount() == null ? amount : amount.add(r.amount());
             lines.add(Arrays.<Object>asList(branding.dateTime(r.startedAt()), branding.dateTime(r.endedAt()), r.chargePointId(), r.connectorId(), r.idTag(), r.holder() == null ? "Public" : "Chauffeur NDZela", r.holder() == null ? null : r.holder().driverName(), r.holder() == null ? null : r.holder().vehicle(), r.energyKwh(), duration(r),
-                    r.amount(), r.payment() == null ? null : r.payment().total(), r.payment() == null ? null : stateLabel(r.payment().state()), r.socBefore(), r.socAfter(), SessionLabels.status(r.status()), SessionLabels.reason(r.stopReason(), r.endedAt() != null), payment(r), r.transactionId()));
+                    r.amount(), r.payment() == null ? null : r.payment().total(), r.payment() == null ? null : r.payment().freeCategory() != null ? "Offert" : stateLabel(r.payment().state()), r.socBefore(), r.socAfter(), SessionLabels.status(r.status()), SessionLabels.reason(r.stopReason(), r.endedAt() != null), payment(r), r.transactionId()));
         }
         List<Object> totals = Arrays.<Object>asList("TOTAL (" + rows.size() + (rows.size() > 1 ? " sessions)" : " session)"), null, null, null, null, null, null, null, energy, null, amount, null, null, null, null, null, null, null, null);
         audit.record("CHARGING_EXPORTED", "CHARGING", null, "Export des sessions du réseau", TenantHolder.current().countryId(), "sessions, " + rows.size() + " lignes");
@@ -130,6 +130,6 @@ public class ChargingSessionService {
     }
 
     private static String payment(SessionRow r) {
-        return r.rechargeId() != null ? "Enregistré par NDZela" : r.payment() != null && "CHARGED".equals(r.payment().state()) ? "Payé via Zella" : r.startedAt() != null && r.endedAt() == null ? "En cours" : r.holder() == null ? "Sans objet (public)" : "À enregistrer";
+        return r.rechargeId() != null ? "Enregistré par NDZela" : r.payment() != null && r.payment().freeCategory() != null ? "Offert" : r.payment() != null && "CHARGED".equals(r.payment().state()) ? "Payé via Zella" : r.startedAt() != null && r.endedAt() == null ? "En cours" : r.holder() == null ? "Sans objet (public)" : "À enregistrer";
     }
 }

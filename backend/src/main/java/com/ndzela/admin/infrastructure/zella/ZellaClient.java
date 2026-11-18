@@ -140,7 +140,7 @@ public class ZellaClient {
                     number(i, "energyCostMinor"), number(i, "vatMinor"), number(i, "serviceFeeMinor"), number(i, "totalChargedMinor"), text(i, "currency"),
                     number(i, "currencyDecimals") == null ? null : number(i, "currencyDecimals").intValue(), i.path("breakdownEstimated").asBoolean(false), time(i, "updatedAt"),
                     text(i, "stationId"), number(i, "connectorId") == null ? null : number(i, "connectorId").intValue(), time(i, "startedAt"), time(i, "stoppedAt"),
-                    decimal(i, "energyKwh"), decimal(i, "batteryStartPercent"), decimal(i, "batteryPercent"), decimal(i, "powerKw"), number(i, "pricePerKwhMinor"), i.toString()));
+                    decimal(i, "energyKwh"), decimal(i, "batteryStartPercent"), decimal(i, "batteryPercent"), decimal(i, "powerKw"), number(i, "pricePerKwhMinor"), text(i, "freeCategory"), i.toString()));
         }
         return new ZellaFeedPage(items, text(json, "nextCursor"), json.path("hasMore").asBoolean(false));
     }

@@ -62,6 +62,10 @@ public class SessionPayment extends TenantOwned {
     @Column(name = "breakdown_estimated", nullable = false)
     private boolean breakdownEstimated;
 
+    // NDZELA_STAFF or OTHER when the charge was free of charge, null when it was paid
+    @Column(name = "free_category")
+    private String freeCategory;
+
     @Column(name = "source_updated_at")
     private OffsetDateTime sourceUpdatedAt;
 

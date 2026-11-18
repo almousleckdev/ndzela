@@ -186,6 +186,7 @@ public class ZellaFeedService {
         p.setCurrency(item.currency());
         p.setCurrencyDecimals(item.currencyDecimals());
         p.setBreakdownEstimated(item.breakdownEstimated());
+        p.setFreeCategory(item.freeCategory());
         p.setSourceUpdatedAt(item.updatedAt());
     }
 }

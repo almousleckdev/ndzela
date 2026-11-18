@@ -8,4 +8,4 @@ public record ZellaFeedItem(String transactionId, String customerId, String idTa
                             Long energyCostMinor, Long vatMinor, Long serviceFeeMinor, Long totalChargedMinor, String currency, Integer currencyDecimals,
                             boolean breakdownEstimated, OffsetDateTime updatedAt,
                             String stationId, Integer connectorId, OffsetDateTime startedAt, OffsetDateTime stoppedAt, BigDecimal energyKwh,
-                            BigDecimal batteryStartPercent, BigDecimal batteryPercent, BigDecimal powerKw, Long pricePerKwhMinor, String raw) {}
+                            BigDecimal batteryStartPercent, BigDecimal batteryPercent, BigDecimal powerKw, Long pricePerKwhMinor, String freeCategory, String raw) {}

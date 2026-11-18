@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { formatFcfa } from "@/lib/money";
 import { formatDateTime } from "@/lib/time";
-import { batteryLabel, durationLabel, PAYMENT_STATE, reasonLabel, statusLabel } from "@/features/charging/components/session-format";
+import { batteryLabel, durationLabel, freeLabel, PAYMENT_STATE, reasonLabel, statusLabel } from "@/features/charging/components/session-format";
 import type { ChargingSessionRow } from "@/features/charging/types";
 
 function Rows({ rows }: { rows: [string, React.ReactNode][] }) {
@@ -24,7 +24,8 @@ const money = (value: number | null) => (value === null ? null : formatFcfa(valu
 // One session with who charged and the breakdown of what the driver paid, for disputes.
 export function SessionDetailDialog({ session: s, onClose }: { session: ChargingSessionRow; onClose: () => void }) {
   const p = s.payment;
-  const state = p?.state ? PAYMENT_STATE[p.state] : undefined;
+  const free = freeLabel(s);
+  const state = p?.state && !free ? PAYMENT_STATE[p.state] : undefined;
   const battery = batteryLabel(s);
   return (
     <Dialog isOpen onClose={onClose} title={`Session ${s.transactionId}`} description={s.chargePointId ? `${s.chargePointId}${s.connectorId ? ` · connecteur ${s.connectorId}` : ""}` : undefined} className="max-w-xl">
@@ -51,8 +52,8 @@ export function SessionDetailDialog({ session: s, onClose }: { session: Charging
           ]} />
         </section>
         <section>
-          <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-900">Ce que le chauffeur a payé {state && <Badge variant={state.variant}>{state.label}</Badge>}</h3>
-          {p ? (
+          <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-900">Ce que le chauffeur a payé {state && <Badge variant={state.variant}>{state.label}</Badge>}{free && <Badge variant="info">{free}</Badge>}</h3>
+          {free ? <p className="text-sm text-slate-600">Recharge offerte : l'énergie consommée est comptée, mais rien n'est débité ni encaissé.</p> : p ? (
             <>
               <Rows rows={[
                 ["Énergie", money(p.energyCost)],

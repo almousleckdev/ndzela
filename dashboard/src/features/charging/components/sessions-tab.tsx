@@ -27,7 +27,7 @@ import { formatFcfa } from "@/lib/money";
 import { formatDateTime } from "@/lib/time";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
-import { batteryLabel, durationLabel, isRunning, PAYMENT_STATE, powerLabel, reasonLabel, statusLabel } from "@/features/charging/components/session-format";
+import { batteryLabel, durationLabel, freeLabel, isRunning, PAYMENT_STATE, powerLabel, reasonLabel, statusLabel } from "@/features/charging/components/session-format";
 import { SessionDetailDialog } from "@/features/charging/components/session-detail-dialog";
 import { HolderKindBadge, holderKindOf } from "@/features/charging/components/holder-kind";
 import { chargingService } from "@/features/charging/services/charging.service";
@@ -77,6 +77,8 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
     col.accessor("amount", { id: "amount", header: "Montant calculé", enableSorting: false, cell: (c) => (c.getValue() === null ? <None /> : <Stack primary={formatFcfa(c.getValue() as number)} secondary={c.row.original.pricePerKwh !== null ? `${c.row.original.pricePerKwh} FCFA/kWh` : undefined} />) }),
     col.display({ id: "paid", header: "Total payé", cell: (c) => {
       const p = c.row.original.payment;
+      const free = freeLabel(c.row.original);
+      if (free) return <Stack primary={<span className="whitespace-nowrap">Offert</span>} secondary={<Badge variant="info">{free}</Badge>} />;
       const state = p?.state ? PAYMENT_STATE[p.state] : undefined;
       return p ? <Stack primary={p.total === null ? <None /> : <span className="whitespace-nowrap tabular-nums">{formatFcfa(p.total)}</span>} secondary={state ? <Badge variant={state.variant}>{state.label}</Badge> : undefined} /> : <None />;
     } }),
@@ -86,6 +88,8 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
     col.display({ id: "payment", header: "Paiement", enableHiding: false, cell: (c) => {
       const row = c.row.original;
       if (row.rechargeId) return <Badge variant="success">Payée</Badge>;
+      const free = freeLabel(row);
+      if (free) return <Badge variant="info">{free}</Badge>;
       if (row.payment?.state === "CHARGED") return <Badge variant="success">Payée · Zella</Badge>;
       if (isRunning(row)) return <Badge variant="info">En cours</Badge>;
       if (holderKindOf(row) === "PUBLIC") return <Badge>Sans objet (public)</Badge>;

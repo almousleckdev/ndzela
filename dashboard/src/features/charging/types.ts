@@ -115,6 +115,8 @@ export interface SessionPayment {
   breakdownEstimated: boolean;
   // The charge was limited to the authorised budget: the parts add up to more than the total
   capped: boolean;
+  // Set when the charge was free of charge, never paid: NDZELA_STAFF or OTHER
+  freeCategory: "NDZELA_STAFF" | "OTHER" | null;
 }
 
 export interface SessionHolder {

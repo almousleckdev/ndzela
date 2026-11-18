@@ -50,6 +50,7 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0043](0043-cancelled-rent-days.md) | Staff can cancel rent days a driver does not owe | Accepted |
 | [0042](0042-stopping-a-charge-from-both-dashboards.md) | A running charge can be stopped from the NDZela admin and from the Zella dashboard | Accepted |
 | [0040](0040-zella-reads-a-linked-drivers-contract-and-car.md) | The Zella app reads a linked driver's contract and car | Accepted |
+| [0044](0044-free-staff-charges.md) | Free staff charges are marked, never shown as unpaid | Accepted |
 ||||||| 9158784 (feat: count yesterday's rent as owed from 00:00, late after 12:00)
 
 Template for a new ADR: title, status, date, context, decision, consequences (positive and negative), alternatives considered.

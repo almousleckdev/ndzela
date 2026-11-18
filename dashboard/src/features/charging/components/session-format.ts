@@ -36,6 +36,10 @@ export function batteryLabel(row: ChargingSessionRow): { primary: string; second
   return { primary: `${before} % → ${after} %`, secondary: after > before ? `+${after - before} %` : undefined };
 }
 
+const FREE_LABEL = { NDZELA_STAFF: "Personnel NDZela", OTHER: "Offert" } as const;
+
+export const freeLabel = (row: ChargingSessionRow) => (row.payment?.freeCategory ? FREE_LABEL[row.payment.freeCategory] : null);
+
 export const PAYMENT_STATE: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info" | "neutral" }> = {
   CHARGED: { label: "Payé", variant: "success" },
   PENDING: { label: "En attente", variant: "info" },

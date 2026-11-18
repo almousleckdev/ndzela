@@ -36,7 +36,7 @@ public class SessionPayments {
         BigDecimal parts = sum(p.getEnergyCostMinor(), p.getVatMinor(), p.getServiceFeeMinor());
         boolean capped = total != null && parts != null && parts.compareTo(total) > 0;
         return new SessionPaymentView(p.getPaymentState(), total, whole(p.getEnergyCostMinor(), digits), whole(p.getVatMinor(), digits), whole(p.getServiceFeeMinor(), digits),
-                p.getCurrency(), p.getPaymentMethod() == null ? WALLET : p.getPaymentMethod(), p.isBreakdownEstimated(), capped);
+                p.getCurrency(), p.getPaymentMethod() == null ? WALLET : p.getPaymentMethod(), p.isBreakdownEstimated(), capped, p.getFreeCategory());
     }
 
     private static BigDecimal whole(Long minor, int digits) {

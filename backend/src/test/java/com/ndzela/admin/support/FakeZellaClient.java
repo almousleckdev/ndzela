@@ -187,7 +187,13 @@ public class FakeZellaClient extends ZellaClient {
     /** A session of someone who is not a NDZela driver: no customer, no idTag. */
     public static ZellaFeedItem publicCharge(String transactionId, String stationId, String sessionState, String startedAt, String stoppedAt, String energyKwh, long total, String updatedAt) {
         return new ZellaFeedItem(transactionId, null, null, sessionState, "CHARGED", null, total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
-                stationId, 1, OffsetDateTime.parse(startedAt), stoppedAt == null ? null : OffsetDateTime.parse(stoppedAt), new java.math.BigDecimal(energyKwh), null, null, null, 350L, "{}");
+                stationId, 1, OffsetDateTime.parse(startedAt), stoppedAt == null ? null : OffsetDateTime.parse(stoppedAt), new java.math.BigDecimal(energyKwh), null, null, null, 350L, null, "{}");
+    }
+
+    public static ZellaFeedItem staffCharge(String transactionId, String sessionState, String updatedAt) {
+        return new ZellaFeedItem(transactionId, null, null, sessionState, "NOT_CHARGED", null, 0L, 0L, 0L, 0L, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
+                "CP-1", 1, OffsetDateTime.parse("2026-11-05T09:00:00Z"), OffsetDateTime.parse("2026-11-05T10:00:00Z"), new java.math.BigDecimal("12.5"), null, null, null, 350L,
+                "NDZELA_STAFF", "{}");
     }
 
     /** The page served for a cursor ("" is the first request), for the global feed or one customer's. */
@@ -213,7 +219,7 @@ public class FakeZellaClient extends ZellaClient {
 
     public static ZellaFeedItem paidWithTag(String transactionId, String customerId, String idTag, String state, long total, String updatedAt) {
         return new ZellaFeedItem(transactionId, customerId, idTag, "COMPLETED", state, "WALLET", total - 500, 0L, 500L, total, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
-                null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public static ZellaFeedItem charged(String transactionId, String customerId, String sessionState, String stationId, String startedAt, String stoppedAt,
@@ -222,7 +228,7 @@ public class FakeZellaClient extends ZellaClient {
                 "COMPLETED".equals(sessionState) ? 3500L : null, 0L, 500L, "COMPLETED".equals(sessionState) ? 4000L : null, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
                 stationId, 1, startedAt == null ? null : OffsetDateTime.parse(startedAt), stoppedAt == null ? null : OffsetDateTime.parse(stoppedAt),
                 energyKwh == null ? null : new java.math.BigDecimal(energyKwh), batteryStart == null ? null : new java.math.BigDecimal(batteryStart),
-                batteryEnd == null ? null : new java.math.BigDecimal(batteryEnd), powerKw == null ? null : new java.math.BigDecimal(powerKw), 350L, "{}");
+                batteryEnd == null ? null : new java.math.BigDecimal(batteryEnd), powerKw == null ? null : new java.math.BigDecimal(powerKw), 350L, null, "{}");
     }
 
     public void goDown() {

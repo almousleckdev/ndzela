@@ -64,10 +64,19 @@ class ZellaFeedTest extends AbstractZellaFeedTest {
         session("7");
         zella.serveFeed(null, "", new ZellaFeedPage(List.of(new com.ndzela.admin.infrastructure.zella.ZellaFeedItem("7", "cust-1", "Z-ABC", "COMPLETED", "CHARGED", "WALLET",
                 3500L, 0L, 500L, 3000L, "XAF", 0, false, java.time.OffsetDateTime.parse("2026-11-05T10:00:00Z"),
-                null, null, null, null, null, null, null, null, null, null)), "c1", false));
+                null, null, null, null, null, null, null, null, null, null, null)), "c1", false));
         sync();
 
         sessions().andExpect(jsonPath("$.items[0].payment.total").value(3000)).andExpect(jsonPath("$.items[0].payment.capped").value(true));
+    }
+
+    @Test
+    void aFreeStaffChargeIsMarkedSoItIsNeverTreatedAsAnUnpaidOne() throws Exception {
+        session("9");
+        zella.serveFeed(null, "", new ZellaFeedPage(List.of(FakeZellaClient.staffCharge("9", "COMPLETED", "2026-11-05T10:00:00Z")), "c1", false));
+        sync();
+
+        sessions().andExpect(jsonPath("$.items[0].payment.freeCategory").value("NDZELA_STAFF"));
     }
 
     @Test
