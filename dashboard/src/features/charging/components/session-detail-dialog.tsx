@@ -19,6 +19,8 @@ function Rows({ rows }: { rows: [string, React.ReactNode][] }) {
   );
 }
 
+const FREE_NOTICE = "Recharge offerte : l'énergie consommée est comptée, mais rien n'est débité ni encaissé.";
+
 const money = (value: number | null) => (value === null ? null : formatFcfa(value));
 
 // One session with who charged and the breakdown of what the driver paid, for disputes.
@@ -53,7 +55,7 @@ export function SessionDetailDialog({ session: s, onClose }: { session: Charging
         </section>
         <section>
           <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-900">Ce que le chauffeur a payé {state && <Badge variant={state.variant}>{state.label}</Badge>}{free && <Badge variant="info">{free}</Badge>}</h3>
-          {free ? <p className="text-sm text-slate-600">Recharge offerte : l'énergie consommée est comptée, mais rien n'est débité ni encaissé.</p> : p ? (
+          {free ? <p className="text-sm text-slate-600">{FREE_NOTICE}</p> : p ? (
             <>
               <Rows rows={[
                 ["Énergie", money(p.energyCost)],
