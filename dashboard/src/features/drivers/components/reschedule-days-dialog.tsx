@@ -57,6 +57,7 @@ export function RescheduleDaysDialog({ driverId, driverName, onClose, onSaved }:
           ))}
         </div>
       )}
+      {selected.length > 0 && <p className="text-xs font-medium text-slate-700">{selected.length} jour{selected.length > 1 ? "s" : ""} sélectionné{selected.length > 1 ? "s" : ""}</p>}
       {days.length > 1 && <button type="button" className="text-xs font-medium text-primary" onClick={() => setSelected(selected.length === days.length ? [] : days.map((d) => d.day))}>Tout sélectionner</button>}
       <div>
         <Label htmlFor="reschedule-reason">Motif *</Label>

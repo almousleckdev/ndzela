@@ -70,6 +70,37 @@ class RestoreDeactivatedContractsScriptTest extends AbstractDriverTest {
         assertEquals(0, auditRows("CONTRACT_RESTORED"));
     }
 
+    @Test
+    void aReactivatedDriverWhoGotAnEmptyNewContractGetsHisOriginalContractBack() throws Exception {
+        String old = newVehicle(manager);
+        String driver = deactivatedTheOldWay(old, "ACTIVE");
+        jdbc.update("insert into audit_logs (id, actor, action, target, result, target_type, target_id, created_at) values (gen_random_uuid(), 'staff', 'DRIVER_REACTIVATED', 'x', 'SUCCESS', 'DRIVER', ?, now() + interval '1 minute')", driver);
+        String originalContract = jdbc.queryForObject("select id::text from contracts where driver_id = ?::uuid", String.class, driver);
+        String current = newVehicle(manager);
+        postJson("/api/v1/drivers/" + driver + "/vehicle", "{\"vehicleId\":\"" + current + "\",\"deposit\":250000}", manager).andExpect(status().isOk());
+        assertEquals(2, rows("select count(*) from contracts where driver_id = ?::uuid", driver));
+
+        runScript();
+
+        assertEquals(originalContract, jdbc.queryForObject("select id::text from contracts where driver_id = ?::uuid and status = 'ACTIVE'", String.class, driver));
+        assertEquals(current, jdbc.queryForObject("select vehicle_id::text from contracts where id = ?::uuid", String.class, originalContract));
+        assertEquals(1, rows("select count(*) from vehicle_assignments where driver_id = ?::uuid and ended_at is null and vehicle_id = ?::uuid", driver, current));
+        assertEquals(1, auditRows("CONTRACT_RESTORED"));
+    }
+
+    @Test
+    void aNewContractThatAlreadyHasActivityIsLeftAlone() throws Exception {
+        String old = newVehicle(manager);
+        String driver = deactivatedTheOldWay(old, "ACTIVE");
+        postJson("/api/v1/drivers/" + driver + "/vehicle", "{\"vehicleId\":\"" + newVehicle(manager) + "\",\"deposit\":250000}", manager).andExpect(status().isOk());
+        jdbc.update("insert into day_incidents (id, country_id, driver_id, contract_id, day, kind, cause, created_by) "
+                + "select gen_random_uuid(), country_id, driver_id, id, current_date, 'STOP', 'OTHER', 'staff' from contracts where driver_id = ?::uuid and status = 'ACTIVE'", driver);
+
+        runScript();
+
+        assertEquals(0, auditRows("CONTRACT_RESTORED"));
+    }
+
     private String driverWith(String vehicle) throws Exception {
         return id(createDriver(manager, DriverJson.create(vehicle, center)).andExpect(status().isCreated()));
     }
