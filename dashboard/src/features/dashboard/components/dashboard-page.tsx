@@ -57,7 +57,7 @@ export function DashboardPage() {
   }
   if (mayCharging) {
     const c = charging.data;
-    kpis.push({ label: "Recharges du jour", value: c ? formatFcfa(c.fcfaToday) : "-", hint: c ? `${c.sessionsToday} recharge(s) sur le réseau` : undefined, href: "/charging" });
+    kpis.push({ label: "Recharges du jour", value: c ? formatFcfa(c.today.collected) : "-", hint: c ? `${c.today.sessions} recharge(s) sur le réseau` : undefined, href: "/charging" });
   }
   if (mayVehicles) {
     const v = vehicles.data;

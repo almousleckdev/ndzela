@@ -4,6 +4,7 @@ import com.ndzela.admin.charging.api.dto.SessionSummary;
 import com.ndzela.admin.charging.application.ChargingSessionService;
 import com.ndzela.admin.charging.application.SessionDeletionService;
 import com.ndzela.admin.charging.application.SessionStopService;
+import com.ndzela.admin.charging.application.SessionUsage;
 import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.common.web.dto.ReasonRequest;
@@ -34,6 +35,7 @@ public class ChargingSessionController {
     private final ChargingSessionService sessions;
     private final SessionDeletionService deletion;
     private final SessionStopService stops;
+    private final SessionUsage usage;
 
     @GetMapping("/api/v1/charging/sessions")
     @PreAuthorize("hasAuthority('charging:read')")
@@ -46,8 +48,8 @@ public class ChargingSessionController {
 
     @GetMapping("/api/v1/charging/sessions/summary")
     @PreAuthorize("hasAuthority('charging:read')")
-    public SessionSummary summary(@RequestParam(defaultValue = "ALL") SessionKind kind) {
-        return sessions.summary(kind);
+    public SessionSummary summary(@RequestParam(defaultValue = "ALL") SessionKind kind, @RequestParam(required = false) String chargePoint, @RequestParam(required = false) UUID driverId) {
+        return usage.summarise(kind, chargePoint, driverId);
     }
 
     @DeleteMapping("/api/v1/charging/sessions/{id}")

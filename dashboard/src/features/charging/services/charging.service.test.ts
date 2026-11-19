@@ -27,6 +27,12 @@ describe("the charging sessions requests", () => {
     expect(chargingService.exportSessionsPath({ q: "", from: "", to: "", kind: "PUBLIC" }, "XLSX")).toContain("kind=PUBLIC");
   });
 
+  it("narrows the totals to one charger or one driver", async () => {
+    await chargingService.sessionSummary("ALL", { chargePoint: "CP-1", driverId: "d1" });
+
+    expect(apiClient).toHaveBeenCalledWith("/charging/sessions/summary?chargePoint=CP-1&driverId=d1");
+  });
+
   it("asks the server to stop a charge", async () => {
     await chargingService.stopSession("abc");
 

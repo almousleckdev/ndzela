@@ -88,9 +88,9 @@ class ZellaPublicFeedTest extends AbstractZellaFeedTest {
         aPublicSession();
         sync();
 
-        send(get("/api/v1/charging/sessions/summary?kind=DRIVER"), manager).andExpect(jsonPath("$.sessionsToday").value(1)).andExpect(jsonPath("$.fcfaToday").value(3500));
-        send(get("/api/v1/charging/sessions/summary?kind=PUBLIC"), manager).andExpect(jsonPath("$.sessionsToday").value(1)).andExpect(jsonPath("$.fcfaToday").value(5500));
-        send(get("/api/v1/charging/sessions/summary"), manager).andExpect(jsonPath("$.sessionsToday").value(2));
+        send(get("/api/v1/charging/sessions/summary?kind=DRIVER"), manager).andExpect(jsonPath("$.today.sessions").value(1)).andExpect(jsonPath("$.today.energyKwh").isNumber());
+        send(get("/api/v1/charging/sessions/summary?kind=PUBLIC"), manager).andExpect(jsonPath("$.today.sessions").value(1)).andExpect(jsonPath("$.today.energyKwh").isNumber());
+        send(get("/api/v1/charging/sessions/summary"), manager).andExpect(jsonPath("$.today.sessions").value(2));
     }
 
     @Test

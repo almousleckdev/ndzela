@@ -19,7 +19,7 @@ import { DateRangePicker } from "@/components/data-table/date-range-picker";
 import { columnsFor } from "@/components/data-table/features";
 import { SearchField } from "@/components/data-table/search-field";
 import { useTableQuery } from "@/components/data-table/use-table-query";
-import { KpiBand, Panel, Toolbar, type Kpi } from "@/components/layout/page";
+import { Panel, Toolbar } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
 import { usePolling } from "@/hooks/use-polling";
 import { describeRange, NO_RANGE } from "@/lib/date-range";
@@ -28,6 +28,7 @@ import { formatDateTime } from "@/lib/time";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { batteryLabel, durationLabel, freeLabel, isRunning, PAYMENT_STATE, powerLabel, reasonLabel, statusLabel } from "@/features/charging/components/session-format";
+import { SessionUsageBand } from "@/features/charging/components/session-usage-band";
 import { SessionDetailDialog } from "@/features/charging/components/session-detail-dialog";
 import { HolderKindBadge, holderKindOf } from "@/features/charging/components/holder-kind";
 import { chargingService } from "@/features/charging/services/charging.service";
@@ -55,16 +56,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
   const [stopPending, setStopPending] = useState(false);
   const [deleting, setDeleting] = useState<ChargingSessionRow | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const summary = useAsync(() => chargingService.sessionSummary(kind), [kind]);
-  usePolling(() => { list.reload(); summary.reload(); }, 5000);
-  const s = summary.data;
-  const kpis: Kpi[] = [
-    { label: "Recharges du jour", value: s?.sessionsToday ?? "-" },
-    { label: "Encaissé aujourd'hui", value: s ? formatFcfa(s.fcfaToday) : "-" },
-    { label: "Encaissé hier", value: s ? formatFcfa(s.fcfaYesterday) : "-" },
-    { label: "Encaissé dans la semaine", value: s ? formatFcfa(s.fcfaWeek) : "-" },
-    { label: "Encaissé ce mois", value: s ? formatFcfa(s.fcfaMonth) : "-" },
-  ];
+  usePolling(() => list.reload(), 5000);
 
   const columns = useMemo(() => col.columns([
     col.accessor("startedAt", { id: "startedAt", header: "Début", enableSorting: false, cell: (c) => (c.getValue() ? <span className="whitespace-nowrap tabular-nums">{formatDateTime(c.getValue() as string)}</span> : <None />) }),
@@ -107,7 +99,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
   return (
     <>
       <Tabs tabs={KIND_TABS} value={kind} onChange={(next) => { setKind(next); query.setPage(0); }} label="Type de sessions" />
-      <KpiBand items={kpis} />
+      <SessionUsageBand kind={kind} />
       <Panel>
       <Toolbar start={(
         <>
@@ -121,7 +113,7 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
       {can(PERMISSIONS.CHARGING_DELETE) && (
         <BulkDelete items={list.data?.items ?? []} selected={selected} onSelectedChange={setSelected} idOf={(s) => s.id} nameOf={(s) => `Session ${s.transactionId}`}
           remove={(s, reason) => chargingService.deleteSession(s.id, reason)} withReason noun={{ one: "session", many: "sessions" }}
-          note="Les sessions sont supprimées définitivement et ne reviennent pas à la prochaine synchronisation ; la suppression est enregistrée dans le journal d'audit." onDone={() => { list.reload(); summary.reload(); }} />
+          note="Les sessions sont supprimées définitivement et ne reviennent pas à la prochaine synchronisation ; la suppression est enregistrée dans le journal d'audit." onDone={list.reload} />
       )}
       <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id} selection={can(PERMISSIONS.CHARGING_DELETE) ? { selected, onChange: setSelected } : undefined} numeric={["energyKwh", "amount"]}
         server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: [], onSortingChange: () => {} }}
@@ -135,7 +127,6 @@ export function SessionsTab({ onRecord }: { onRecord: (session: ChargingSessionR
             setDeleting(null);
             addToast({ title: "Succès", description: "Session supprimée.", type: "success" });
             list.reload();
-            summary.reload();
           }} />
       )}
       <ConfirmDialog isOpen={stopping !== null} onClose={() => setStopping(null)} isLoading={stopPending} destructive title="Arrêter cette recharge ?"

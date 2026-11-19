@@ -51,12 +51,24 @@ export interface ChargingSummary {
 export type SessionKind = "ALL" | "DRIVER" | "PUBLIC";
 export type HolderKind = Exclude<SessionKind, "ALL">;
 
+export interface SessionPeriod {
+  sessions: number;
+  energyKwh: number;
+  collected: number;
+  staffEnergyKwh: number;
+}
+
 export interface SessionSummary {
-  sessionsToday: number;
-  fcfaToday: number;
-  fcfaYesterday: number;
-  fcfaWeek: number;
-  fcfaMonth: number;
+  today: SessionPeriod;
+  yesterday: SessionPeriod;
+  week: SessionPeriod;
+  month: SessionPeriod;
+}
+
+// Narrows the figures to one charger or one driver
+export interface SessionScope {
+  chargePoint?: string;
+  driverId?: string;
 }
 
 export interface RecordRechargeInput {

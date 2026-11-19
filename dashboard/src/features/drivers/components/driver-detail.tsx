@@ -19,6 +19,7 @@ import { RequirePermission } from "@/features/access/components/require-permissi
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
 import { DriverActionDialogs, availableActions, type DriverAction } from "@/features/drivers/components/driver-actions";
+import { SessionUsageBand } from "@/features/charging/components/session-usage-band";
 import { DriverAvatar } from "@/features/drivers/components/driver-avatar";
 import { DriverLeavesDialog } from "@/features/drivers/components/driver-leaves-dialog";
 import { DriverHistoryCard } from "@/features/drivers/components/driver-history-card";
@@ -129,6 +130,13 @@ function DriverDetailContent({ id }: { id: string }) {
           <p className="text-sm text-slate-500">Aucun contrat actif : le contrat est créé quand un véhicule est affecté.</p>
         )}
       </Card>
+
+      {can(PERMISSIONS.CHARGING_READ) && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-medium text-slate-700">Recharges en station</h2>
+          <SessionUsageBand scope={{ driverId: id }} />
+        </section>
+      )}
 
       {can(PERMISSIONS.CONTRACTS_READ) && (d.status === "ARCHIVED" || d.status === "INACTIVE" || !d.contract) && <DriverHistoryCard driverId={id} />}
 

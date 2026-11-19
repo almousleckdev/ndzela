@@ -8,10 +8,7 @@ import com.ndzela.admin.common.export.ExportFormat;
 import com.ndzela.admin.common.export.ExportTable;
 import com.ndzela.admin.common.export.ExportColumn;
 import com.ndzela.admin.country.application.ExportBranding;
-import com.ndzela.admin.charging.api.dto.SessionSummary;
-import com.ndzela.admin.charging.domain.ChargingPeriod;
 import com.ndzela.admin.common.web.dto.PageResponse;
-import com.ndzela.admin.country.application.CountryService;
 import com.ndzela.admin.ocpp.api.SessionKind;
 import com.ndzela.admin.ocpp.api.SessionRow;
 import com.ndzela.admin.ocpp.application.OcppSessionQueryService;
@@ -40,7 +37,6 @@ public class ChargingSessionService {
     private final ChargingEntryRepository entries;
     private final ExportBranding branding;
     private final AuditService audit;
-    private final CountryService countries;
     private final SessionHolders holders;
     private final SessionPayments walletPayments;
 
@@ -53,23 +49,6 @@ public class ChargingSessionService {
         }
         List<SessionRow> marked = walletPayments.mark(holders.mark(found.items().stream().map(row -> paid.containsKey(row.id()) ? row.withRecharge(paid.get(row.id())) : row).toList()));
         return new PageResponse<>(marked, found.page(), found.size(), found.total());
-    }
-
-    // Sessions started today, and the calculated amount of the day, yesterday, the week (Monday to Sunday) and the month, in the country's time zone
-    @Transactional(readOnly = true)
-    public SessionSummary summary(SessionKind kind) {
-        var today = TenantHolder.current().isCountry() ? LocalDate.now(countries.zoneOf(TenantHolder.current().countryId()))
-                : countries.todayByCountry().values().stream().min(LocalDate::compareTo).orElse(LocalDate.now());
-        List<SessionRow> day = inPeriod(ChargingPeriod.DAY, today, kind);
-        return new SessionSummary(day.size(), total(day), total(inPeriod(ChargingPeriod.DAY, today.minusDays(1), kind)), total(inPeriod(ChargingPeriod.WEEK, today, kind)), total(inPeriod(ChargingPeriod.MONTH, today, kind)));
-    }
-
-    private List<SessionRow> inPeriod(ChargingPeriod period, LocalDate reference, SessionKind kind) {
-        return sessions.list(null, null, period.start(reference), period.end(reference).minusDays(1), kind, holders.driverIdTags(), 0, EXPORT_LIMIT).items();
-    }
-
-    private static BigDecimal total(List<SessionRow> rows) {
-        return rows.stream().map(SessionRow::amount).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add).setScale(0, java.math.RoundingMode.HALF_UP);
     }
 
     // The sessions of the period with their payment status, as an Excel file or a PDF, with the energy and amount totals

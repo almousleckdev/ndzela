@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api/api-client";
 import type { ExportFormat } from "@/components/export-menu";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import type { IdTagRow, IdTagStatus, ChargingSummary, SessionKind, SessionSummary, Recharge, RecordRechargeInput, Station, VehicleOption, ChargingSessionRow } from "@/features/charging/types";
+import type { IdTagRow, IdTagStatus, ChargingSummary, SessionKind, SessionSummary, SessionScope, Recharge, RecordRechargeInput, Station, VehicleOption, ChargingSessionRow } from "@/features/charging/types";
 
 // "ALL" is the default: it is not sent
 const kindParam = (kind: SessionKind | undefined) => (kind === "ALL" ? undefined : kind);
@@ -15,7 +15,10 @@ export const chargingService = {
   sessions: (query: { q?: string; status?: string; from?: string; to?: string; kind?: SessionKind }, page: number, size: number) =>
     apiClient<Page<ChargingSessionRow>>(`/charging/sessions?${queryString({ q: query.q?.trim(), status: query.status, from: query.from, to: query.to, kind: kindParam(query.kind), page, size })}`),
 
-  sessionSummary: (kind?: SessionKind) => apiClient<SessionSummary>(`/charging/sessions/summary${kindParam(kind) ? `?${queryString({ kind: kindParam(kind) })}` : ""}`),
+  sessionSummary: (kind?: SessionKind, scope: SessionScope = {}) => {
+    const query = queryString({ kind: kindParam(kind), chargePoint: scope.chargePoint, driverId: scope.driverId });
+    return apiClient<SessionSummary>(`/charging/sessions/summary${query ? `?${query}` : ""}`);
+  },
 
   idTags: (status: IdTagStatus) => apiClient<IdTagRow[]>(`/charging/id-tags?status=${status}`),
   confirmIdTag: (id: string) => apiClient(`/charging/id-tags/${id}/confirm`, { method: "POST" }),
