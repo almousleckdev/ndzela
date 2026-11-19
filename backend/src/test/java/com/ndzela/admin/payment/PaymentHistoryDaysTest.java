@@ -50,7 +50,7 @@ class PaymentHistoryDaysTest extends AbstractDriverTest {
 
     @Test
     void theScopeSeparatesFormerRidersFromCurrentOnes() throws Exception {
-        jdbc.update("update drivers set status = 'INACTIVE'");
+        jdbc.update("update drivers set status = 'ARCHIVED'");
 
         send(get("/api/v1/payments/history?scope=FORMER"), viewer).andExpect(jsonPath("$.total").value(1));
         send(get("/api/v1/payments/history?scope=CURRENT"), viewer).andExpect(jsonPath("$.total").value(0));
@@ -74,7 +74,7 @@ class PaymentHistoryDaysTest extends AbstractDriverTest {
         send(get("/api/v1/payments/transactions?scope=CURRENT"), viewer).andExpect(jsonPath("$.total").value(1));
         send(get("/api/v1/payments/transactions?scope=FORMER"), viewer).andExpect(jsonPath("$.total").value(0));
 
-        jdbc.update("update drivers set status = 'INACTIVE'");
+        jdbc.update("update drivers set status = 'ARCHIVED'");
 
         send(get("/api/v1/payments/transactions?scope=CURRENT"), viewer).andExpect(jsonPath("$.total").value(0));
         send(get("/api/v1/payments/transactions?scope=FORMER"), viewer).andExpect(jsonPath("$.total").value(1));

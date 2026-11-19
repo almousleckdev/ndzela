@@ -116,7 +116,7 @@ public class PaymentQueryService {
         return new PaidDayView(d.getBusinessDay(), d.getKind(), whole(d.getAmount()), d.isPaidOnTime());
     }
 
-    // CURRENT: riders who are not archived, FORMER: the archived (INACTIVE) ones, anything else: everyone
+    // CURRENT: riders who are not archived, FORMER: the archived ones, anything else: everyone
     private Specification<LedgerEntry> scopeOf(String scope) {
         boolean former = "FORMER".equals(scope);
         if (!former && !"CURRENT".equals(scope)) {

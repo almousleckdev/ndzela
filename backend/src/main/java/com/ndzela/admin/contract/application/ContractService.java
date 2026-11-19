@@ -83,7 +83,9 @@ public class ContractService {
         Contract contract = loadActive(contractId);
         BigDecimal deposit = ContractTerms.of(contract.getStartDate(), contract.getDailyRent(), newDeposit).deposit();
         BigDecimal previous = contract.getDeposit();
-        contract.setSnapshot(write(current.withBailleur(readSnapshot(contract).bailleur())));
+        if (current != null) {
+            contract.setSnapshot(write(current.withBailleur(readSnapshot(contract).bailleur())));
+        }
         contract.setDeposit(deposit);
         touch(contract);
         audit.record("CONTRACT_UPDATED", "CONTRACT", contract.getId().toString(), contract.getContractNumber(), contract.getCountryId(),
@@ -91,7 +93,18 @@ public class ContractService {
         return ContractResponse.from(contract);
     }
 
-    // The same contract moves to another car; the rent, the dates and the number stay as signed.
+    // The car is taken from the driver; the contract, its dates and its history stay and wait for the next car.
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void detachVehicle(UUID driverId, String reason) {
+        contracts.findByDriverIdAndStatus(driverId, ContractStatus.ACTIVE).ifPresent(contract -> {
+            contract.setVehicleId(null);
+            touch(contract);
+            audit.record("CONTRACT_VEHICLE_REMOVED", "CONTRACT", contract.getId().toString(), contract.getContractNumber(), contract.getCountryId(),
+                    "revision " + contract.getRevision() + ", reason: " + reason);
+        });
+    }
+
+    // The same contract moves to another car (or to a car, after it had none); the rent, the dates and the number stay as signed.
     @Transactional(propagation = Propagation.MANDATORY)
     public ContractResponse changeVehicle(UUID contractId, UUID vehicleId, ContractSnapshot current) {
         Contract contract = loadActive(contractId);

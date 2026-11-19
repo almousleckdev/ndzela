@@ -36,7 +36,7 @@ class EarningsTest extends AbstractEarningsTest {
         driverWithTheStandardLedger();
         String former = newDriver();
         payment(former, 10000, "2026-09-01T10:00:00Z");
-        jdbc.update("update drivers set status = 'INACTIVE' where id = ?", UUID.fromString(former));
+        jdbc.update("update drivers set status = 'ARCHIVED' where id = ?", UUID.fromString(former));
 
         send(get("/api/v1/payments/earnings"), admin).andExpect(status().isOk())
                 .andExpect(jsonPath("$.collected").value(56000)).andExpect(jsonPath("$.collectedCurrent").value(46000)).andExpect(jsonPath("$.collectedFormer").value(10000));

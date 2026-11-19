@@ -8,8 +8,8 @@ public enum DriverStatus {
     // Resigned: no car, no login, nothing owed, the whole history kept
     ARCHIVED;
 
-    // No longer working for NDZela: the old riders and the ones who resigned
+    // No longer working for NDZela: the ones who resigned. An inactive driver is only paused (ADR-0046).
     public boolean isFormer() {
-        return this == INACTIVE || this == ARCHIVED;
+        return this == ARCHIVED;
     }
 }

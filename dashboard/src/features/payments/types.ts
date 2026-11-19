@@ -85,6 +85,16 @@ export interface CancelledDay {
   cancelledAt: string;
 }
 
+// A late rent day pushed to a working day after the end of the contract (rééchelonné)
+export interface RescheduledDay {
+  id: string;
+  originalDay: string;
+  newDay: string;
+  reason: string;
+  rescheduledBy: string;
+  rescheduledAt: string;
+}
+
 export interface PayableDay {
   day: string;
   dueAt: string;

@@ -1,19 +1,11 @@
 package com.ndzela.admin.payment;
 
-import com.ndzela.admin.driver.AbstractDriverTest;
 import com.ndzela.admin.driver.DriverJson;
-import com.ndzela.admin.infrastructure.email.EmailProvider;
-import com.ndzela.admin.payment.application.ArrearsService;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.DayOfWeek;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,7 +15,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -160,5 +151,16 @@ class ArrearsJobTest extends AbstractArrearsTest {
         postJson("/api/v1/drivers/" + driver + "/leaves", "{\"type\":\"SINGLE_DAY\",\"startDate\":\"" + tomorrow + "\",\"reason\":\"PUBLIC_HOLIDAY\"}", manager).andExpect(status().isCreated());
         arrears.evaluateAll(tomorrow.atTime(13, 0).atZone(ZONE).toInstant());
         assertEquals("NONE", level(), "the only rent due by then was the waived day");
+    }
+
+    @Test
+    void aDriverSetInactiveOwesNoRentWhileTheContractStaysOpen() throws Exception {
+        LocalDate tomorrow = LocalDate.now(ZONE).plusDays(1);
+        while (tomorrow.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            tomorrow = tomorrow.plusDays(1);
+        }
+        postJson("/api/v1/drivers/" + driver + "/deactivate", "{\"reason\":\"Accident\"}", manager).andExpect(status().isOk());
+        arrears.evaluateAll(tomorrow.plusDays(4).atTime(13, 0).atZone(ZONE).toInstant());
+        assertEquals("NONE", level(), "no rent is charged during the pause");
     }
 }

@@ -58,6 +58,9 @@ public class DriverAppService {
     @Transactional(readOnly = true)
     public DriverVehicleResponse vehicle(UUID driverId) {
         ContractResponse contract = activeContract(driverId);
+        if (contract.vehicleId() == null) {
+            throw new BusinessRuleViolationException("DRIVER_HAS_NO_VEHICLE", "This driver has no vehicle.");
+        }
         return DriverVehicleResponse.from(vehicles.responsesByIds(List.of(contract.vehicleId())).get(contract.vehicleId()));
     }
 

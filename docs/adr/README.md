@@ -49,6 +49,8 @@ One file per decision: `NNNN-short-title.md`. Never delete; supersede. Status va
 | [0042](0042-resigned-drivers-are-archived.md) | Resigned drivers are archived with their whole history | Accepted |
 | [0043](0043-cancelled-rent-days.md) | Staff can cancel rent days a driver does not owe | Accepted |
 | [0042](0042-stopping-a-charge-from-both-dashboards.md) | A running charge can be stopped from the NDZela admin and from the Zella dashboard | Accepted |
+| [0046](0046-pauses-keep-the-contract.md) | A driver keeps his contract when set inactive or when the car is taken; the rent is paused | Accepted |
+| [0047](0047-rescheduling-late-rent-days.md) | Late rent days can be pushed to the end of the contract (rééchelonner) | Accepted |
 | [0040](0040-zella-reads-a-linked-drivers-contract-and-car.md) | The Zella app reads a linked driver's contract and car | Accepted |
 | [0044](0044-free-staff-charges.md) | Free staff charges are marked, never shown as unpaid | Accepted |
 | [0045](0045-staff-car-and-free-charging.md) | A staff member gets a car and free charging from Users | Accepted |

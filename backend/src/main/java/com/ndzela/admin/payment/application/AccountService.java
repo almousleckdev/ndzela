@@ -5,6 +5,7 @@ import com.ndzela.admin.country.domain.CountryRepository;
 import com.ndzela.admin.driver.application.DriverArrearsService;
 import com.ndzela.admin.driver.application.model.DriverRef;
 import com.ndzela.admin.driver.application.DriverLeaveService;
+import com.ndzela.admin.driver.application.DriverPauseService;
 import com.ndzela.admin.payment.application.model.AccountEntry;
 import com.ndzela.admin.payment.application.model.AccountIncident;
 import com.ndzela.admin.payment.application.model.AccountInput;
@@ -15,6 +16,8 @@ import com.ndzela.admin.payment.domain.CancelledDayRepository;
 import com.ndzela.admin.payment.domain.DayIncidentRepository;
 import com.ndzela.admin.payment.domain.LedgerEntry;
 import com.ndzela.admin.payment.domain.LedgerEntryRepository;
+import com.ndzela.admin.payment.domain.RescheduledDay;
+import com.ndzela.admin.payment.domain.RescheduledDayRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,20 +35,24 @@ import java.util.UUID;
 public class AccountService {
     private final LedgerEntryRepository ledger;
     private final DriverLeaveService leaveService;
+    private final DriverPauseService pauseService;
     private final DriverArrearsService driverArrears;
     private final CountryRepository countries;
     private final DayIncidentRepository incidents;
     private final CancelledDayRepository cancelledDays;
+    private final RescheduledDayRepository rescheduledDays;
 
     @Transactional(readOnly = true)
     public AccountState state(UUID countryId, ContractResponse contract, Instant now) {
         ZoneId zone = zoneOf(countryId);
         List<AccountEntry> entries = ledger.findAllByContractIdOrderByCreatedAtAscIdAsc(contract.id()).stream().map(AccountService::entry).toList();
-        List<AccountLeave> leaves = leaveService.activeRanges(contract.driverId()).stream().map(r -> new AccountLeave(r[0], r[1])).toList();
+        List<AccountLeave> leaves = java.util.stream.Stream.concat(leaveService.activeRanges(contract.driverId()).stream(), pauseService.ranges(contract.driverId()).stream())
+                .map(r -> new AccountLeave(r[0], r[1])).toList();
         List<AccountIncident> declared = incidents.findAllByContractIdAndCancelledAtIsNull(contract.id()).stream().map(i -> new AccountIncident(i.getDay(), i.getKind())).toList();
         return AccountCalculator.compute(new AccountInput(contract.startDate(), contract.endDate(),
                 contract.endedAt() == null ? null : contract.endedAt().atZoneSameInstant(zone).toLocalDate(), contract.dailyRent(), leaves, declared, entries, zone, now,
-                cancelledDays.findAllByContractIdOrderByBusinessDayAsc(contract.id()).stream().map(CancelledDay::getBusinessDay).collect(java.util.stream.Collectors.toSet())));
+                cancelledDays.findAllByContractIdOrderByBusinessDayAsc(contract.id()).stream().map(CancelledDay::getBusinessDay).collect(java.util.stream.Collectors.toSet()),
+                rescheduledDays.findAllByContractIdOrderByOriginalDayAsc(contract.id()).stream().collect(java.util.stream.Collectors.toMap(RescheduledDay::getOriginalDay, RescheduledDay::getNewDay))));
     }
 
     @Transactional

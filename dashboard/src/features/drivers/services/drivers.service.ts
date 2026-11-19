@@ -63,6 +63,7 @@ export const driversService = {
   changeContractStart: (id: string, startDate: string) => apiClient<Contract>(`/drivers/${id}/contract/start-date`, { method: "PUT", body: { startDate } }),
 
   archive: (id: string, reason: string) => apiClient<Driver>(`/drivers/${id}/archive`, { method: "POST", body: { reason } }),
+  releaseVehicle: (id: string, reason: string) => apiClient<Driver>(`/drivers/${id}/vehicle/release`, { method: "POST", body: { reason } }),
   removeVehicle: (id: string, reason: string) => apiClient<Driver>(`/drivers/${id}/vehicle/remove`, { method: "POST", body: { reason } }),
 
   filePath: (id: string, kind: DriverFileKind) => `/drivers/${id}/files/${kind}`,

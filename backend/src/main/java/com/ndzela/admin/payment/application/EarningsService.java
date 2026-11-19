@@ -5,7 +5,6 @@ import com.ndzela.admin.contract.api.dto.ContractResponse;
 import com.ndzela.admin.contract.application.ContractService;
 import com.ndzela.admin.driver.application.DriverArrearsService;
 import com.ndzela.admin.driver.application.model.DriverRef;
-import com.ndzela.admin.driver.domain.DriverStatus;
 import com.ndzela.admin.payment.api.dto.EarningsDriverRow;
 import com.ndzela.admin.payment.api.dto.EarningsResponse;
 import com.ndzela.admin.payment.api.dto.EarningsResponse.MonthTotal;

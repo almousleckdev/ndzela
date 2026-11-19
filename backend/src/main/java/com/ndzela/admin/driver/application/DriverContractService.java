@@ -31,6 +31,6 @@ public class DriverContractService {
         if (active == null) {
             throw new BusinessRuleViolationException("NO_ACTIVE_CONTRACT", "This driver has no active contract.");
         }
-        return contractService.amend(active.id(), deposit, DriverContractSnapshots.of(driver, vehicleService.get(active.vehicleId())));
+        return contractService.amend(active.id(), deposit, active.vehicleId() == null ? null : DriverContractSnapshots.of(driver, vehicleService.get(active.vehicleId())));
     }
 }

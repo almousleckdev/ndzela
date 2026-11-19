@@ -120,8 +120,9 @@ export function DriverWizardForm({ driver, countries, centers, vehicles }: Drive
       if (startChanged) await driversService.changeContractStart(existing.id, startDate);
       await driversService.update(existing.id, toRequestBody(form.getValues(), codes));
       const vehicleChanged = Boolean(newVehicleId && newVehicleId !== existing.vehicle?.id);
-      if (vehicleChanged) await driversService.changeVehicle(existing.id, newVehicleId);
       const deposit = Number(form.getValues("contract.deposit"));
+      // Without a car the driver keeps his contract: the new car continues it instead of opening another one.
+      if (vehicleChanged) await (existing.vehicle ? driversService.changeVehicle(existing.id, newVehicleId) : driversService.assignVehicle(existing.id, newVehicleId, deposit > 0 ? deposit : 1));
       // A car change already refreshed the printed parties, so the contract is refreshed again only for a new deposit.
       if (mayUpdateContract && updateContract && (!vehicleChanged || deposit !== existing.contract?.deposit)) {
         const contract = await driversService.updateContract(existing.id, deposit);

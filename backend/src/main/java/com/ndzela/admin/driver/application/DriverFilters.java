@@ -17,7 +17,7 @@ class DriverFilters {
     private final DriverLeaveService leaveService;
     private final com.ndzela.admin.country.application.DayRanges dayRanges;
 
-    // CURRENT: riders still working, FORMER: the old (INACTIVE) ones, ARCHIVED: the ones who resigned, anything else: everyone
+    // CURRENT: riders still working, FORMER: the inactive (paused) ones, shown as "Inactifs", ARCHIVED: the ones who resigned, anything else: everyone
     Specification<Driver> scope(String scope) {
         if ("CURRENT".equals(scope)) {
             return (root, query, cb) -> cb.not(root.get("status").in(DriverStatus.INACTIVE, DriverStatus.ARCHIVED));

@@ -6,6 +6,7 @@ import com.ndzela.admin.contract.api.dto.ContractResponse;
 import com.ndzela.admin.contract.application.model.ContractSeed;
 import com.ndzela.admin.contract.application.ContractService;
 import com.ndzela.admin.driver.domain.Driver;
+import com.ndzela.admin.driver.domain.PauseCause;
 import com.ndzela.admin.driver.domain.VehicleAssignment;
 import com.ndzela.admin.driver.domain.VehicleAssignmentRepository;
 import com.ndzela.admin.tenant.TenantHolder;
@@ -31,6 +32,7 @@ public class DriverAssignmentService {
     private final VehicleService vehicleService;
     private final ContractService contractService;
     private final AuditService audit;
+    private final DriverPauseService pauses;
 
     @Transactional
     public void assign(Driver driver, UUID vehicleId, BigDecimal deposit) {
@@ -40,7 +42,14 @@ public class DriverAssignmentService {
         }
         VehicleResponse vehicle = vehicleService.reserve(vehicleId);
         openAssignment(driver, vehicleId);
-        contractService.open(new ContractSeed(driver.getCountryId(), driver.getId(), vehicleId, vehicle.dailyRent(), deposit, DriverContractSnapshots.of(driver, vehicle)));
+        ContractResponse waiting = contractService.activeOf(List.of(driver.getId())).get(driver.getId());
+        if (waiting != null) {
+            // The contract he kept without a car continues on the new one; no new contract, no reset.
+            contractService.changeVehicle(waiting.id(), vehicleId, DriverContractSnapshots.of(driver, vehicle));
+            pauses.closeIfOpen(driver, PauseCause.NO_CAR);
+        } else {
+            contractService.open(new ContractSeed(driver.getCountryId(), driver.getId(), vehicleId, vehicle.dailyRent(), deposit, DriverContractSnapshots.of(driver, vehicle)));
+        }
         audit.record("DRIVER_VEHICLE_ASSIGNED", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(),
                 vehicle.fleetNumber() + " " + vehicle.plate());
     }
@@ -79,25 +88,51 @@ public class DriverAssignmentService {
         }
     }
 
+    // Takes the car from the driver. His contract stays as it is (counters, history) and no rent runs until he gets a car again.
     @Transactional
     public void unassign(Driver driver, String reason) {
         VehicleAssignment open = assignments.findByDriverIdAndEndedAtIsNull(driver.getId())
                 .orElseThrow(() -> new BusinessRuleViolationException("DRIVER_HAS_NO_VEHICLE", "This driver has no vehicle."));
-        open.setEndedAt(OffsetDateTime.now());
-        open.setEndReason(reason.trim());
-        assignments.save(open);
-        VehicleResponse vehicle = vehicleService.release(open.getVehicleId());
-        contractService.terminateActive(driver.getId(), reason.trim());
+        VehicleResponse vehicle = endAssignment(open, reason);
+        contractService.detachVehicle(driver.getId(), reason.trim());
+        pauses.open(driver, PauseCause.NO_CAR, reason);
         audit.record("DRIVER_VEHICLE_REMOVED", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(),
                 vehicle.fleetNumber() + " " + vehicle.plate() + ", reason: " + reason.trim());
     }
 
-    // Frees the car (and ends the contract) when the driver has one; nothing to do otherwise.
+    // Ends the contract for good, and frees the car when the driver still has one.
+    @Transactional
+    public void closeContract(Driver driver, String reason) {
+        if (contractService.activeOf(List.of(driver.getId())).get(driver.getId()) == null) {
+            throw new BusinessRuleViolationException("NO_ACTIVE_CONTRACT", "This driver has no active contract.");
+        }
+        closeContractIfAny(driver, reason);
+    }
+
+    @Transactional
+    public void closeContractIfAny(Driver driver, String reason) {
+        assignments.findByDriverIdAndEndedAtIsNull(driver.getId()).ifPresent(open -> {
+            VehicleResponse vehicle = endAssignment(open, reason);
+            audit.record("DRIVER_VEHICLE_REMOVED", "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(),
+                    vehicle.fleetNumber() + " " + vehicle.plate() + ", reason: " + reason.trim());
+        });
+        contractService.terminateActive(driver.getId(), reason.trim());
+        pauses.closeIfOpen(driver, PauseCause.NO_CAR);
+    }
+
+    // Frees the car when the driver has one (the contract stays); nothing to do otherwise.
     @Transactional
     public void releaseIfAny(Driver driver, String reason) {
         if (assignments.findByDriverIdAndEndedAtIsNull(driver.getId()).isPresent()) {
             unassign(driver, reason);
         }
+    }
+
+    private VehicleResponse endAssignment(VehicleAssignment open, String reason) {
+        open.setEndedAt(OffsetDateTime.now());
+        open.setEndReason(reason.trim());
+        assignments.save(open);
+        return vehicleService.release(open.getVehicleId());
     }
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)

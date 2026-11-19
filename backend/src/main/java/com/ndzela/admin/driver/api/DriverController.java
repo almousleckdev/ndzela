@@ -172,6 +172,12 @@ public class DriverController {
         return drivers.removeVehicle(id, request.reason());
     }
 
+    @PostMapping("/{id}/vehicle/release")
+    @PreAuthorize("hasAuthority('drivers:update')")
+    public DriverResponse releaseVehicle(@PathVariable UUID id, @Valid @RequestBody ReasonRequest request) {
+        return drivers.releaseVehicle(id, request.reason());
+    }
+
     @GetMapping("/{id}/files/{kind}")
     @PreAuthorize("hasAuthority('drivers:read')")
     public ResponseEntity<Resource> file(@PathVariable UUID id, @PathVariable String kind) {

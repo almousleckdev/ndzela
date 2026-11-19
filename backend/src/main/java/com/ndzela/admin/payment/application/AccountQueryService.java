@@ -73,14 +73,14 @@ public class AccountQueryService {
         var result = driverArrears.page(level, "LATE".equals(filter), q, lateFrom, lateTo, sort, page, size);
         List<UUID> ids = result.getContent().stream().map(DriverRef::id).toList();
         Map<UUID, ContractResponse> contracts = contractService.activeOf(ids);
-        Map<UUID, VehicleResponse> vehicles = vehicleService.responsesByIds(contracts.values().stream().map(ContractResponse::vehicleId).toList());
+        Map<UUID, VehicleResponse> vehicles = vehicleService.responsesByIds(contracts.values().stream().map(ContractResponse::vehicleId).filter(java.util.Objects::nonNull).toList());
         Map<UUID, OffsetDateTime> lastPayment = lastPaymentOf(ids);
         boolean ranged = paidFrom != null || paidTo != null;
         Map<UUID, BigDecimal> collected = ranged ? collectedBy(ids, paidFrom, paidTo) : Map.of();
         LocalDate today = LocalDate.now(period.zone());
         return PageResponse.from(result, d -> {
             ContractResponse c = contracts.get(d.id());
-            VehicleResponse v = c == null ? null : vehicles.get(c.vehicleId());
+            VehicleResponse v = c == null || c.vehicleId() == null ? null : vehicles.get(c.vehicleId());
             int elapsed = c == null ? 0 : ContractProgressCalculator.elapsedDays(c, today);
             int total = c == null ? 0 : c.billableDays();
             return new AccountRow(d.id(), d.fullName(), d.phone(), d.status().name(),

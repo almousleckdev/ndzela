@@ -6,6 +6,7 @@ import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
 import com.ndzela.admin.driver.domain.DriverStatus;
+import com.ndzela.admin.driver.domain.PauseCause;
 import com.ndzela.admin.driver.domain.SuspensionCause;
 
 import lombok.RequiredArgsConstructor;
@@ -18,12 +19,13 @@ import java.util.UUID;
 
 import static com.ndzela.admin.driver.application.DriverAssignmentService.label;
 
-// Suspending (temporary) and blocking (permanent until an administrator lifts it) a driver.
+// Suspending (temporary), pausing (inactive: keeps the car and contract, no rent) and blocking (permanent until an administrator lifts it) a driver.
 @Service
 @RequiredArgsConstructor
 public class DriverStatusService {
     private final DriverRepository drivers;
     private final AuditService audit;
+    private final DriverPauseService pauses;
 
     @Transactional
     public Driver suspend(UUID id, String reason) {
@@ -102,11 +104,17 @@ public class DriverStatusService {
 
     private Driver change(Driver driver, DriverStatus target, String reason, String action, SuspensionCause cause, boolean automatic) {
         if (driver.getStatus() != target) {
+            DriverStatus previous = driver.getStatus();
             driver.setStatus(target);
             driver.setStatusReason(reason == null ? null : reason.trim());
             driver.setSuspensionCause(target == DriverStatus.SUSPENDED ? cause : null);
             driver.setAutoRestoredAt(automatic ? java.time.OffsetDateTime.now() : null);
             drivers.save(driver);
+            if (target == DriverStatus.INACTIVE) {
+                pauses.open(driver, PauseCause.INACTIVE, reason);
+            } else if (previous == DriverStatus.INACTIVE) {
+                pauses.closeIfOpen(driver, PauseCause.INACTIVE);
+            }
             audit.record(action, "DRIVER", driver.getId().toString(), label(driver), driver.getCountryId(), reason == null ? null : "reason: " + reason.trim());
         }
         return driver;

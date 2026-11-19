@@ -44,7 +44,7 @@ Payments settle **whole daily rents, oldest first** ([ADR-0021](../adr/0021-day-
 
 **Receipt.** One server-drawn ticket-style PDF (80 mm wide) per confirmed or recorded payment: company, number, date and time, driver, contract, operator, masked phone, transaction, a line per rent day with the exact payment time, penalties, credit kept, fee, total, a QR code that opens the receipt's public page on the website ([ADR-0030](../adr/0030-receipt-qr-opens-a-public-payment-page.md)). **No RCCM.** Staff download it from the Transactions table ("Reçu"); a reversed payment's receipt says ANNULÉ.
 
-**Former riders** are the old (`INACTIVE`) and archived (`ARCHIVED`) drivers: Chauffeurs has the tabs Actuels, Anciens (`INACTIVE`) and Archivés (`ARCHIVED`), and the Transactions table a Chauffeurs filter (`scope=CURRENT|FORMER`).
+**Former riders** are the archived (`ARCHIVED`) drivers (ADR-0046: an inactive driver is paused, not gone): Chauffeurs has the tabs Actuels, Inactifs (`INACTIVE`) and Archivés (`ARCHIVED`), and the Transactions table a Chauffeurs filter (`scope=CURRENT|FORMER`).
 
 ## Escalation (Decided; reconciled with the contract on 2026-10-14)
 
@@ -90,3 +90,6 @@ Yesterday's rent is *awaiting* until its deadline (12:00). It is shown in "À r�
 **Historique (dashboard).** The Transactions tab lists the **successful** payments by default; the failed and pending attempts are counted above the table ("5 tentatives échouées") and shown with the Statut filter (Réussis, Échoués, En attente, Annulés, Tous). Each driver name opens his own history page (`/finance/history/{driverId}`: level, amount due, credit, on-time / late / unpaid counts, then his payments, with the same filter); `GET /payments/transactions` takes an optional `driverId` for it.
 
 **Total encaissé (2026-11-16).** Finance > "Total encaissé" (`earnings:read`: SUPER_ADMIN, ADMIN, COMPTABLE) shows everything collected since the start over a chosen period: **collected** (payments that were not reversed), the **provider fees** on their own line, the **net**, the split between **current and former drivers** (former = archived, status INACTIVE), a month-by-month table in the country's time zone (UTC for a super admin without a chosen country), and a per-driver table with the total paid, the contract and the last payment. It exports to Excel or PDF. Charging income is not in this total (it stays on the charging page), and the money kept aside during the legacy import is not in the ledger, so it is not counted until staff decide what to do with it.
+
+
+**Pauses and rescheduling (2026-11-19).** No rent is charged while a driver is inactive or has no car ([ADR-0046](../adr/0046-pauses-keep-the-contract.md)). Staff with `payments:reschedule_days` can push late days to working days after the contract end instead of cancelling them ([ADR-0047](../adr/0047-rescheduling-late-rent-days.md)).

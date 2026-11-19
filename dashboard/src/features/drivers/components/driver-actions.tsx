@@ -8,6 +8,7 @@ import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS, type Permission } from "@/features/access/lib/permissions";
 import { AllowDaysDialog } from "@/features/drivers/components/allow-days-dialog";
 import { CancelDaysDialog } from "@/features/drivers/components/cancel-days-dialog";
+import { RescheduleDaysDialog } from "@/features/drivers/components/reschedule-days-dialog";
 import { CloseContractDialog } from "@/features/drivers/components/close-contract-dialog";
 import { ChangeContactDialog } from "@/features/drivers/components/change-contact-dialog";
 import { DeleteDriversDialog } from "@/features/drivers/components/delete-drivers-dialog";
@@ -16,7 +17,7 @@ import { SuspendDialog } from "@/features/drivers/components/suspend-dialog";
 import { driversService } from "@/features/drivers/services/drivers.service";
 import type { Driver } from "@/features/drivers/types";
 
-export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "archive" | "partial-payment" | "cancel-days" | "delete";
+export type DriverActionKind = "suspend" | "block" | "deactivate" | "reactivate" | "unlock-login" | "change-contact" | "reset-password" | "remove-vehicle" | "release-vehicle" | "archive" | "partial-payment" | "cancel-days" | "reschedule-days" | "delete";
 export interface DriverAction { kind: DriverActionKind; driver: Driver }
 
 // The state-changing actions offered for a driver, according to their state and the viewer's permissions.
@@ -33,18 +34,21 @@ export function availableActions(driver: Driver, can: (permission: Permission) =
     items.push({ kind: "change-contact", label: "Modifier l'email ou le téléphone" });
     items.push({ kind: "reset-password", label: "Nouveau mot de passe" });
   }
-  if (can(PERMISSIONS.DRIVERS_UPDATE) && can(PERMISSIONS.CONTRACTS_TERMINATE) && driver.vehicle) items.push({ kind: "remove-vehicle", label: "Clôturer le contrat" });
+  if (can(PERMISSIONS.DRIVERS_UPDATE) && driver.vehicle) items.push({ kind: "release-vehicle", label: "Retirer le véhicule" });
+  if (can(PERMISSIONS.DRIVERS_UPDATE) && can(PERMISSIONS.CONTRACTS_TERMINATE) && driver.contract) items.push({ kind: "remove-vehicle", label: "Clôturer le contrat" });
   if (can(PERMISSIONS.DRIVERS_ARCHIVE) && driver.status !== "BLOCKED" && driver.status !== "ARCHIVED") items.push({ kind: "archive", label: "Archiver (démission)" });
-  if (can(PERMISSIONS.PAYMENTS_CANCEL_DAYS) && driver.vehicle) items.push({ kind: "cancel-days", label: "Annuler des jours de loyer" });
+  if (can(PERMISSIONS.PAYMENTS_CANCEL_DAYS) && driver.contract) items.push({ kind: "cancel-days", label: "Annuler des jours de loyer" });
+  if (can(PERMISSIONS.PAYMENTS_RESCHEDULE_DAYS) && driver.contract) items.push({ kind: "reschedule-days", label: "Rééchelonner des jours" });
   if (can(PERMISSIONS.DRIVERS_PARTIAL_PAYMENT) && driver.arrears.unpaidDays >= 3) items.push({ kind: "partial-payment", label: "Autoriser le paiement partiel" });
   if (can(PERMISSIONS.DRIVERS_DELETE) || can(PERMISSIONS.DRIVERS_PURGE)) items.push({ kind: "delete", label: "Supprimer", destructive: true });
   return items;
 }
 
 const REASONED = {
-  deactivate: { title: "Mettre ce chauffeur inactif ?", text: "Il quitte ou arrête le travail : son véhicule redevient disponible et son contrat en cours est résilié.", button: "Mettre inactif", success: "Chauffeur inactif.", run: driversService.deactivate, destructive: false },
-  block: { title: "Bloquer ce chauffeur ?", text: "Le blocage est durable : seul un administrateur pourra le lever. Son véhicule redevient disponible et son contrat en cours est résilié.", button: "Bloquer", success: "Chauffeur bloqué.", run: driversService.block, destructive: true },
+  deactivate: { title: "Mettre ce chauffeur inactif ?", text: "Pause (accident, congé…) : il garde son véhicule et son contrat, aucun loyer n'est facturé pendant l'inactivité. Réactivez-le à son retour. Pour un départ définitif, utilisez Archiver.", button: "Mettre inactif", success: "Chauffeur inactif.", run: driversService.deactivate, destructive: false },
+  block: { title: "Bloquer ce chauffeur ?", text: "Le blocage est durable : seul un administrateur pourra le lever. Son véhicule redevient disponible ; son contrat reste ouvert et reprend avec le prochain véhicule.", button: "Bloquer", success: "Chauffeur bloqué.", run: driversService.block, destructive: true },
   "remove-vehicle": { success: "Contrat clôturé.", run: driversService.removeVehicle },
+  "release-vehicle": { title: "Retirer le véhicule ?", text: "Le véhicule redevient disponible. Le contrat reste ouvert avec tout son historique, sans loyer tant qu'il n'a pas de véhicule ; le prochain véhicule reprend le même contrat.", button: "Retirer le véhicule", success: "Véhicule retiré.", run: driversService.releaseVehicle, destructive: false },
 } as const;
 
 interface DriverActionDialogsProps {
@@ -96,7 +100,11 @@ export function DriverActionDialogs({ target, onClose, onDone }: DriverActionDia
     return <AllowDaysDialog driverId={driver.id} driverName={name} onClose={onClose} onSaved={() => { addToast({ title: "Succès", description: "Jours autorisés mis à jour.", type: "success" }); onDone(kind); }} />;
   }
 
-  if (kind === "block" || kind === "deactivate") {
+  if (kind === "reschedule-days") {
+    return <RescheduleDaysDialog driverId={driver.id} driverName={name} onClose={onClose} onSaved={() => { addToast({ title: "Succès", description: "Jours de loyer rééchelonnés.", type: "success" }); onDone(kind); }} />;
+  }
+
+  if (kind === "block" || kind === "deactivate" || kind === "release-vehicle") {
     const copy = REASONED[kind];
     return (
       <ReasonDialog title={copy.title} description={`${name}. ${copy.text}`} confirmText={copy.button} destructive={copy.destructive} onClose={onClose}

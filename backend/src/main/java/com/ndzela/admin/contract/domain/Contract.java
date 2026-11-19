@@ -29,7 +29,7 @@ public class Contract extends TenantOwned {
     @Column(name = "driver_id", nullable = false)
     private UUID driverId;
 
-    @Column(name = "vehicle_id", nullable = false)
+    @Column(name = "vehicle_id")
     private UUID vehicleId;
 
     @Enumerated(EnumType.STRING)

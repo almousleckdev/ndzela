@@ -91,7 +91,7 @@ public class DriverService {
         return queries.response(driver);
     }
 
-    // A blocked driver no longer holds a car.
+    // A blocked driver no longer holds a car; his contract stays.
     @Transactional
     public DriverResponse block(UUID id, String reason) {
         Driver driver = statusService.block(id, reason);
@@ -99,12 +99,10 @@ public class DriverService {
         return queries.response(driver);
     }
 
-    // A driver who quits no longer holds a car.
+    // A paused driver (accident, holiday) keeps the car and the contract; the rent stops until he is reactivated.
     @Transactional
     public DriverResponse deactivate(UUID id, String reason) {
-        Driver driver = statusService.deactivate(id, reason);
-        assignmentService.releaseIfAny(driver, reason);
-        return queries.response(driver);
+        return queries.response(statusService.deactivate(id, reason));
     }
 
     @Transactional
@@ -166,10 +164,19 @@ public class DriverService {
         return queries.response(driver);
     }
 
+    // "Clôturer le contrat": ends the contract for good (nothing may be owed) and frees the car.
     @Transactional
     public DriverResponse removeVehicle(UUID id, String reason) {
-        Driver driver = load(id);
+        Driver driver = lock(id);
         requireNothingOwed(driver);
+        assignmentService.closeContract(driver, reason);
+        return queries.response(driver);
+    }
+
+    // "Retirer le véhicule": the car goes back to the pool, the contract stays and waits for the next car.
+    @Transactional
+    public DriverResponse releaseVehicle(UUID id, String reason) {
+        Driver driver = lock(id);
         assignmentService.unassign(driver, reason);
         return queries.response(driver);
     }
@@ -180,7 +187,7 @@ public class DriverService {
         Driver driver = load(id);
         requireNothingOwed(driver);
         statusService.archive(id, reason);
-        assignmentService.releaseIfAny(driver, reason);
+        assignmentService.closeContractIfAny(driver, reason);
         return queries.response(driver);
     }
 
@@ -190,6 +197,11 @@ public class DriverService {
         if (owes && contractService.activeOf(List.of(driver.getId())).containsKey(driver.getId())) {
             throw new BusinessRuleViolationException("CONTRACT_HAS_ARREARS", "The late rent must be paid first.");
         }
+    }
+
+    // Two staff members acting on the same driver at once are served one after the other.
+    private Driver lock(UUID id) {
+        return drivers.findForUpdate(id).orElseThrow(() -> new ResourceNotFoundException("Driver not found."));
     }
 
     private Driver load(UUID id) {

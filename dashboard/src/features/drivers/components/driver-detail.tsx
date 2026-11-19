@@ -78,7 +78,7 @@ function DriverDetailContent({ id }: { id: string }) {
             {d.contract && can(PERMISSIONS.INCIDENTS_DECLARE) && <Button variant="outline" onClick={() => setLeaves("half-days")}>Demi-journée</Button>}
             {can(PERMISSIONS.DRIVERS_UPDATE) && <Link href={`/drivers/${id}/edit`}><Button variant="outline">Modifier</Button></Link>}
             {d.contract && can(PERMISSIONS.CONTRACTS_READ) && <Link href={`/contracts/${d.contract.id}`}><Button variant="outline">Contrat</Button></Link>}
-            {availableActions(d, can).filter((item) => item.kind !== "remove-vehicle").map((item) => (
+            {availableActions(d, can).filter((item) => item.kind !== "release-vehicle").map((item) => (
               <Button key={item.kind} variant="outline" className={item.destructive ? "text-red-600 hover:bg-red-50" : undefined} onClick={() => setAction({ kind: item.kind, driver: d })}>{item.label}</Button>
             ))}
           </div>
@@ -95,7 +95,7 @@ function DriverDetailContent({ id }: { id: string }) {
               ["Immatriculation", d.vehicle.plate],
               ["Loyer journalier", formatFcfa(d.vehicle.dailyRent)],
             ]} />
-            {can(PERMISSIONS.DRIVERS_UPDATE) && <div className="mt-4"><Button variant="outline" onClick={() => setAction({ kind: "remove-vehicle", driver: d })}>Retirer le véhicule</Button></div>}
+            {can(PERMISSIONS.DRIVERS_UPDATE) && <div className="mt-4"><Button variant="outline" onClick={() => setAction({ kind: "release-vehicle", driver: d })}>Retirer le véhicule</Button></div>}
           </>
         ) : (
           <div className="flex items-center justify-between gap-4">

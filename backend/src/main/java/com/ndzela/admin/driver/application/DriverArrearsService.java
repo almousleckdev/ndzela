@@ -117,10 +117,10 @@ public class DriverArrearsService {
         return drivers.findAll(spec, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), order)).map(DriverRef::from);
     }
 
-    // The old (INACTIVE) and archived riders, whose payments are the former riders' history
+    // The archived riders, whose payments are the former riders' history
     @Transactional(readOnly = true)
     public List<UUID> formerIds() {
-        return drivers.findAll((root, query, cb) -> root.get("status").in(DriverStatus.INACTIVE, DriverStatus.ARCHIVED)).stream().map(Driver::getId).toList();
+        return drivers.findAll((root, query, cb) -> cb.equal(root.get("status"), DriverStatus.ARCHIVED)).stream().map(Driver::getId).toList();
     }
 
     @Transactional(readOnly = true)

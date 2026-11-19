@@ -41,7 +41,7 @@ import { useCountrySelectionStore } from "@/features/tenancy/store/country-selec
 
 type Filter = "ACTIVE" | "ON_LEAVE" | "LATE" | "INACTIVE" | "SUSPENDED" | "BLOCKED";
 type Scope = NonNullable<DriverQuery["scope"]>;
-const SCOPE_TABS: { value: Scope; label: string }[] = [{ value: "CURRENT", label: "Actuels" }, { value: "FORMER", label: "Anciens" }, { value: "ARCHIVED", label: "Archivés" }];
+const SCOPE_TABS: { value: Scope; label: string }[] = [{ value: "CURRENT", label: "Actuels" }, { value: "FORMER", label: "Inactifs" }, { value: "ARCHIVED", label: "Archivés" }];
 
 // What a choice asks the server for
 function queryOf(filter: string): Pick<DriverQuery, "status" | "onLeave" | "late"> {

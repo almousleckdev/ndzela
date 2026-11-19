@@ -53,7 +53,7 @@ class DriverAssignmentTest extends AbstractDriverTest {
         postJson("/api/v1/drivers/" + driver + "/vehicle/remove", REASON, manager).andExpect(status().isOk()).andExpect(jsonPath("$.vehicle").doesNotExist());
         assertEquals("AVAILABLE", jdbc.queryForObject("select status from vehicles where id = ?::uuid", String.class, vehicle));
         postJson("/api/v1/drivers/" + driver + "/vehicle/remove", REASON, manager)
-                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DRIVER_HAS_NO_VEHICLE"));
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("NO_ACTIVE_CONTRACT"));
 
         postJson("/api/v1/drivers/" + driver + "/vehicle", "{\"vehicleId\":\"" + vehicle + "\",\"deposit\":250000}", manager)
                 .andExpect(status().isOk()).andExpect(jsonPath("$.vehicle.status").value("ASSIGNED"));

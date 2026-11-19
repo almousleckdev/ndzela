@@ -50,10 +50,17 @@ public final class AccountCalculator {
         List<AccountCharge> awaiting = new ArrayList<>();
         LocalDate today = in.now().atZone(in.zone()).toLocalDate();
         LocalDate last = min(in.contractEnd(), in.endedOn() == null ? today : in.endedOn(), today);
+        List<LocalDate> rentDays = new ArrayList<>();
         for (LocalDate day = in.contractStart().plusDays(1); !day.isAfter(last); day = day.plusDays(1)) {
-            if (day.getDayOfWeek() == DayOfWeek.SUNDAY || onLeave(in.leaves(), day) || in.cancelledDays().contains(day)) {
+            if (day.getDayOfWeek() == DayOfWeek.SUNDAY || onLeave(in.leaves(), day) || in.cancelledDays().contains(day) || in.pushedDays().containsKey(day)) {
                 continue;
             }
+            rentDays.add(day);
+        }
+        // Days pushed to the end of the contract are charged on their new day, which comes after the contract end.
+        LocalDate lastPushed = min(today, in.endedOn() == null ? today : in.endedOn(), today);
+        in.pushedDays().values().stream().sorted().filter(day -> !day.isAfter(lastPushed) && !in.cancelledDays().contains(day) && !in.pushedDays().containsKey(day)).forEach(rentDays::add);
+        for (LocalDate day : rentDays) {
             BigDecimal rent = rentOf(day, in);
             if (rent.signum() == 0) {
                 continue;

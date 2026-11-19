@@ -37,7 +37,7 @@ public class ZellaDriverProfiles {
     private Optional<ZellaDriverProfile> profile(UUID driverId) {
         return drivers.find(driverId).map(driver -> {
             ContractResponse contract = contracts.activeOf(List.of(driverId)).get(driverId);
-            VehicleResponse car = contract == null ? null : vehicles.responsesByIds(List.of(contract.vehicleId())).get(contract.vehicleId());
+            VehicleResponse car = contract == null || contract.vehicleId() == null ? null : vehicles.responsesByIds(List.of(contract.vehicleId())).get(contract.vehicleId());
             return new ZellaDriverProfile(person(driver), contract == null ? null : contract(contract), car == null ? null : car(car));
         });
     }

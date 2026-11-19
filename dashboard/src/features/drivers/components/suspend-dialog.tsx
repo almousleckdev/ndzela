@@ -20,7 +20,7 @@ export function SuspendDialog({ driver, name, onClose, onDone }: { driver: Drive
       }}>
       {driver.vehicle && (
         <Checkbox checked={release} onChange={(event) => setRelease(event.target.checked)} label="Libérer le véhicule"
-          description="Le véhicule redevient disponible et le contrat en cours est résilié." />
+          description="Le véhicule redevient disponible ; le contrat reste ouvert et reprend avec le prochain véhicule." />
       )}
     </ReasonDialog>
   );

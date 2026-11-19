@@ -121,7 +121,7 @@ public class PaymentReceiptService {
                 entry.getCreatedAt().atZoneSameInstant(zone),
                 operatorLabel(intent != null ? intent.getOperatorCode() : entry.getMethod().name()),
                 ReceiptTicketStyle.maskPhone(intent != null ? intent.getCustomerPhone() : null),
-                driver.firstName() + " " + driver.lastName(), contract.contractNumber(), vehicles.get(contract.vehicleId()).fleetNumber(),
+                driver.firstName() + " " + driver.lastName(), contract.contractNumber(), contract.vehicleId() == null ? "-" : vehicles.get(contract.vehicleId()).fleetNumber(),
                 entry.getAmount(), intent != null ? intent.getFeeAmount() : null, country.getCurrencyCode(),
                 orDefault(country.getLegalName(), CountryBrand.ofCountry(country.getCode()).name()), country.getHeadOffice(),
                 country.getLegalPhone(), country.getLegalEmail(), CountryBrand.ofCountry(country.getCode()),

@@ -28,7 +28,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 // Brings one contract's arrears up to date
@@ -96,7 +95,7 @@ public class ArrearsEvaluator {
             if (suspended) {
                 suspensionSync.suspended(driver, state);
             }
-            String plate = vehicleService.responsesByIds(java.util.List.of(contract.vehicleId())).values().stream().findFirst().map(v -> v.fleetNumber() + " " + v.plate()).orElse("");
+            String plate = contract.vehicleId() == null ? "" : vehicleService.responsesByIds(java.util.List.of(contract.vehicleId())).values().stream().findFirst().map(v -> v.fleetNumber() + " " + v.plate()).orElse("");
             notifications.notifyHolders("arrears:manage", driver.countryId(), null, "ARREARS_RED", "Impayés : 3 jours ou plus",
                     driver.fullName() + " : " + state.overdueAmount().setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " FCFA impayés"
                             + (suspended ? ", chauffeur suspendu automatiquement" : "") + ". Bloquez le véhicule " + plate + " dans l'outil GPS.");

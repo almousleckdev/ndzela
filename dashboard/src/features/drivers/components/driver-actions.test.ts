@@ -9,7 +9,8 @@ vi.mock("@/lib/api/api-client", () => ({ apiClient: vi.fn() }));
 vi.mock("@/features/drivers/components/close-contract-dialog", () => ({ CloseContractDialog: () => null }));
 
 const driver = { status: "ACTIVE", loginLocked: false, vehicle: null, arrears: { unpaidDays: 0 } } as unknown as Driver;
-const withCar = { ...driver, vehicle: {} } as unknown as Driver;
+const withCar = { ...driver, vehicle: {}, contract: {} } as unknown as Driver;
+const withoutCar = { ...driver, contract: {} } as unknown as Driver;
 const late = (days: number) => ({ ...driver, arrears: { unpaidDays: days } }) as unknown as Driver;
 const holding = (...held: Permission[]) => (permission: Permission) => held.includes(permission);
 
@@ -42,6 +43,22 @@ describe("availableActions: closing a contract", () => {
 
     expect(both).toContain("Clôturer le contrat");
     expect(updateOnly).not.toContain("Clôturer le contrat");
+  });
+});
+
+describe("availableActions: a driver whose car was taken keeps his contract", () => {
+  const manager = holding(PERMISSIONS.DRIVERS_UPDATE, PERMISSIONS.CONTRACTS_TERMINATE, PERMISSIONS.PAYMENTS_CANCEL_DAYS, PERMISSIONS.PAYMENTS_RESCHEDULE_DAYS);
+
+  it("offers to take the car only while he has one, and the contract actions as long as the contract is open", () => {
+    expect(availableActions(withCar, manager).map((action) => action.kind)).toContain("release-vehicle");
+    const kinds = availableActions(withoutCar, manager).map((action) => action.kind);
+
+    expect(kinds).not.toContain("release-vehicle");
+    expect(kinds).toEqual(expect.arrayContaining(["remove-vehicle", "cancel-days", "reschedule-days"]));
+  });
+
+  it("offers rescheduling days only with payments:reschedule_days", () => {
+    expect(availableActions(withCar, holding(PERMISSIONS.PAYMENTS_CANCEL_DAYS)).map((action) => action.kind)).not.toContain("reschedule-days");
   });
 });
 

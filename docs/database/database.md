@@ -62,6 +62,8 @@ Dev database credentials in `docker-compose.yml` are for local use only. Product
 
 **V36 (payment attempt days):** `payment_intents.days_requested` (nullable int, the number of days the driver chose).
 
+**V69 (pauses):** `driver_pauses (driver_id, cause INACTIVE|NO_CAR, started_on, ended_on, reason, country_id)`, one open pause per driver and cause, and `contracts.vehicle_id` becomes nullable ([ADR-0046](../adr/0046-pauses-keep-the-contract.md)). **V70 (rescheduled rent days):** `rescheduled_rent_days (contract_id, driver_id, original_day, new_day, reason, rescheduled_by, country_id)` and permission `payments:reschedule_days` ([ADR-0047](../adr/0047-rescheduling-late-rent-days.md)).
+
 **V66 (cancelled rent days):** `cancelled_rent_days (contract_id, driver_id, business_day, reason, cancelled_by, cancelled_at, country_id)`, unique per contract day, and permission `payments:cancel_days` ([ADR-0043](../adr/0043-cancelled-rent-days.md)).
 
 **V62 (contract closing, partial payment):** permissions `contracts:terminate` and `drivers:partial_payment` (its `drivers.partial_payment_allowed` column was dropped by V64). **V64 (allowed days):** `payment_allowed_days (driver_id, business_day, allowed_by, allowed_at, country_id)` and `payment_intents.selected_days DATE[]` ([ADR-0041](../adr/0041-contract-closing-and-partial-payment-exception.md)).
