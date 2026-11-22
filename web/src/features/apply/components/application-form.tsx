@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileField } from "@/components/ui/file-field";
@@ -8,7 +8,7 @@ import { InputField, TextareaField } from "@/components/ui/field";
 import { SendingScreen } from "@/components/ui/sending-screen";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { submitToApi, SubmitError } from "@/lib/api";
-import { applicationSchema, DOCUMENT_TYPES, fileProblem, IMAGE_TYPES, type ApplicationValues } from "@/features/apply/schema";
+import { applicationSchema, birthDateBounds, DOCUMENT_TYPES, fileProblem, IMAGE_TYPES, MIN_EXPERIENCE, type ApplicationValues } from "@/features/apply/schema";
 
 type FileKey = "photo" | "licence" | "id" | "addressProof" | "seegReceipt";
 type Files = Record<FileKey, File | null>;
@@ -16,6 +16,12 @@ type Files = Record<FileKey, File | null>;
 const EMPTY: ApplicationValues = { firstName: "", lastName: "", phone: "", email: "", birthDate: "", drivingExperienceYears: "", city: "", address: "", licenceNumber: "", message: "", consent: false, website: "" };
 const NO_FILES: Files = { photo: null, licence: null, id: null, addressProof: null, seegReceipt: null };
 const REQUIRED: FileKey[] = ["photo", "licence", "id", "seegReceipt"];
+
+const subscribeNever = () => () => {};
+let cachedBounds: { min: string; max: string } | undefined;
+function browserBirthBounds() {
+  return (cachedBounds ??= birthDateBounds());
+}
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -31,6 +37,8 @@ export function ApplicationForm() {
   const [files, setFiles] = useState<Files>(NO_FILES);
   const [fileErrors, setFileErrors] = useState<Partial<Record<FileKey, string>>>({});
   const [sent, setSent] = useState(false);
+  // Known only in the browser: the page is built ahead of time, so the server renders no bounds.
+  const birthBounds = useSyncExternalStore(subscribeNever, browserBirthBounds, () => undefined);
   const [failure, setFailure] = useState<string>();
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ApplicationValues>({ resolver: zodResolver(applicationSchema), defaultValues: EMPTY });
 
@@ -74,7 +82,7 @@ export function ApplicationForm() {
           <InputField label="Nom" required autoComplete="family-name" error={errors.lastName?.message} {...register("lastName")} />
           <InputField label="Téléphone" required type="tel" autoComplete="tel" hint="Nous vous appelons sur ce numéro." error={errors.phone?.message} {...register("phone")} />
           <InputField label="E-mail" type="email" autoComplete="email" error={errors.email?.message} {...register("email")} />
-          <InputField label="Date de naissance" required type="date" autoComplete="bday" hint="Entre 30 et 55 ans." error={errors.birthDate?.message} {...register("birthDate")} />
+          <InputField label="Date de naissance" required type="date" autoComplete="bday" hint="Entre 30 et 55 ans." min={birthBounds?.min} max={birthBounds?.max} error={errors.birthDate?.message} {...register("birthDate")} />
           <InputField label="Ville" autoComplete="address-level2" error={errors.city?.message} {...register("city")} />
         </div>
         <InputField label="Adresse" autoComplete="street-address" error={errors.address?.message} {...register("address")} />
@@ -83,7 +91,7 @@ export function ApplicationForm() {
       <Section title="Votre permis de conduire">
         <div className="grid gap-5 sm:grid-cols-2">
           <InputField label="Numéro du permis" error={errors.licenceNumber?.message} {...register("licenceNumber")} />
-          <InputField label="Années d'expérience de conduite" required type="number" inputMode="numeric" min={0} max={60} hint="5 ans minimum." error={errors.drivingExperienceYears?.message} {...register("drivingExperienceYears")} />
+          <InputField label="Années d'expérience de conduite" required type="number" inputMode="numeric" min={MIN_EXPERIENCE} max={40} placeholder="5" hint="5 ans minimum." error={errors.drivingExperienceYears?.message} {...register("drivingExperienceYears")} />
         </div>
       </Section>
 

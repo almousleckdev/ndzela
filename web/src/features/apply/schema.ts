@@ -5,6 +5,14 @@ export const MIN_AGE = 30;
 export const MAX_AGE = 55;
 export const MIN_EXPERIENCE = 5;
 
+// The oldest and youngest dates of birth allowed today, as yyyy-mm-dd for a date input.
+export function birthDateBounds(today = new Date()): { min: string; max: string } {
+  const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const max = new Date(today.getFullYear() - MIN_AGE, today.getMonth(), today.getDate());
+  const min = new Date(today.getFullYear() - MAX_AGE - 1, today.getMonth(), today.getDate() + 1);
+  return { min: iso(min), max: iso(max) };
+}
+
 // Full years between a yyyy-mm-dd date of birth and today.
 function ageOn(birthDate: string): number {
   const born = new Date(birthDate);
