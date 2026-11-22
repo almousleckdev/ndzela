@@ -26,8 +26,8 @@ final dioProvider = Provider<Dio>((ref) {
       tokens: tokens,
       refresher: TokenRefresher(tokens: tokens, client: _newClient()),
       client: dio,
-      onUnauthorized: () =>
-          ref.read(sessionControllerProvider.notifier).signOut(forced: true),
+      onSessionEnded: (reason) =>
+          ref.read(sessionControllerProvider.notifier).signOut(reason: reason),
     ),
   ]);
   return dio;

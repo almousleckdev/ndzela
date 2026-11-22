@@ -10,12 +10,12 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { submitToApi, SubmitError } from "@/lib/api";
 import { applicationSchema, DOCUMENT_TYPES, fileProblem, IMAGE_TYPES, type ApplicationValues } from "@/features/apply/schema";
 
-type FileKey = "photo" | "licence" | "id" | "addressProof";
+type FileKey = "photo" | "licence" | "id" | "addressProof" | "seegReceipt";
 type Files = Record<FileKey, File | null>;
 
-const EMPTY: ApplicationValues = { firstName: "", lastName: "", phone: "", email: "", birthDate: "", city: "", address: "", licenceNumber: "", message: "", consent: false, website: "" };
-const NO_FILES: Files = { photo: null, licence: null, id: null, addressProof: null };
-const REQUIRED: FileKey[] = ["photo", "licence", "id"];
+const EMPTY: ApplicationValues = { firstName: "", lastName: "", phone: "", email: "", birthDate: "", drivingExperienceYears: "", city: "", address: "", licenceNumber: "", message: "", consent: false, website: "" };
+const NO_FILES: Files = { photo: null, licence: null, id: null, addressProof: null, seegReceipt: null };
+const REQUIRED: FileKey[] = ["photo", "licence", "id", "seegReceipt"];
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -47,10 +47,10 @@ export function ApplicationForm() {
       setFileErrors((current) => ({ ...current, ...missing }));
       return;
     }
-    const { consent: _consent, birthDate, ...rest } = values;
+    const { consent: _consent, birthDate, drivingExperienceYears, ...rest } = values;
     void _consent;
     const form = new FormData();
-    form.append("data", new Blob([JSON.stringify({ ...rest, birthDate: birthDate || undefined })], { type: "application/json" }));
+    form.append("data", new Blob([JSON.stringify({ ...rest, birthDate, drivingExperienceYears: Number(drivingExperienceYears) })], { type: "application/json" }));
     (Object.keys(files) as FileKey[]).forEach((key) => { const file = files[key]; if (file) form.append(key, file); });
     try {
       await submitToApi("/applications", form);
@@ -74,14 +74,17 @@ export function ApplicationForm() {
           <InputField label="Nom" required autoComplete="family-name" error={errors.lastName?.message} {...register("lastName")} />
           <InputField label="Téléphone" required type="tel" autoComplete="tel" hint="Nous vous appelons sur ce numéro." error={errors.phone?.message} {...register("phone")} />
           <InputField label="E-mail" type="email" autoComplete="email" error={errors.email?.message} {...register("email")} />
-          <InputField label="Date de naissance" type="date" autoComplete="bday" error={errors.birthDate?.message} {...register("birthDate")} />
+          <InputField label="Date de naissance" required type="date" autoComplete="bday" hint="Entre 30 et 55 ans." error={errors.birthDate?.message} {...register("birthDate")} />
           <InputField label="Ville" autoComplete="address-level2" error={errors.city?.message} {...register("city")} />
         </div>
         <InputField label="Adresse" autoComplete="street-address" error={errors.address?.message} {...register("address")} />
       </Section>
 
       <Section title="Votre permis de conduire">
-        <InputField label="Numéro du permis" error={errors.licenceNumber?.message} {...register("licenceNumber")} />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <InputField label="Numéro du permis" error={errors.licenceNumber?.message} {...register("licenceNumber")} />
+          <InputField label="Années d'expérience de conduite" required type="number" inputMode="numeric" min={0} max={60} hint="5 ans minimum." error={errors.drivingExperienceYears?.message} {...register("drivingExperienceYears")} />
+        </div>
       </Section>
 
       <Section title="Vos documents" description="Photos nettes et lisibles. JPG, PNG, WebP ou PDF, 5 Mo maximum chacun.">
@@ -89,6 +92,7 @@ export function ApplicationForm() {
           <FileField label="Photo de profil" required accept={IMAGE_TYPES.join(",")} file={files.photo} error={fileErrors.photo} onChange={pick("photo", IMAGE_TYPES)} hint="Un portrait de face." />
           <FileField label="Permis de conduire" required accept={DOCUMENT_TYPES.join(",")} file={files.licence} error={fileErrors.licence} onChange={pick("licence", DOCUMENT_TYPES)} />
           <FileField label="Pièce d'identité" required accept={DOCUMENT_TYPES.join(",")} file={files.id} error={fileErrors.id} onChange={pick("id", DOCUMENT_TYPES)} hint="Carte nationale d'identité ou passeport." />
+          <FileField label="Quittance SEEG" required accept={DOCUMENT_TYPES.join(",")} file={files.seegReceipt} error={fileErrors.seegReceipt} onChange={pick("seegReceipt", DOCUMENT_TYPES)} hint="Votre dernière quittance d'eau ou d'électricité." />
           <FileField label="Casier judiciaire" accept={DOCUMENT_TYPES.join(",")} file={files.addressProof} error={fileErrors.addressProof} onChange={pick("addressProof", DOCUMENT_TYPES)} hint="Extrait de casier judiciaire. Facultatif." />
         </div>
       </Section>

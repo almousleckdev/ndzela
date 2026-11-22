@@ -18,7 +18,13 @@ class ShareReceiptButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sharing = ref.watch(receiptShareControllerProvider);
     ref.listen(receiptShareControllerProvider, (_, next) {
-      if (next.hasError) showAppMessage(context, messageFor(next.error!));
+      if (next.hasError) {
+        showAppMessage(
+          context,
+          messageFor(next.error!),
+          kind: AppToastKind.error,
+        );
+      }
     });
     return AppButton(
       label: 'Partager le reçu',

@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 
 import '../storage/token_storage.dart';
 
-enum RefreshOutcome { refreshed, rejected, unavailable }
+// refreshed: new tokens saved. replaced: the driver signed in on another phone. expired: the server no
+// longer knows the refresh token. unavailable: the server could not be asked (the session is kept).
+enum RefreshOutcome { refreshed, replaced, expired, unavailable }
 
 // Exchanges the stored refresh token for a new pair; callers that ask together share one exchange,
 // because a refresh token can be used only once.
@@ -25,7 +27,7 @@ class TokenRefresher {
 
   Future<RefreshOutcome> _run() async {
     final refresh = await tokens.readRefresh();
-    if (refresh == null) return RefreshOutcome.rejected;
+    if (refresh == null) return RefreshOutcome.expired;
     try {
       final response = await client.post<Map<String, dynamic>>(
         '/auth/refresh',
@@ -40,9 +42,14 @@ class TokenRefresher {
       return RefreshOutcome.refreshed;
     } on DioException catch (error) {
       final status = error.response?.statusCode;
-      return _rejectedStatuses.contains(status)
-          ? RefreshOutcome.rejected
-          : RefreshOutcome.unavailable;
+      if (!_rejectedStatuses.contains(status)) {
+        return RefreshOutcome.unavailable;
+      }
+      final body = error.response?.data;
+      final code = body is Map<String, dynamic> ? body['code'] : null;
+      return code == 'SESSION_REPLACED'
+          ? RefreshOutcome.replaced
+          : RefreshOutcome.expired;
     }
   }
 }

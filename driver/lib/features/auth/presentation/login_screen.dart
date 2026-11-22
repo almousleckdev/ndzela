@@ -12,7 +12,9 @@ import '../../../core/widgets/adaptive/app_button.dart';
 import '../../../core/widgets/adaptive/app_password_field.dart';
 import '../../../core/widgets/adaptive/app_link_button.dart';
 import '../../../core/widgets/adaptive/app_text_field.dart';
-import '../../../core/widgets/feedback/error_banner.dart';
+import '../../../core/storage/token_storage.dart';
+import '../../../core/widgets/adaptive/app_check_row.dart';
+import '../../../core/widgets/adaptive/app_message.dart';
 import '../domain/session.dart';
 import 'login_controller.dart';
 import 'session_controller.dart';
@@ -29,15 +31,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _identifier = TextEditingController();
   final _password = TextEditingController();
-  // Captured once at mount so it survives later rebuilds, after the controller's own flag is acknowledged/cleared.
-  bool _signedOutElsewhere = false;
+  var _remember = true;
 
   @override
   void initState() {
     super.initState();
-    if (ref.read(sessionControllerProvider) case SignedOut(forced: true)) {
-      _signedOutElsewhere = true;
-      ref.read(sessionControllerProvider.notifier).acknowledgeForcedSignOut();
+    _prefill();
+    final session = ref.read(sessionControllerProvider);
+    if (session case SignedOut(:final reason?)) {
+      ref.read(sessionControllerProvider.notifier).acknowledgeSessionEnd();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _announce(reason);
+      });
+    }
+  }
+
+  void _announce(
+    SessionEndReason reason,
+  ) => showAppMessage(context, switch (reason) {
+    SessionEndReason.replaced =>
+      'Votre compte a été ouvert sur un autre appareil. Reconnectez-vous pour continuer ici.',
+    SessionEndReason.expired =>
+      'Votre session a expiré. Reconnectez-vous pour continuer.',
+  }, title: 'Session terminée');
+
+  Future<void> _prefill() async {
+    final tokens = ref.read(tokenStorageProvider);
+    final remember = await tokens.readRemember();
+    final identifier = await tokens.readSavedIdentifier();
+    if (!mounted) return;
+    setState(() => _remember = remember);
+    if (identifier != null && _identifier.text.isEmpty) {
+      _identifier.text = identifier;
     }
   }
 
@@ -53,7 +78,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     TextInput.finishAutofillContext();
     await ref
         .read(loginControllerProvider.notifier)
-        .signIn(identifier: _identifier.text, password: _password.text);
+        .signIn(
+          identifier: _identifier.text,
+          password: _password.text,
+          remember: _remember,
+        );
   }
 
   String? _required(String? value, String message) =>
@@ -62,6 +91,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final login = ref.watch(loginControllerProvider);
+    ref.listen(loginControllerProvider, (_, next) {
+      if (next.hasError) {
+        showAppMessage(
+          context,
+          messageFor(next.error!),
+          kind: AppToastKind.error,
+          title: 'Connexion impossible',
+        );
+      }
+    });
     return AuthHeroScaffold(
       title: 'Connexion',
       subtitle: 'Connectez-vous avec les accès remis par Ndzela.',
@@ -93,17 +132,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   validator: (v) =>
                       _required(v, 'Saisissez votre mot de passe.'),
                 ),
-                if (_signedOutElsewhere) ...[
-                  const SizedBox(height: 16),
-                  const ErrorBanner(
-                    message:
-                        'Votre session a pris fin (connexion sur un autre appareil ou session expirée). Reconnectez-vous.',
-                  ),
-                ],
-                if (login.hasError) ...[
-                  const SizedBox(height: 16),
-                  ErrorBanner(message: messageFor(login.error!)),
-                ],
+                const SizedBox(height: 12),
+                AppCheckRow(
+                  label: 'Se souvenir de moi',
+                  value: _remember,
+                  onChanged: login.isLoading
+                      ? null
+                      : (v) => setState(() => _remember = v),
+                ),
                 Align(
                   alignment: Alignment.centerRight,
                   child: AppLinkButton(

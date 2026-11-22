@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -54,6 +55,13 @@ public class DriverAppController {
     public ResponseEntity<Resource> photo(@AuthenticationPrincipal DriverPrincipal driver) {
         FileContent content = app.photo(driver.driverId());
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(content.contentType())).cacheControl(CacheControl.noStore()).body(content.resource());
+    }
+
+    @PutMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('driver:self')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePhoto(@AuthenticationPrincipal DriverPrincipal driver, @RequestPart("file") MultipartFile file) {
+        app.changePhoto(driver.driverId(), file);
     }
 
     @GetMapping("/vehicle")

@@ -90,7 +90,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(SessionExpiredException.class)
     public ResponseEntity<ApiErrorResponse> handleSessionExpired(SessionExpiredException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, "SESSION_EXPIRED", ex.getMessage(), request, null);
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getCode(), ex.getMessage(), request, null);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

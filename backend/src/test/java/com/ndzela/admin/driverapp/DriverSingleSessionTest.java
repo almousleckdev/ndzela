@@ -27,6 +27,12 @@ class DriverSingleSessionTest extends AbstractDriverAppTest {
 
         mvc.perform(post("/api/v1/driver/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"" + refreshTokenA + "\"}"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value("SESSION_REPLACED"));
+    }
+
+    @Test
+    void anUnknownRefreshTokenIsExpiredNotReplaced() throws Exception {
+        mvc.perform(post("/api/v1/driver/auth/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\"never-issued\"}"))
+                .andExpect(status().isUnauthorized()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value("SESSION_EXPIRED"));
     }
 }

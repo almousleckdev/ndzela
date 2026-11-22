@@ -40,6 +40,19 @@ class ProfileRepository {
     );
   }
 
+  // Sets or replaces the driver's own profile picture.
+  Future<void> changePhoto({
+    required String filename,
+    required Uint8List bytes,
+  }) async {
+    await _dio.put<void>(
+      '/me/photo',
+      data: FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: filename),
+      }),
+    );
+  }
+
   // The driver's own contract as a PDF, drawn by the server.
   Future<Uint8List> fetchContractPdf() async {
     final response = await _dio.get<List<int>>(

@@ -61,7 +61,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
       await ref.read(paymentFormControllerProvider.notifier).submit();
     } catch (error) {
       if (mounted) {
-        showAppMessage(context, messageFor(error));
+        showAppMessage(context, messageFor(error), kind: AppToastKind.error);
       }
     }
   }

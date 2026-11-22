@@ -1,12 +1,29 @@
 import { z } from "zod";
 import { PHONE } from "@/features/contact/schema";
 
+export const MIN_AGE = 30;
+export const MAX_AGE = 55;
+export const MIN_EXPERIENCE = 5;
+
+// Full years between a yyyy-mm-dd date of birth and today.
+function ageOn(birthDate: string): number {
+  const born = new Date(birthDate);
+  if (Number.isNaN(born.getTime())) return -1;
+  const now = new Date();
+  const birthdayPassed = now.getMonth() > born.getMonth() || (now.getMonth() === born.getMonth() && now.getDate() >= born.getDate());
+  return now.getFullYear() - born.getFullYear() - (birthdayPassed ? 0 : 1);
+}
+
 export const applicationSchema = z.object({
   firstName: z.string().trim().min(1, "Indiquez votre prénom.").max(100),
   lastName: z.string().trim().min(1, "Indiquez votre nom.").max(100),
   phone: z.string().regex(PHONE, "Numéro de téléphone invalide."),
   email: z.union([z.literal(""), z.email("Adresse e-mail invalide.")]),
-  birthDate: z.string().refine((value) => value === "" || new Date(value) < new Date(), "La date de naissance doit être passée."),
+  birthDate: z.string().min(1, "Indiquez votre date de naissance.").refine(
+    (value) => { const age = ageOn(value); return age >= MIN_AGE && age <= MAX_AGE; },
+    `Les candidats doivent avoir entre ${MIN_AGE} et ${MAX_AGE} ans.`,
+  ),
+  drivingExperienceYears: z.string().min(1, "Indiquez vos années d'expérience.").refine((value) => Number.isInteger(Number(value)) && Number(value) >= MIN_EXPERIENCE, `Il faut au moins ${MIN_EXPERIENCE} ans d'expérience de conduite.`),
   city: z.string().max(100),
   address: z.string().max(255),
   licenceNumber: z.string().max(50),

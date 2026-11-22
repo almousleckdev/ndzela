@@ -38,7 +38,8 @@ public class PublicSiteController {
                       @RequestPart(value = "licence", required = false) MultipartFile licence,
                       @RequestPart(value = "id", required = false) MultipartFile id,
                       @RequestPart(value = "addressProof", required = false) MultipartFile addressProof,
+                      @RequestPart(value = "seegReceipt", required = false) MultipartFile seegReceipt,
                       HttpServletRequest http) {
-        submissions.submitApplication(request, new ApplicationUploads(photo, licence, id, addressProof), http.getRemoteAddr());
+        submissions.submitApplication(request, new ApplicationUploads(photo, licence, id, addressProof, seegReceipt), http.getRemoteAddr());
     }
 }

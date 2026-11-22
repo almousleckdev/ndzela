@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +27,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PublicSubmissionService {
     private static final Duration SUBMISSION_WINDOW = Duration.ofHours(1);
+    private static final int MIN_AGE = 30;
+    private static final int MAX_AGE = 55;
+    private static final int MIN_EXPERIENCE_YEARS = 5;
 
     private final AppProperties props;
     private final CountryRepository countries;
@@ -47,9 +52,10 @@ public class PublicSubmissionService {
         if (isRobot(request.website())) {
             return;
         }
-        if (missing(uploads.photo()) || missing(uploads.licence()) || missing(uploads.id())) {
-            throw new BusinessRuleViolationException("DOCUMENTS_REQUIRED", "The photo, the driving licence and the identity document are required.");
+        if (missing(uploads.photo()) || missing(uploads.licence()) || missing(uploads.id()) || missing(uploads.seegReceipt())) {
+            throw new BusinessRuleViolationException("DOCUMENTS_REQUIRED", "The photo, the driving licence, the identity document and the SEEG receipt are required.");
         }
+        requireEligible(request);
         limiter.check("public-application", visitor, props.publicSite().maxSubmissionsPerHour(), SUBMISSION_WINDOW);
         List<String> stored = new ArrayList<>();
         String countryCode = props.publicSite().countryCode();
@@ -58,13 +64,25 @@ public class PublicSubmissionService {
             String licence = keep(stored, storage.save(uploads.licence(), false, countryCode));
             String id = keep(stored, storage.save(uploads.id(), false, countryCode));
             String proof = missing(uploads.addressProof()) ? null : keep(stored, storage.save(uploads.addressProof(), false, countryCode));
+            String seeg = keep(stored, storage.save(uploads.seegReceipt(), false, countryCode));
             TenantHolder.callAs(country(), () -> {
-                store.saveApplication(request, photo, licence, id, proof);
+                store.saveApplication(request, photo, licence, id, proof, seeg);
                 return null;
             });
         } catch (RuntimeException e) {
             stored.forEach(storage::delete);
             throw e;
+        }
+    }
+
+    // The recruitment criteria: 30 to 55 years old and at least 5 years of driving.
+    private static void requireEligible(ApplicationRequest request) {
+        int age = Period.between(request.birthDate(), LocalDate.now()).getYears();
+        if (age < MIN_AGE || age > MAX_AGE) {
+            throw new BusinessRuleViolationException("AGE_NOT_ELIGIBLE", "Candidates must be between " + MIN_AGE + " and " + MAX_AGE + " years old.");
+        }
+        if (request.drivingExperienceYears() < MIN_EXPERIENCE_YEARS) {
+            throw new BusinessRuleViolationException("EXPERIENCE_TOO_LOW", "Candidates need at least " + MIN_EXPERIENCE_YEARS + " years of driving experience.");
         }
     }
 

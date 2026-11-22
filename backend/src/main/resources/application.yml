@@ -75,6 +75,7 @@ app:
     access-token-ttl: 15m
   auth:
     refresh-token-ttl: 24h
+    driver-refresh-token-ttl: 30d    # the driver app stays signed in until sign-out or a sign-in elsewhere (renewed on every use)
     challenge-ttl: 10m               # time allowed to finish password -> OTP -> MFA
     password-reset-ttl: 15m
     invitation-ttl: 48h

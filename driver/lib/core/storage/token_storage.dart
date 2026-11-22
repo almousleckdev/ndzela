@@ -7,6 +7,8 @@ class TokenStorage {
   static const _accessKey = 'access_token';
   static const _refreshKey = 'refresh_token';
   static const _mustChangeKey = 'must_change_password';
+  static const _rememberKey = 'remember_me';
+  static const _identifierKey = 'saved_identifier';
 
   final FlutterSecureStorage _storage;
 
@@ -25,10 +27,36 @@ class TokenStorage {
     await _storage.write(key: _mustChangeKey, value: '$mustChangePassword');
   }
 
+  // "Se souvenir de moi": a remembered driver stays signed in until they sign out or sign in on another
+  // phone. Absent means remembered, so a session from an older version is never dropped.
+  Future<bool> readRemember() async =>
+      await _storage.read(key: _rememberKey) != 'false';
+  Future<String?> readSavedIdentifier() => _storage.read(key: _identifierKey);
+
+  // Only the e-mail or phone is kept for the next sign-in, never the password.
+  Future<void> saveRemember({
+    required bool remember,
+    required String identifier,
+  }) async {
+    await _storage.write(key: _rememberKey, value: '$remember');
+    if (remember) {
+      await _storage.write(key: _identifierKey, value: identifier);
+    } else {
+      await _storage.delete(key: _identifierKey);
+    }
+  }
+
+  // The session only; the remember-me choice and the saved identifier survive a sign-out.
   Future<void> clear() async {
     await _storage.delete(key: _accessKey);
     await _storage.delete(key: _refreshKey);
     await _storage.delete(key: _mustChangeKey);
+  }
+
+  Future<void> clearAll() async {
+    await clear();
+    await _storage.delete(key: _rememberKey);
+    await _storage.delete(key: _identifierKey);
   }
 }
 

@@ -84,6 +84,11 @@ public class DriverAppService {
                 available("RESIDENCE_CERTIFICATE", DriverFileKind.RESIDENCE_CERTIFICATE, driver));
     }
 
+    // The driver sets or replaces their own profile picture (an image only).
+    public void changePhoto(UUID driverId, org.springframework.web.multipart.MultipartFile file) {
+        files.replace(driverId, DriverFileKind.PHOTO, file);
+    }
+
     public void addDocument(UUID driverId, String slug, org.springframework.web.multipart.MultipartFile file) {
         DriverFileKind kind = DriverFileKind.fromSlug(slug);
         if (kind == null) {

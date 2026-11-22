@@ -4,4 +4,4 @@ import com.ndzela.admin.config.properties.RefreshCookieProperties;
 
 import java.time.Duration;
 
-public record AuthProperties(Duration refreshTokenTtl, Duration challengeTtl, Duration passwordResetTtl, Duration invitationTtl, RefreshCookieProperties refreshCookie) {}
+public record AuthProperties(Duration refreshTokenTtl, Duration driverRefreshTokenTtl, Duration challengeTtl, Duration passwordResetTtl, Duration invitationTtl, RefreshCookieProperties refreshCookie) {}

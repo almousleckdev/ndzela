@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:driver/core/network/auth_interceptor.dart';
 import 'package:driver/core/network/token_refresher.dart';
 import 'package:driver/core/storage/token_storage.dart';
+import 'package:driver/features/auth/domain/session.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/memory_storage.dart';
@@ -66,7 +67,7 @@ class Rig {
         tokens: tokens,
         refresher: TokenRefresher(tokens: tokens, client: plain),
         client: dio,
-        onUnauthorized: () => signedOut++,
+        onSessionEnded: ended.add,
       ),
     );
   }
@@ -75,7 +76,8 @@ class Rig {
   final MemoryStorage storage;
   late final TokenStorage tokens;
   late final Dio dio;
-  int signedOut = 0;
+  final ended = <SessionEndReason>[];
+  int get signedOut => ended.length;
 }
 
 ResponseBody renewing(RequestOptions options) {
@@ -201,7 +203,40 @@ void main() {
   });
 
   test(
-    'a request that is still refused after a renewal signs the driver out',
+    'a refresh the server rejects as replaced says another phone signed in',
+    () async {
+      final rig = Rig(
+        (options) => options.path == '/auth/refresh'
+            ? json(401, {'code': 'SESSION_REPLACED'})
+            : json(401, {'code': 'UNAUTHORIZED'}),
+      );
+
+      await expectLater(
+        rig.dio.get<Map<String, dynamic>>('/account'),
+        throwsA(isA<DioException>()),
+      );
+
+      expect(rig.ended, [SessionEndReason.replaced]);
+    },
+  );
+
+  test('a refresh the server does not know says the session expired', () async {
+    final rig = Rig(
+      (options) => options.path == '/auth/refresh'
+          ? json(401, {'code': 'SESSION_EXPIRED'})
+          : json(401, {'code': 'UNAUTHORIZED'}),
+    );
+
+    await expectLater(
+      rig.dio.get<Map<String, dynamic>>('/account'),
+      throwsA(isA<DioException>()),
+    );
+
+    expect(rig.ended, [SessionEndReason.expired]);
+  });
+
+  test(
+    'a request still refused after a good renewal does not sign the driver out',
     () async {
       final rig = Rig(
         (options) => options.path == '/auth/refresh'
@@ -210,7 +245,7 @@ void main() {
                 'refreshToken': 'new-refresh',
                 'mustChangePassword': false,
               })
-            : json(401, {'code': 'SESSION_REPLACED'}),
+            : json(401, {'code': 'UNAUTHORIZED'}),
       );
 
       await expectLater(
@@ -218,8 +253,22 @@ void main() {
         throwsA(isA<DioException>()),
       );
 
-      expect(rig.adapter.callsTo('/auth/refresh'), 1);
-      expect(rig.signedOut, 1);
+      expect(rig.signedOut, 0);
+      expect(await rig.tokens.readRefresh(), isNotNull);
     },
   );
+
+  test('a missing refresh token means the session expired', () async {
+    final rig = Rig(
+      (_) => json(401, {'code': 'UNAUTHORIZED'}),
+      stored: {'access_token': 'old-access'},
+    );
+
+    await expectLater(
+      rig.dio.get<Map<String, dynamic>>('/account'),
+      throwsA(isA<DioException>()),
+    );
+
+    expect(rig.ended, [SessionEndReason.expired]);
+  });
 }

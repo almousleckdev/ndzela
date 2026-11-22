@@ -73,6 +73,12 @@ public class DriverApplication extends TenantOwned {
     @Column(name = "address_proof_file", updatable = false)
     private String addressProofFile;
 
+    @Column(name = "seeg_receipt_file", updatable = false)
+    private String seegReceiptFile;
+
+    @Column(name = "driving_experience_years", updatable = false)
+    private Integer drivingExperienceYears;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApplicationStatus status;

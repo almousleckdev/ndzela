@@ -2,7 +2,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 const MESSAGES: Record<string, string> = {
   TOO_MANY_REQUESTS: "Vous avez envoyé trop de demandes. Réessayez dans une heure.",
-  DOCUMENTS_REQUIRED: "La photo, le permis de conduire et la pièce d'identité sont obligatoires.",
+  DOCUMENTS_REQUIRED: "La photo, le permis de conduire, la pièce d'identité et la quittance SEEG sont obligatoires.",
+  AGE_NOT_ELIGIBLE: "Les candidats doivent avoir entre 30 et 55 ans.",
+  EXPERIENCE_TOO_LOW: "Il faut au moins 5 ans d'expérience de conduite.",
   INVALID_FILE: "Un fichier n'est pas accepté : utilisez une image (JPG, PNG, WebP) ou un PDF.",
   FILE_TOO_LARGE: "Un fichier dépasse 5 Mo.",
 };

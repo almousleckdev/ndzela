@@ -47,7 +47,11 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
           newPassword: _password.text,
         );
     if (done && mounted) {
-      showAppMessage(context, 'Mot de passe modifié. Connectez-vous.');
+      showAppMessage(
+        context,
+        'Mot de passe modifié. Connectez-vous.',
+        kind: AppToastKind.success,
+      );
       context.go(Routes.login);
     }
   }

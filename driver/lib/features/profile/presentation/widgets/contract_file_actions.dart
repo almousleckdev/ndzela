@@ -16,7 +16,13 @@ class ContractFileActions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(contractFileControllerProvider);
     ref.listen(contractFileControllerProvider, (_, next) {
-      if (next.hasError) showAppMessage(context, messageFor(next.error!));
+      if (next.hasError) {
+        showAppMessage(
+          context,
+          messageFor(next.error!),
+          kind: AppToastKind.error,
+        );
+      }
     });
     if (state.isLoading) return const AppActivityIndicator(size: 20);
     final controller = ref.read(contractFileControllerProvider.notifier);

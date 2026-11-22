@@ -32,11 +32,11 @@ public class InquiryStore {
     }
 
     @Transactional
-    public void saveApplication(ApplicationRequest request, String photo, String licence, String id, String addressProof) {
+    public void saveApplication(ApplicationRequest request, String photo, String licence, String id, String addressProof, String seegReceipt) {
         applications.save(DriverApplication.builder().firstName(request.firstName().trim()).lastName(request.lastName().trim()).phone(request.phone().trim())
                 .email(Strings.blankToNull(request.email())).birthDate(request.birthDate()).city(Strings.blankToNull(request.city())).address(Strings.blankToNull(request.address()))
                 .licenceNumber(Strings.blankToNull(request.licenceNumber())).message(Strings.blankToNull(request.message()))
-                .photoFile(photo).licenceFile(licence).idFile(id).addressProofFile(addressProof).status(ApplicationStatus.NEW).build());
+                .photoFile(photo).licenceFile(licence).idFile(id).addressProofFile(addressProof).seegReceiptFile(seegReceipt).drivingExperienceYears(request.drivingExperienceYears()).status(ApplicationStatus.NEW).build());
         notifications.notifyHolders("inquiries:read", TenantHolder.requireCountry(), null, "DRIVER_APPLICATION", "Nouvelle candidature chauffeur", request.firstName().trim() + " " + request.lastName().trim());
     }
 }

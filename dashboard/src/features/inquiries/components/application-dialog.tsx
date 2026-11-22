@@ -23,6 +23,7 @@ const FILES: { kind: ApplicationFileKind; label: string }[] = [
   { kind: "photo", label: "Photo" },
   { kind: "licence", label: "Permis de conduire" },
   { kind: "id", label: "Pièce d'identité" },
+  { kind: "seeg-receipt", label: "Quittance SEEG" },
   { kind: "address-proof", label: "Casier judiciaire" },
 ];
 
@@ -124,6 +125,7 @@ export function ApplicationDialog({ application, onClose, onSaved, onDeleted }: 
           <Row label="Ville" value={application.city} />
           <Row label="Adresse" value={application.address} />
           <Row label="Numéro du permis" value={application.licenceNumber} />
+          <Row label="Expérience de conduite" value={application.drivingExperienceYears === null ? null : `${application.drivingExperienceYears} ans`} />
         </dl>
         {answer && (
           <div className="rounded-lg border border-slate-200 p-3 text-sm">
@@ -143,7 +145,7 @@ export function ApplicationDialog({ application, onClose, onSaved, onDeleted }: 
         <div>
           <p className="mb-2 text-sm font-medium">Documents</p>
           <div className="flex flex-wrap gap-2">
-            {FILES.filter((file) => file.kind !== "address-proof" || application.hasAddressProof).map((file) => (
+            {FILES.filter((file) => (file.kind !== "address-proof" || application.hasAddressProof) && (file.kind !== "seeg-receipt" || application.hasSeegReceipt)).map((file) => (
               <Button key={file.kind} variant="outline" size="sm" onClick={() => open(file.kind)}><ExternalLink className="mr-2 h-3.5 w-3.5" />{file.label}</Button>
             ))}
           </div>

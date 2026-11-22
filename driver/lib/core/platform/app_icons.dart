@@ -34,9 +34,9 @@ abstract final class AppIcons {
     Icons.person_rounded,
     CupertinoIcons.person_fill,
   );
-  static const notifications = AppIcon(
-    Icons.notifications_none_rounded,
-    CupertinoIcons.bell,
+  static const camera = AppIcon(
+    Icons.photo_camera_outlined,
+    CupertinoIcons.camera,
   );
   static const lock = AppIcon(Icons.lock_outline, CupertinoIcons.lock);
   static const showSecret = AppIcon(

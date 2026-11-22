@@ -20,6 +20,9 @@ public class RefreshTokenService {
     private static final String USER_INDEX_PREFIX = "auth:rt-user:";
     private static final String GRACE_PREFIX = "auth:rt-grace:";
     private static final String GRACE_INDEX_PREFIX = "auth:rt-grace-user:";
+    // Remembers the refresh tokens a driver's newer sign-in ended, so the app can tell "signed in elsewhere" from "expired".
+    private static final String REPLACED_PREFIX = "auth:rt-replaced:";
+    private static final String DRIVER_SUBJECT_PREFIX = "driver:";
     // A refresh token is single use, but its answer can be lost (a dropped connection, the app killed) or two requests can
     // carry it at once: for this long after its rotation it can still be exchanged, so the session is not lost to a race.
     private static final Duration REUSE_GRACE = Duration.ofSeconds(30);
@@ -35,7 +38,7 @@ public class RefreshTokenService {
     public String issue(String subject, String sessionId) {
         String token = OpaqueTokens.generate();
         String hash = OpaqueTokens.hash(token);
-        Duration ttl = props.auth().refreshTokenTtl();
+        Duration ttl = ttlOf(subject);
         redis.opsForValue().set(TOKEN_PREFIX + hash, encode(subject, sessionId), ttl);
         redis.opsForSet().add(USER_INDEX_PREFIX + subject, hash);
         redis.expire(USER_INDEX_PREFIX + subject, ttl);
@@ -50,7 +53,11 @@ public class RefreshTokenService {
             stored = redis.opsForValue().get(GRACE_PREFIX + hash);
         }
         if (stored == null) {
-            log.info("Refresh refused: the token is unknown (expired, already used, revoked by a newer login, or lost from Redis)");
+            if (Boolean.TRUE.equals(redis.hasKey(REPLACED_PREFIX + hash))) {
+                log.info("Refresh refused: the session was ended by a newer sign-in");
+                throw new SessionExpiredException("This session was ended by a newer sign-in.", SessionExpiredException.REPLACED);
+            }
+            log.info("Refresh refused: the token is unknown (expired, already used, revoked, or lost from Redis)");
             throw new SessionExpiredException("Invalid or expired session.");
         }
         String subject = subjectOf(stored);
@@ -75,10 +82,20 @@ public class RefreshTokenService {
     public void revokeAll(String subject) {
         var hashes = redis.opsForSet().members(USER_INDEX_PREFIX + subject);
         if (hashes != null) {
-            hashes.forEach(hash -> redis.delete(TOKEN_PREFIX + hash));
+            boolean driver = subject.startsWith(DRIVER_SUBJECT_PREFIX);
+            hashes.forEach(hash -> {
+                redis.delete(TOKEN_PREFIX + hash);
+                if (driver) {
+                    redis.opsForValue().set(REPLACED_PREFIX + hash, "1", ttlOf(subject));
+                }
+            });
         }
         redis.delete(USER_INDEX_PREFIX + subject);
         forgetGrace(subject);
+    }
+
+    private Duration ttlOf(String subject) {
+        return subject.startsWith(DRIVER_SUBJECT_PREFIX) ? props.auth().driverRefreshTokenTtl() : props.auth().refreshTokenTtl();
     }
 
     private void keepForGrace(String hash, String stored, String subject) {

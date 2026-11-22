@@ -1,19 +1,36 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
-import '../../platform/platform.dart';
-import 'toast_banner.dart';
+import 'app_toast.dart';
 
-// A short, non-blocking message
-void showAppMessage(BuildContext context, String message) {
-  if (!isCupertino(context)) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-    return;
-  }
-  final entry = OverlayEntry(builder: (_) => ToastBanner(message: message));
+export 'app_toast.dart' show AppToastKind;
+
+OverlayEntry? _showing;
+
+// A short, non-blocking message; a new one replaces the one on screen.
+void showAppMessage(
+  BuildContext context,
+  String message, {
+  AppToastKind kind = AppToastKind.info,
+  String? title,
+}) {
+  _showing?.remove();
+  late final OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (overlay) => DefaultTextStyle(
+      style: Theme.of(
+        overlay,
+      ).textTheme.bodyMedium!.copyWith(decoration: TextDecoration.none),
+      child: AppToast(
+        message: message,
+        title: title,
+        kind: kind,
+        onClosed: () {
+          entry.remove();
+          if (_showing == entry) _showing = null;
+        },
+      ),
+    ),
+  );
+  _showing = entry;
   Overlay.of(context, rootOverlay: true).insert(entry);
-  Timer(const Duration(seconds: 3), entry.remove);
 }

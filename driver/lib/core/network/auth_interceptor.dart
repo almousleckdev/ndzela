@@ -1,16 +1,17 @@
 import 'package:dio/dio.dart';
 
+import '../../features/auth/domain/session.dart';
 import '../storage/token_storage.dart';
 import 'token_refresher.dart';
 
 // Adds the bearer token, renews it when the server says it expired, and reports a session
-// the server no longer accepts so the app can sign the driver out.
+// the server ended so the app can sign the driver out.
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
     required this.tokens,
     required this.refresher,
     required this.client,
-    required this.onUnauthorized,
+    required this.onSessionEnded,
   });
 
   static const publicPaths = {'/auth/login'};
@@ -20,7 +21,7 @@ class AuthInterceptor extends Interceptor {
   final TokenStorage tokens;
   final TokenRefresher refresher;
   final Dio client;
-  final void Function() onUnauthorized;
+  final void Function(SessionEndReason reason) onSessionEnded;
 
   @override
   Future<void> onRequest(
@@ -35,6 +36,8 @@ class AuthInterceptor extends Interceptor {
     handler.next(options);
   }
 
+  // The refresh endpoint alone decides whether the session is over: a 401 on any other request
+  // (a stale token, a race with another request) never signs the driver out by itself.
   @override
   Future<void> onError(
     DioException err,
@@ -44,19 +47,21 @@ class AuthInterceptor extends Interceptor {
     if (err.response?.statusCode != 401 || publicPaths.contains(request.path)) {
       return handler.next(err);
     }
-    if (request.extra[_retriedKey] == true) {
-      onUnauthorized();
-      return handler.next(err);
-    }
-    final current = await tokens.readAccess();
-    if (current != null && current != request.extra[_sentKey]) {
-      return _retry(request, handler, err);
+    final retried = request.extra[_retriedKey] == true;
+    if (!retried) {
+      final current = await tokens.readAccess();
+      if (current != null && current != request.extra[_sentKey]) {
+        return _retry(request, handler, err);
+      }
     }
     switch (await refresher.refresh()) {
       case RefreshOutcome.refreshed:
-        return _retry(request, handler, err);
-      case RefreshOutcome.rejected:
-        onUnauthorized();
+        return retried ? handler.next(err) : _retry(request, handler, err);
+      case RefreshOutcome.replaced:
+        onSessionEnded(SessionEndReason.replaced);
+        return handler.next(err);
+      case RefreshOutcome.expired:
+        onSessionEnded(SessionEndReason.expired);
         return handler.next(err);
       case RefreshOutcome.unavailable:
         return handler.next(

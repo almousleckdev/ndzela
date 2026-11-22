@@ -12,6 +12,8 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+// Only the changed columns are written: a stale copy saved by another request must not overwrite session_id (ADR-0022).
+@org.hibernate.annotations.DynamicUpdate
 @Entity
 @Table(name = "drivers")
 @Getter

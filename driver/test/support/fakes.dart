@@ -38,6 +38,7 @@ class FakeBackend {
     this.finalStatus = PaymentStatus.success,
     this.history = const [],
   }) {
+    registerFallbackValue(Uint8List(0));
     registerFallbackValue(
       const PaymentRequest(
         operator: PaymentOperator(code: '', label: ''),
@@ -53,6 +54,12 @@ class FakeBackend {
     }
     when(() => profile.fetchMe()).thenAnswer((_) async => sampleProfile);
     when(() => profile.fetchPhoto()).thenAnswer((_) async => photo);
+    when(
+      () => profile.changePhoto(
+        filename: any(named: 'filename'),
+        bytes: any(named: 'bytes'),
+      ),
+    ).thenAnswer((_) async {});
     when(
       () => profile.fetchDocuments(),
     ).thenAnswer((_) async => sampleDocuments);
@@ -170,6 +177,12 @@ class FakeBackend {
     bytes: Uint8List.fromList([1, 2, 3]),
   );
 
+  // What the phone's picture picker hands back
+  PickedDocument? pickedPhoto = PickedDocument(
+    filename: 'moi.jpg',
+    bytes: Uint8List.fromList([4, 5, 6]),
+  );
+
   // The files shown in the phone's viewer
   final opened = <({String filename, int size})>[];
 }
@@ -201,6 +214,7 @@ Widget appWith(
       contractRepositoryProvider.overrideWithValue(backend.contract),
       paymentsRepositoryProvider.overrideWithValue(backend.payments),
       supportRepositoryProvider.overrideWithValue(backend.support),
+      photoPickerProvider.overrideWithValue(() async => backend.pickedPhoto),
       documentPickerProvider.overrideWithValue(
         () async => backend.pickedDocument,
       ),

@@ -99,11 +99,66 @@ void main() {
       await tester.tap(find.text('Se connecter'));
       await tester.pumpAndSettle();
 
+      expect(find.text('Connexion impossible'), findsOneWidget);
       expect(
         find.text('Identifiant ou mot de passe incorrect.'),
         findsOneWidget,
       );
       expect(find.byType(LoginScreen), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(find.text('Connexion impossible'), findsNothing);
     },
   );
+
+  testWidgets('"Se souvenir de moi" keeps the e-mail for the next sign-in', (
+    tester,
+  ) async {
+    usePhone(tester);
+    final backend = FakeBackend();
+    await tester.pumpWidget(appWith(backend));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'ana@ndzela.com');
+    await tester.enterText(find.byType(TextFormField).at(1), 'Secret123');
+    await tester.tap(find.text('Se connecter'));
+    await tester.pumpAndSettle();
+
+    expect(await backend.tokens.readRemember(), isTrue);
+    expect(await backend.tokens.readSavedIdentifier(), 'ana@ndzela.com');
+  });
+
+  testWidgets('without "Se souvenir de moi" nothing is kept for later', (
+    tester,
+  ) async {
+    usePhone(tester);
+    final backend = FakeBackend();
+    await tester.pumpWidget(appWith(backend));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Se souvenir de moi'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), 'ana@ndzela.com');
+    await tester.enterText(find.byType(TextFormField).at(1), 'Secret123');
+    await tester.tap(find.text('Se connecter'));
+    await tester.pumpAndSettle();
+
+    expect(await backend.tokens.readRemember(), isFalse);
+    expect(await backend.tokens.readSavedIdentifier(), isNull);
+  });
+
+  testWidgets('the saved e-mail is filled in on the login screen', (
+    tester,
+  ) async {
+    usePhone(tester);
+    final backend = FakeBackend();
+    await backend.tokens.saveRemember(
+      remember: true,
+      identifier: 'ana@ndzela.com',
+    );
+    await tester.pumpWidget(appWith(backend));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ana@ndzela.com'), findsOneWidget);
+  });
 }

@@ -87,6 +87,7 @@ public class InquiryService {
             case "licence" -> application.getLicenceFile();
             case "id" -> application.getIdFile();
             case "address-proof" -> application.getAddressProofFile();
+            case "seeg-receipt" -> application.getSeegReceiptFile();
             default -> throw new BusinessRuleViolationException("INVALID_FILE_KIND", "Unknown file kind.");
         };
         Resource resource = name == null ? null : storage.load(name);
@@ -133,7 +134,7 @@ public class InquiryService {
     @Transactional
     public void deleteApplication(UUID id) {
         DriverApplication application = application(id);
-        java.util.stream.Stream.of(application.getPhotoFile(), application.getLicenceFile(), application.getIdFile(), application.getAddressProofFile())
+        java.util.stream.Stream.of(application.getPhotoFile(), application.getLicenceFile(), application.getIdFile(), application.getAddressProofFile(), application.getSeegReceiptFile())
                 .forEach(storage::delete);
         applications.delete(application);
         audit.record("APPLICATION_DELETED", "DRIVER_APPLICATION", id.toString(), application.getFirstName() + " " + application.getLastName(), application.getCountryId(), null);

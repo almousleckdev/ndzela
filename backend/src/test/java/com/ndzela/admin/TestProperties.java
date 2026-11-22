@@ -31,7 +31,7 @@ public final class TestProperties {
                 "http://localhost:3000",
                 List.of("http://localhost:3000"),
                 new JwtProperties(JWT_SECRET, "ndzela-test", Duration.ofMinutes(15)),
-                new AuthProperties(Duration.ofHours(24), Duration.ofMinutes(10), Duration.ofMinutes(15), Duration.ofHours(48),
+                new AuthProperties(Duration.ofHours(24), Duration.ofDays(30), Duration.ofMinutes(10), Duration.ofMinutes(15), Duration.ofHours(48),
                         new RefreshCookieProperties("ndzela_refresh", false, "Strict")),
                 new OtpProperties(Duration.ofMinutes(3), 3, Duration.ofSeconds(60)),
                 new BruteForceProperties(5, Duration.ofMinutes(30)),

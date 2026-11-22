@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RecruitmentApiTest extends AbstractIntegrationTest {
     private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0};
     private static final byte[] PDF = "%PDF-1.4 test".getBytes(StandardCharsets.UTF_8);
-    private static final String APPLICATION = "{\"firstName\":\"Jean\",\"lastName\":\"Mba\",\"phone\":\"+241 62 00 00 00\",\"email\":\"jean@example.com\",\"city\":\"Libreville\",\"licenceNumber\":\"L-123\"}";
+    private static final String APPLICATION = "{\"firstName\":\"Jean\",\"lastName\":\"Mba\",\"phone\":\"+241 62 00 00 00\",\"email\":\"jean@example.com\",\"city\":\"Libreville\",\"licenceNumber\":\"L-123\",\"birthDate\":\"" + java.time.LocalDate.now().minusYears(40) + "\",\"drivingExperienceYears\":10}";
 
     private User manager;
     private User maliManager;
@@ -41,7 +41,7 @@ class RecruitmentApiTest extends AbstractIntegrationTest {
         MockMultipartHttpServletRequestBuilder request = multipart("/api/v1/public/applications").file(new MockMultipartFile("data", "", "application/json", json.getBytes(StandardCharsets.UTF_8)));
         if (withDocuments) {
             request.file(new MockMultipartFile("photo", "p.png", "image/png", PNG)).file(new MockMultipartFile("licence", "l.pdf", "application/pdf", PDF))
-                    .file(new MockMultipartFile("id", "i.png", "image/png", PNG));
+                    .file(new MockMultipartFile("id", "i.png", "image/png", PNG)).file(new MockMultipartFile("seegReceipt", "s.pdf", "application/pdf", PDF));
         }
         return mvc.perform(request);
     }
@@ -96,8 +96,28 @@ class RecruitmentApiTest extends AbstractIntegrationTest {
         apply("{\"firstName\":\"\",\"lastName\":\"Mba\",\"phone\":\"12\"}", true).andExpect(status().isBadRequest());
         mvc.perform(multipart("/api/v1/public/applications").file(new MockMultipartFile("data", "", "application/json", APPLICATION.getBytes(StandardCharsets.UTF_8)))
                 .file(new MockMultipartFile("photo", "p.png", "image/png", PNG)).file(new MockMultipartFile("licence", "l.txt", "text/plain", "not an image".getBytes(StandardCharsets.UTF_8)))
-                .file(new MockMultipartFile("id", "i.png", "image/png", PNG))).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INVALID_FILE"));
+                .file(new MockMultipartFile("id", "i.png", "image/png", PNG)).file(new MockMultipartFile("seegReceipt", "s.pdf", "application/pdf", PDF)))
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INVALID_FILE"));
         assertEquals(0, jdbc.queryForObject("select count(*) from driver_applications", Integer.class));
+    }
+
+    @Test
+    void onlyCandidatesFrom30To55YearsOldWithFiveYearsOfDrivingAreAccepted() throws Exception {
+        String base = "{\"firstName\":\"Jean\",\"lastName\":\"Mba\",\"phone\":\"+241 62 00 00 00\",\"birthDate\":\"%s\",\"drivingExperienceYears\":%d}";
+        java.time.LocalDate today = java.time.LocalDate.now();
+        apply(base.formatted(today.minusYears(29).minusDays(1), 10), true).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("AGE_NOT_ELIGIBLE"));
+        apply(base.formatted(today.minusYears(56), 10), true).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("AGE_NOT_ELIGIBLE"));
+        apply(base.formatted(today.minusYears(40), 4), true).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("EXPERIENCE_TOO_LOW"));
+        apply(base.formatted(today.minusYears(30), 5), true).andExpect(status().isAccepted());
+        apply(base.formatted(today.minusYears(55), 30), true).andExpect(status().isAccepted());
+        assertEquals(2, jdbc.queryForObject("select count(*) from driver_applications", Integer.class));
+    }
+
+    @Test
+    void theSeegReceiptIsRequired() throws Exception {
+        mvc.perform(multipart("/api/v1/public/applications").file(new MockMultipartFile("data", "", "application/json", APPLICATION.getBytes(StandardCharsets.UTF_8)))
+                .file(new MockMultipartFile("photo", "p.png", "image/png", PNG)).file(new MockMultipartFile("licence", "l.pdf", "application/pdf", PDF))
+                .file(new MockMultipartFile("id", "i.png", "image/png", PNG))).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("DOCUMENTS_REQUIRED"));
     }
 
     @Test

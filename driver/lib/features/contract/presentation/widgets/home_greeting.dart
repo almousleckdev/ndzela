@@ -5,12 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
 import '../../../../app/theme/app_text_styles.dart';
-import '../../../../core/platform/app_icons.dart';
-import '../../../../core/widgets/adaptive/app_icon_button.dart';
 import '../../../../core/widgets/display/app_avatar.dart';
 import '../../../profile/presentation/profile_providers.dart';
 
-// "Bonjour," and the driver's name on the left; notifications and the avatar on the right.
+// "Bonjour," and the driver's name on the left; the avatar on the right.
 class HomeGreeting extends ConsumerWidget {
   const HomeGreeting({super.key});
 
@@ -34,12 +32,6 @@ class HomeGreeting extends ConsumerWidget {
             ],
           ),
         ),
-        AppIconButton(
-          icon: AppIcons.notifications,
-          tooltip: 'Notifications',
-          onPressed: () {},
-        ),
-        const SizedBox(width: 10),
         GestureDetector(
           onTap: () => context.go(Routes.profile),
           child: Semantics(

@@ -86,7 +86,7 @@ public class DriverAuthService {
         // even though it survived rotation: the driver's current session id is the only truth.
         if (!java.util.Objects.equals(driver.getSessionId(), rotation.sessionId())) {
             refreshTokens.revoke(rotation.newToken());
-            throw new SessionExpiredException("Invalid or expired session.");
+            throw new SessionExpiredException("This session was ended by a newer sign-in.", SessionExpiredException.REPLACED);
         }
         return new DriverTokens(jwt.generateDriverAccessToken(driverId, countryId, driver.getSessionId()), rotation.newToken(), jwt.accessTokenTtlSeconds(), driver.isMustChangePassword());
     }

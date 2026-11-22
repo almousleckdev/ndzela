@@ -6,10 +6,14 @@ class SessionLoading extends Session {
   const SessionLoading();
 }
 
+// Why the server ended a session the driver did not end: a sign-in on another phone, or a session
+// that can no longer be renewed.
+enum SessionEndReason { replaced, expired }
+
 class SignedOut extends Session {
-  // true when the server rejected the session (e.g. signed in on another device), not a voluntary logout.
-  final bool forced;
-  const SignedOut({this.forced = false});
+  // Set when the server ended the session, not the driver; null after a voluntary sign-out.
+  final SessionEndReason? reason;
+  const SignedOut({this.reason});
 }
 
 // Signed in with the password Ndzela set

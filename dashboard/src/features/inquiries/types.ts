@@ -1,6 +1,6 @@
 export type ApplicationStatus = "NEW" | "CONTACTED" | "ACCEPTED" | "REJECTED";
 export type MessageStatus = "NEW" | "HANDLED";
-export type ApplicationFileKind = "photo" | "licence" | "id" | "address-proof";
+export type ApplicationFileKind = "photo" | "licence" | "id" | "address-proof" | "seeg-receipt";
 
 // A driver application sent from the public website.
 export interface Application {
@@ -15,6 +15,8 @@ export interface Application {
   licenceNumber: string | null;
   message: string | null;
   hasAddressProof: boolean;
+  hasSeegReceipt: boolean;
+  drivingExperienceYears: number | null;
   status: ApplicationStatus;
   staffNote: string | null;
   interviewAt: string | null;

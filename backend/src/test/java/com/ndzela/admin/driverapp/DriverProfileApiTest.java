@@ -154,6 +154,19 @@ class DriverProfileApiTest extends AbstractDriverAppTest {
     }
 
     @Test
+    void aDriverReplacesOwnPhotoWithAnImageButNotWithAPdf() throws Exception {
+        var image = new org.springframework.mock.web.MockMultipartFile("file", "me.png", "image/png", PNG);
+        var pdf = new org.springframework.mock.web.MockMultipartFile("file", "me.pdf", "application/pdf", "%PDF-1.4 test".getBytes());
+        var put = org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(org.springframework.http.HttpMethod.PUT, "/api/v1/driver/me/photo");
+        mvc.perform(put.file(image).header("Authorization", "Bearer " + token)).andExpect(status().isNoContent());
+        org.junit.jupiter.api.Assertions.assertEquals(1, auditRows("DRIVER_FILE_UPDATED"));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(org.springframework.http.HttpMethod.PUT, "/api/v1/driver/me/photo").file(pdf)
+                .header("Authorization", "Bearer " + token)).andExpect(status().isUnprocessableEntity());
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(org.springframework.http.HttpMethod.PUT, "/api/v1/driver/me/photo").file(image))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void theDriverCanFetchOwnPhotoButNobodyElsesAndStaffTokensCannot() throws Exception {
         asDriver("/api/v1/driver/me/photo", token).andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType("image/png"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes(PNG));

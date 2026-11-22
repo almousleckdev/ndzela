@@ -33,10 +33,16 @@ class DocumentsSection extends ConsumerWidget {
           .read(documentUploadControllerProvider.notifier)
           .add(kind);
       if (sent && context.mounted) {
-        showAppMessage(context, 'Document ajouté. Merci.');
+        showAppMessage(
+          context,
+          'Document ajouté. Merci.',
+          kind: AppToastKind.success,
+        );
       }
     } catch (error) {
-      if (context.mounted) showAppMessage(context, messageFor(error));
+      if (context.mounted) {
+        showAppMessage(context, messageFor(error), kind: AppToastKind.error);
+      }
     }
   }
 

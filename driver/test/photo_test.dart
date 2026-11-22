@@ -33,6 +33,37 @@ void main() {
     expect(find.text('AN'), findsNothing);
   });
 
+  testWidgets('the home header has no notification bell', (tester) async {
+    usePhone(tester);
+    await tester.pumpWidget(appWith(FakeBackend(signedIn: true)));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Notifications'), findsNothing);
+  });
+
+  testWidgets('the driver changes their picture from the profile', (
+    tester,
+  ) async {
+    usePhone(tester, height: 7000);
+    final backend = FakeBackend(signedIn: true);
+    await tester.pumpWidget(appWith(backend));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(NavItem).at(3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.photo_camera_outlined));
+    await tester.pumpAndSettle();
+
+    final sent = verify(
+      () => backend.profile.changePhoto(
+        filename: captureAny(named: 'filename'),
+        bytes: any(named: 'bytes'),
+      ),
+    ).captured;
+    expect(sent.single, 'moi.jpg');
+    expect(find.text('Votre photo de profil est à jour.'), findsOneWidget);
+  });
+
   testWidgets('without a photo the avatar shows the initials', (tester) async {
     usePhone(tester);
     await tester.pumpWidget(appWith(FakeBackend(signedIn: true)));
