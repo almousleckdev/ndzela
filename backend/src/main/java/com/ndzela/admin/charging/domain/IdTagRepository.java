@@ -18,6 +18,10 @@ public interface IdTagRepository extends JpaRepository<IdTag, UUID> {
 
     List<IdTag> findAllByDriverId(UUID driverId);
 
+    List<IdTag> findAllByCustomerIdInAndStatus(Collection<String> customerIds, IdTagStatus status);
+
+    List<IdTag> findAllByDriverIdInAndStatus(Collection<UUID> driverIds, IdTagStatus status);
+
     List<IdTag> findAllByStatusAndZellaNotifiedAndHistoryRead(IdTagStatus status, boolean zellaNotified, boolean historyRead);
 
     boolean existsByDriverIdAndStatusAndIdNot(UUID driverId, IdTagStatus status, UUID id);

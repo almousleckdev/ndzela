@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import static com.ndzela.admin.support.FakeZellaClient.freeCharge;
 import static com.ndzela.admin.support.FakeZellaClient.publicCharge;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,6 +45,17 @@ class SessionExportTest extends AbstractZellaFeedTest {
         session("7");
         zella.servePublicFeed("", new ZellaFeedPage(List.of(publicCharge("900", "CP-009", "COMPLETED", now, now, "20.0", 6000, now)), "p1", false));
         sync();
+    }
+
+    @Test
+    void aFreeSundayChargeIsExportedAsOffered() throws Exception {
+        session("7");
+        zella.serveFeed(null, "", new ZellaFeedPage(List.of(freeCharge("7", "FREE_SUNDAY", "COMPLETED", now)), "c1", false));
+        sync();
+
+        Sheet sheet = export("kind=ALL");
+
+        assertEquals("Offert", cell(sheet.getRow(5), column(sheet, "Paiement")));
     }
 
     @Test

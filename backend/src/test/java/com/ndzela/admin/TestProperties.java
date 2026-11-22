@@ -11,6 +11,7 @@ import com.ndzela.admin.config.properties.StorageProperties;
 import com.ndzela.admin.config.properties.BootstrapProperties;
 import com.ndzela.admin.config.properties.AppProperties;
 import com.ndzela.admin.config.properties.DriverAppProperties;
+import com.ndzela.admin.config.properties.FreeChargingProperties;
 import com.ndzela.admin.config.properties.OcppProperties;
 import com.ndzela.admin.config.properties.PublicSiteProperties;
 import com.ndzela.admin.config.properties.RateLimitProperties;
@@ -44,6 +45,7 @@ public final class TestProperties {
                 new PublicSiteProperties("GA", 5, List.of("https://ndzela.test")),
                 new OcppProperties("https://ocpp.test", "test-key", "", "whsecret", "X-Webhook-Signature", "GA", false, Duration.ofMinutes(1), 500, Duration.ofSeconds(5)),
                 new ZellaProperties("https://zella.test", "zella-test-key", "GA", false, Duration.ofMinutes(15), Duration.ofSeconds(5)),
+                new FreeChargingProperties(null, null, null),
                 new RateLimitProperties(10, 3, 120, 20));
     }
 }

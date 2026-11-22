@@ -23,6 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 // Finds which Zella customer is which NDZela driver. E-mail, phone or both link by themselves when they point to one Zella customer; two different customers matching a driver are suggestions for staff, except one whose e-mail Google or Apple proved (FULL), which links by itself.
@@ -59,6 +60,18 @@ public class IdTagLinkService {
         int stored = directory.find(driverId).filter(d -> !tags.decidedDriverIds().contains(d.id())).map(d -> lookup(List.of(d))).orElse(0);
         sync.reconcile();
         return stored;
+    }
+
+    /** The Zella customer a driver is linked to, when staff or the lookup linked one. */
+    @Transactional(readOnly = true)
+    public Optional<String> linkedCustomerId(UUID driverId) {
+        return tags.findAllByDriverId(driverId).stream().filter(t -> t.getStatus() == IdTagStatus.LINKED).map(IdTag::getCustomerId).findFirst();
+    }
+
+    /** The driver a Zella customer is linked to, when the link is confirmed. */
+    @Transactional(readOnly = true)
+    public Optional<UUID> linkedDriverId(String customerId) {
+        return tags.findByCustomerId(customerId).filter(t -> t.getStatus() == IdTagStatus.LINKED).map(IdTag::getDriverId);
     }
 
     private int lookup(List<DriverRef> drivers) {

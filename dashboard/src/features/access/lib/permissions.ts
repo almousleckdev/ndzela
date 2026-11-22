@@ -67,6 +67,8 @@ export const PERMISSIONS = {
   TRAINING_CENTERS_MANAGE: "training_centers:manage",
   INQUIRIES_READ: "inquiries:read",
   INQUIRIES_MANAGE: "inquiries:manage",
+  FREE_CHARGING_READ: "free_charging:read",
+  FREE_CHARGING_MANAGE: "free_charging:manage",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -117,10 +119,11 @@ const RESOURCE_LABELS: Record<string, string> = {
   incidents: "Demi-journées et arrêts",
   training_centers: "Centres de formation",
   inquiries: "Candidatures et messages du site",
+  free_charging: "Gratuité du dimanche",
 };
 
 // Business resources first, platform administration last.
-const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries", "audit", "vehicles", "drivers", "contracts", "incidents", "training_centers", "inquiries"];
+const RESOURCE_ORDER = ["transactions", "accounts", "cash", "reports", "users", "roles", "countries", "audit", "vehicles", "drivers", "contracts", "incidents", "training_centers", "inquiries", "free_charging"];
 
 const ACTION_LABELS: Record<string, string> = {
   read: "Consulter",

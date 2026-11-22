@@ -70,6 +70,11 @@ const CODE_MESSAGES: Record<string, string> = {
   STAFF_CONTACT_REQUIRED: "Cet utilisateur doit avoir un e-mail et un numéro de téléphone international (par exemple +24177001122) pour être reconnu dans Zella.",
   ZELLA_ACCOUNT_NOT_FOUND: "Aucun compte Zella ne correspond à la fois à l'e-mail et au téléphone de cet utilisateur. Vérifiez qu'ils sont identiques à ceux de son compte Zella.",
   ZELLA_UNAVAILABLE: "L'application Zella ne répond pas. Réessayez dans un instant.",
+  FREE_AGREEMENT_EXISTS: "Ce chauffeur a déjà un accord de gratuité. Retirez-le d'abord.",
+  FREE_AGREEMENT_NOT_LINKED: "Ce chauffeur n'a pas de compte Zella lié : il ne peut pas bénéficier de la gratuité.",
+  FREE_AGREEMENT_DATES_INVALID: "La date de fin ne peut pas précéder la date de début.",
+  FREE_WINDOW_INVALID: "Le créneau n'est pas valide : la fin doit venir après le début.",
+  FREE_AGREEMENT_REVOKED: "Cet accord est retiré et ne peut plus être modifié. Créez-en un nouveau.",
   VALIDATION_ERROR: "Certaines données sont invalides.",
 };
 

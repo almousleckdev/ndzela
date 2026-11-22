@@ -1,13 +1,7 @@
 package com.ndzela.admin.charging;
 
-import com.ndzela.admin.driver.DriverJson;
-import com.ndzela.admin.infrastructure.zella.ZellaEvidenceItem;
-import com.ndzela.admin.infrastructure.zella.ZellaEvidencePage;
-
 import org.junit.jupiter.api.Test;
 
-import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

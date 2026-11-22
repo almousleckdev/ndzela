@@ -14,3 +14,5 @@ NDZela staff charge for free through Zella. The feed reported them as "not charg
 ## Consequences
 
 Staff energy is read in the Zella dashboard (page "Personnel NDZela"). NDZela only marks the sessions.
+
+The value `FREE_SUNDAY` (a driver's free Sunday charge, [ADR-0048](0048-free-sunday-charging-for-selected-drivers.md)) is stored, labelled and excluded from revenue exactly like the staff categories; only `NDZELA_STAFF` energy is reported apart as staff energy.

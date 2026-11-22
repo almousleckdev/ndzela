@@ -207,9 +207,13 @@ public class FakeZellaClient extends ZellaClient {
     }
 
     public static ZellaFeedItem staffCharge(String transactionId, String sessionState, String updatedAt) {
+        return freeCharge(transactionId, "NDZELA_STAFF", sessionState, updatedAt);
+    }
+
+    public static ZellaFeedItem freeCharge(String transactionId, String category, String sessionState, String updatedAt) {
         return new ZellaFeedItem(transactionId, null, null, sessionState, "NOT_CHARGED", null, 0L, 0L, 0L, 0L, "XAF", 0, false, OffsetDateTime.parse(updatedAt),
                 "CP-1", 1, OffsetDateTime.parse("2026-11-05T09:00:00Z"), OffsetDateTime.parse("2026-11-05T10:00:00Z"), new java.math.BigDecimal("12.5"), null, null, null, 350L,
-                "NDZELA_STAFF", "{}");
+                category, "{}");
     }
 
     /** The page served for a cursor ("" is the first request), for the global feed or one customer's. */

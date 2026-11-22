@@ -1,0 +1,14 @@
+# ADR-0049: The free charging window is a country setting edited in the dashboards
+
+**Status:** Accepted · **Date:** 2026-11-22 · **Amends:** [ADR-0048](0048-free-sunday-charging-for-selected-drivers.md) (rules on the window and on the stop time)
+
+**Context.** ADR-0048 fixed the free window at Sunday 12:00 to 22:00 in environment variables (`FREE_CHARGING_DAY`, `FREE_CHARGING_FROM`, `FREE_CHARGING_UNTIL`). The owner wants the free time to be the whole day, 00:00 to 23:59, and wants staff to change the day and the times from the dashboards without a deployment.
+
+**Decision.**
+1. The window is **one setting per country**, table `free_charging_window` (migration V74, at most one row per country, tenant-owned). It holds the weekday, the first moment (included) and the end (excluded). No row means the default: **Sunday, 00:00, to the end of the day**. The end can be "end of the day" (stored as no end time, shown as 23:59): the window then closes at the next midnight.
+2. `WindowSetting` (domain) is the only code that applies the window; `FreeChargingWindow` reads the current country's setting. The three `FREE_CHARGING_*` variables only give the default of a country that has no row (`FROM` now defaults to `00:00` and `UNTIL` to empty, meaning the end of the day). Production does not need to set them.
+3. Staff read it with `free_charging:read` and change it with `free_charging:manage`: `GET|PUT /free-charging/window` (`{day, from, until, endOfDay}`; `endOfDay` true ignores `until`). Zella's dashboard reaches the same operations through `GET|PUT /api/v1/partners/zella/free-charging/window` with `X-Api-Key` and `X-Actor`. An invalid window (end not after the start, a missing day or start, times that are not whole minutes) answers `422 FREE_WINDOW_INVALID`. Every change is audited `FREE_WINDOW_CHANGED` (old and new window).
+4. The eligibility answer carries `window {day, from, until, endOfDay}` whenever the driver is known (also when refused), so Zella's app and dashboard show the real times and no client hard-codes them. `until` is `23:59` when the window runs to the end of the day.
+5. A change applies to the **next** answers. A free session already running keeps the end recorded in its claim when it started, so a change never shortens or lengthens a running session; a Sunday already claimed stays claimed.
+
+**Consequences.** (+) Staff manage the time without a release; the apps and dashboards never carry the hours. (-) A wrong window (a very short one, or another weekday) silently removes the benefit: the dashboards show the current window in words and the audit trail shows who changed it. With the whole-day default a free session can run until midnight, where the existing stop (ADR-0048 point 7, stop reason `FREE_WINDOW_ENDED`) ends it; the OCPP quota and charger caveats of ADR-0048 apply to that stop.

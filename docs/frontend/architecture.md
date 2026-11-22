@@ -7,7 +7,7 @@ Next.js 16 (App Router), React 19, TypeScript `strict`, Tailwind 4, react-hook-f
 
 ```
 src/app/                 routes: (auth)/login, (auth)/reset-password, (dashboard)/{page,users,roles,profile,settings}; layouts; globals.css
-src/features/<feature>/  auth, users, roles, access, profile, notifications, settings, tenancy, audit, vehicles, drivers
+src/features/<feature>/  auth, users, roles, access, profile, notifications, settings, tenancy, audit, vehicles, drivers, free-charging
     components/ hooks/ services/ schemas/ store/ lib/ types.ts      (only the folders a feature needs)
 src/components/ui/       Button, Input, FormField, Dialog, Dropdown, Table, Card, Badge, Avatar, Select, FilterTabs, Tabs (page views, e.g. Historique: Progression and Transactions), ConfirmDialog, Toaster...
 src/components/layout/   Sidebar (collapsible), Header, nav-items.ts
@@ -41,6 +41,8 @@ Feature responsibilities: `auth` (login flow, session hook, auth store, reset pa
 
 `usePermissions().can(PERMISSIONS.X)` and `<RequirePermission>` decide what to show; `nav-items.ts` (`NAV_SECTIONS`: optional heading plus items) filters the sidebar by permission and hides empty sections. The dashboard (`features/dashboard`) reads `GET /drivers/stats`, `GET /vehicles/counts` and `GET /payments/summary`, `GET /charging/summary` and shows each card only to users who hold that module's read permission.
 This is **usability only**; the backend enforces every rule. Never gate on role names.
+
+The Gratuité page (`features/free-charging`, route `/free-charging`, sidebar section Énergie) has the tabs Chauffeurs (agreements: add, edit, suspend, resume, revoke with confirmation) and Historique (free sessions, paged). It is guarded by `free_charging:read`; the action buttons need `free_charging:manage`. The page only displays what the backend decides (eligibility reason, unpaid days).
 
 ## Styling and design system
 

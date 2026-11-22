@@ -13,7 +13,7 @@
 - **Screens:** Suivi paiements (day's collection, total overdue, tabs by level, record a payment), Gérer impayés (overdue drivers, oldest first, red alert banner, record a payment, grant a delay), Historique (ledger with filters, reversal, Excel or PDF export), a Paiements card on each driver (level, amount due, credit, on time / late / unpaid, the last week of days with the whole history one click away, last entries), "En retard" metric, tab and row colours on Chauffeurs, and the dashboard's Paiements card.
 - **Permissions:** `payments:read` (all finance roles and VIEWER), `payments:create` (GESTIONNAIRE, CAISSIER, SUPER_ADMIN), `payments:reverse` and `payments:export` (ADMIN, SUPER_ADMIN; export also COMPTABLE), `arrears:manage` (ADMIN, SUPER_ADMIN).
 - **API:** `GET /payments/accounts?filter=&q=`, `GET /payments/accounts/{driverId}`, `GET /payments/summary`, `GET /payments/history`, `GET /payments/export`, `POST /payments` (an `amount`, or `days` to pay), `POST /payments/{id}/reverse`, `POST /arrears/waivers`. Audit: `PAYMENT_RECORDED`, `PAYMENT_REVERSED`, `ARREARS_WAIVED`, `ARREARS_LEVEL_REACHED`, `PAYMENTS_EXPORTED`.
-- **Not in this round:** the caution (deposit refund or retention), unpaid rent on contracts ended by a vehicle removal (the job tracks active contracts only), PVit and driver-app payments, the restricted session of a suspended driver, the inactivity alert.
+- **Not in this round:** the caution (deposit refund or retention), unpaid rent on contracts ended by a vehicle removal (the job tracks active contracts only), PVit and driver-app payments, the restricted session of a suspended driver, the inactivity alert. (PVit, driver-app payments and the restricted session were built later; see item 5 of Still open.)
 
 ## Daily rent
 
@@ -76,7 +76,7 @@ Yesterday's rent is *awaiting* until its deadline (12:00). It is shown in "À r�
 2. **Penalty**: amount **to be provided later**; a per-country setting, **default 0** (Decided).
 3. **Remote vehicle blocking and GPS** (cars have a GPS and a remote-blocking box): **out of this platform for now** (Decided). The dashboard raises a clear **"block the car" alert** at the 3rd unpaid day; staff block the car in the GPS supplier's own tool. A later integration with the supplier is possible.
 4. **Inactivity clause** (6 consecutive inactive days: NDZELA may recover the car): **Proposed** an alert for staff only.
-5. **Suspended driver experience** (driver app, later): after login only a payment screen with the amount due.
+5. **Suspended driver experience** (built): a driver with `DRIVER_LOCK_AFTER_UNPAID_DAYS` (3) or more unpaid days, or a suspended one, still signs in; `/account` says `locked` and `suspended`, and the session loses the contract and vehicle routes (403). The driver app then shows only the payment form, the whole arrears at once, sign-out and the message to support ([mobile architecture](../mobile/architecture.md)). Profile, documents and support routes stay reachable on the server; hiding them is the app's job. After everything is paid the lock lifts at once and an arrears suspension is lifted by the next arrears run (every minute).
 
 ## Backend constraints (binding once built)
 
@@ -93,3 +93,5 @@ Yesterday's rent is *awaiting* until its deadline (12:00). It is shown in "À r�
 
 
 **Pauses and rescheduling (2026-11-19).** No rent is charged while a driver is inactive or has no car ([ADR-0046](../adr/0046-pauses-keep-the-contract.md)). Staff with `payments:reschedule_days` can push late days to working days after the contract end instead of cancelling them ([ADR-0047](../adr/0047-rescheduling-late-rent-days.md)).
+
+**Free Sunday charge (2026-11-22, [ADR-0048](../adr/0048-free-sunday-charging-for-selected-drivers.md)).** A driver with an active free-charging agreement may start one free charge on the free day, inside the country's free window (default: the whole Sunday, 00:00 to 23:59; staff change the day and times in the dashboard, [ADR-0049](../adr/0049-free-window-is-a-country-setting.md)), only with **zero unpaid days at that moment**, computed live from the ledger (not the cached `drivers.unpaid_days`), so Saturday's rent, due Sunday 12:00, must be paid. One unpaid day gives `UNPAID_DAYS`; a driver suspended at three (ADR-0033) gives `DRIVER_SUSPENDED` until everything is paid and the next arrears run restores them. Any driver who is not `ACTIVE` gets the same `DRIVER_SUSPENDED`: blocked, paused (`INACTIVE`, ADR-0046) and resigned (`ARCHIVED`) drivers never charge free, even with an active agreement. Free charges never enter rent, credit or arrears.

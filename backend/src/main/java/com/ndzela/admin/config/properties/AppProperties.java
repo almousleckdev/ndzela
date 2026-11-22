@@ -28,6 +28,7 @@ public record AppProperties(
         PublicSiteProperties publicSite,
         OcppProperties ocpp,
         ZellaProperties zella,
+        FreeChargingProperties freeCharging,
         RateLimitProperties rateLimit
 ) {
 }

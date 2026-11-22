@@ -1,17 +1,10 @@
+import { reasonLabel } from "@/features/charging/lib/stop-reason";
 import type { ChargingSessionRow } from "@/features/charging/types";
 
-const STATUS: Record<string, string> = { COMPLETED: "Terminée", CHARGING: "En charge", PREPARING: "Préparation", FINISHING: "Fin de charge", FAULTED: "En panne" };
-const DRIVER_STOPPED = "Arrêt par le conducteur";
-const AMOUNT_REACHED = "Montant atteint";
-const POWER_CUT = "Coupure d'électricité";
-const REASON: Record<string, string> = {
-  Remote: DRIVER_STOPPED, Local: DRIVER_STOPPED, EVDisconnected: DRIVER_STOPPED, EmergencyStop: DRIVER_STOPPED, DeAuthorized: DRIVER_STOPPED, UnlockCommand: DRIVER_STOPPED,
-  Other: AMOUNT_REACHED, PowerLoss: POWER_CUT, Reboot: POWER_CUT, HardReset: POWER_CUT, SoftReset: POWER_CUT,
-};
+export { reasonLabel };
 
+const STATUS: Record<string, string> = { COMPLETED: "Terminée", CHARGING: "En charge", PREPARING: "Préparation", FINISHING: "Fin de charge", FAULTED: "En panne" };
 export const statusLabel = (status: string | null) => (status ? STATUS[status] ?? status : null);
-// Why a session stopped, in three words: the driver stopped it, the amount was reached, or the power was cut. A finished session is never left without one.
-export const reasonLabel = (reason: string | null, finished = true) => (reason && REASON[reason]) || (finished ? AMOUNT_REACHED : null);
 export const isRunning = (row: ChargingSessionRow) => row.startedAt !== null && row.endedAt === null;
 
 // A session still under way is measured up to now.
@@ -36,7 +29,7 @@ export function batteryLabel(row: ChargingSessionRow): { primary: string; second
   return { primary: `${before} % → ${after} %`, secondary: after > before ? `+${after - before} %` : undefined };
 }
 
-const FREE_LABEL = { NDZELA_STAFF: "Personnel NDZela", OTHER: "Offert" } as const;
+const FREE_LABEL = { NDZELA_STAFF: "Personnel NDZela", OTHER: "Offert", FREE_SUNDAY: "Offert" } as const;
 
 export const freeLabel = (row: ChargingSessionRow) => (row.payment?.freeCategory ? FREE_LABEL[row.payment.freeCategory] : null);
 

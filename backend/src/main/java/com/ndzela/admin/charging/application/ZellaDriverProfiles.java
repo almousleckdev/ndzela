@@ -1,8 +1,5 @@
 package com.ndzela.admin.charging.application;
 
-import com.ndzela.admin.charging.domain.IdTag;
-import com.ndzela.admin.charging.domain.IdTagRepository;
-import com.ndzela.admin.charging.domain.IdTagStatus;
 import com.ndzela.admin.contract.api.dto.ContractResponse;
 import com.ndzela.admin.contract.application.ContractService;
 import com.ndzela.admin.driver.application.DriverDirectory;
@@ -21,17 +18,14 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ZellaDriverProfiles {
-    private final IdTagRepository tags;
+    private final IdTagLinkService links;
     private final DriverDirectory drivers;
     private final ContractService contracts;
     private final VehicleService vehicles;
 
     @Transactional(readOnly = true)
     public Optional<ZellaDriverProfile> ofCustomer(String customerId) {
-        return tags.findByCustomerId(customerId)
-                .filter(tag -> tag.getStatus() == IdTagStatus.LINKED)
-                .map(IdTag::getDriverId)
-                .flatMap(this::profile);
+        return links.linkedDriverId(customerId).flatMap(this::profile);
     }
 
     private Optional<ZellaDriverProfile> profile(UUID driverId) {
