@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api/api-client";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
+import { DRIVER_PAGE_SIZE, type Membership } from "@/features/free-charging/lib/selection";
 import type { Agreement, AgreementInput, DriverOption, FreeChargingUse, FreeWindow, FreeWindowInput } from "@/features/free-charging/types";
 
 export const freeChargingService = {
@@ -16,7 +17,8 @@ export const freeChargingService = {
 
   revoke: (id: string) => apiClient<Agreement>(`/free-charging/agreements/${id}/revoke`, { method: "POST" }),
 
-  drivers: (q: string) => apiClient<DriverOption[]>(`/free-charging/drivers?${queryString({ q, size: 20 })}`),
+  drivers: (q: string, membership: Membership, page: number) =>
+    apiClient<Page<DriverOption>>(`/free-charging/drivers?${queryString({ q, membership, page, size: DRIVER_PAGE_SIZE })}`),
 
   window: () => apiClient<FreeWindow>("/free-charging/window"),
 

@@ -29,14 +29,14 @@ class FreeChargingDriversEndpointTest extends AbstractFreeChargingTest {
         UUID paul = withCar("NZE", "V015", "PL-0150");
 
         send(get(STAFF).param("q", "v015"), admin).andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].driverId").value(paul.toString()))
-                .andExpect(jsonPath("$[0].customerId").value("cust-" + paul))
-                .andExpect(jsonPath("$[0].fullName").isNotEmpty())
-                .andExpect(jsonPath("$[0].fleetNumber").value("V015"))
-                .andExpect(jsonPath("$[0].plate").value("PL-0150"))
-                .andExpect(jsonPath("$[0].linked").value(true))
-                .andExpect(jsonPath("$[0].inProgram").value(false));
+                .andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.items[0].driverId").value(paul.toString()))
+                .andExpect(jsonPath("$.items[0].customerId").value("cust-" + paul))
+                .andExpect(jsonPath("$.items[0].fullName").isNotEmpty())
+                .andExpect(jsonPath("$.items[0].fleetNumber").value("V015"))
+                .andExpect(jsonPath("$.items[0].plate").value("PL-0150"))
+                .andExpect(jsonPath("$.items[0].linked").value(true))
+                .andExpect(jsonPath("$.items[0].inProgram").value(false));
     }
 
     @Test
@@ -50,9 +50,22 @@ class FreeChargingDriversEndpointTest extends AbstractFreeChargingTest {
         withCar("NZE", "V015", "PL-0150");
         withCar("OBIANG", "V030", "PL-0300");
 
-        send(get(STAFF).param("size", "1"), admin).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+        send(get(STAFF).param("size", "1"), admin).andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.total").value(4));
+        send(get(STAFF).param("size", "1").param("page", "1"), admin).andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.page").value(1));
         send(get(STAFF).param("size", "0"), admin).andExpect(status().isOk());
-        send(get(STAFF).param("size", "100000"), admin).andExpect(status().isOk());
+        send(get(STAFF).param("size", "100000"), admin).andExpect(status().isOk()).andExpect(jsonPath("$.size").value(100));
+        send(get(STAFF).param("page", "-3"), admin).andExpect(status().isOk()).andExpect(jsonPath("$.page").value(0));
+    }
+
+    @Test
+    void theMembershipFilterIsAppliedAndAnUnknownValueMeansEveryone() throws Exception {
+        UUID paul = withCar("NZE", "V015", "PL-0150");
+        withCar("OBIANG", "V030", "PL-0300");
+        postJson("/api/v1/free-charging/agreements", "{\"driverId\":\"" + paul + "\",\"startsOn\":\"2026-01-01\"}", admin).andExpect(status().isCreated());
+
+        send(get(STAFF).param("membership", "IN_PROGRAM"), admin).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].inProgram").value(true)).andExpect(jsonPath("$.items[0].agreementStatus").value("ACTIVE"));
+        send(get(STAFF).param("membership", "NOT_IN_PROGRAM"), admin).andExpect(jsonPath("$.total").value(3));
+        send(get(STAFF).param("membership", "whatever"), admin).andExpect(jsonPath("$.total").value(4));
     }
 
     @Test
@@ -60,7 +73,7 @@ class FreeChargingDriversEndpointTest extends AbstractFreeChargingTest {
         UUID paul = withCar("NZE", "V015", "PL-0150");
 
         mvc.perform(get(PARTNER).param("q", "nze").header("X-Api-Key", KEY)).andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].driverId").value(paul.toString()));
+                .andExpect(jsonPath("$.items[0].driverId").value(paul.toString()));
         mvc.perform(get(PARTNER).param("q", "nze")).andExpect(status().isUnauthorized());
         mvc.perform(get(PARTNER).param("q", "nze").header("X-Api-Key", "wrong")).andExpect(status().isUnauthorized());
     }

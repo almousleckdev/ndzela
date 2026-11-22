@@ -70,4 +70,6 @@ export interface DriverOption {
   status: string;
   linked: boolean;
   inProgram: boolean;
+  agreementId: string | null;
+  agreementStatus: string | null;
 }

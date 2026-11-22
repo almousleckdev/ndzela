@@ -15,7 +15,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   granted.manage = true;
   service.list.mockResolvedValue([]);
-  service.drivers.mockResolvedValue([]);
+  service.drivers.mockResolvedValue({ items: [], page: 0, size: 25, total: 0 });
   service.usage.mockResolvedValue({ items: [], page: 0, size: 20, total: 0 });
   service.window.mockResolvedValue({ day: "SUNDAY", from: "00:00", until: "23:59", endOfDay: true });
 });
@@ -42,7 +42,7 @@ describe("FreeChargingPage", () => {
 
     const dialog = await screen.findByRole("dialog");
     await waitFor(() => expect(dialog).toHaveTextContent("le dimanche, de 00h00 à 23h59 (heure du Gabon)"));
-    expect(dialog).toHaveTextContent("Vous pouvez en choisir plusieurs.");
+    expect(dialog).toHaveTextContent("Cochez un chauffeur pour lui offrir la recharge gratuite");
   });
 
   it("never writes the old 12h-22h window anywhere", async () => {

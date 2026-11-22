@@ -65,8 +65,9 @@ public class FreeChargingController {
 
     @GetMapping("/drivers")
     @PreAuthorize("hasAuthority('free_charging:manage')")
-    public List<DriverOption> drivers(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "20") int size) {
-        return administration.drivers(q, size);
+    public PageResponse<DriverOption> drivers(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "ALL") String membership,
+                                              @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        return administration.drivers(q, membership, page, size);
     }
 
     @GetMapping("/window")

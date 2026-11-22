@@ -5,7 +5,6 @@ import com.ndzela.admin.driver.application.model.FoundDriver;
 import com.ndzela.admin.driver.application.model.HeldCar;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
-import com.ndzela.admin.driver.domain.DriverStatus;
 import com.ndzela.admin.driver.domain.VehicleAssignment;
 import com.ndzela.admin.driver.domain.VehicleAssignmentRepository;
 import com.ndzela.admin.vehicle.domain.Vehicle;
@@ -13,6 +12,7 @@ import com.ndzela.admin.vehicle.domain.VehicleRepository;
 
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -30,7 +29,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// Finds the working drivers a person types: by name (any order), e-mail, phone (any spacing or prefix) or the fleet number or plate of the car the driver holds now.
+// Finds the drivers a person types: by name (any order), e-mail, phone (any spacing or prefix) or the fleet number or plate of the car the driver holds now.
 @Service
 @RequiredArgsConstructor
 public class DriverFinder {
@@ -42,21 +41,26 @@ public class DriverFinder {
     private final VehicleAssignmentRepository assignments;
     private final VehicleRepository vehicles;
 
+    /**
+     * One page of the drivers, by name (any order), e-mail, phone or the car held now; `only` keeps just those ids (null: no limit), `excluded` drops them.
+     * Every status is listed so staff see the whole fleet of drivers; the caller decides who can be picked.
+     */
     @Transactional(readOnly = true)
-    public List<FoundDriver> find(String q, int limit) {
+    public Page<FoundDriver> page(String q, Collection<UUID> only, Collection<UUID> excluded, int page, int size) {
         String text = q == null ? "" : q.trim();
-        Map<UUID, Driver> found = new LinkedHashMap<>();
-        if (!text.isEmpty()) {
-            holdersOfCarsMatching(text).forEach(driver -> found.putIfAbsent(driver.getId(), driver));
+        Specification<Driver> spec = text.isEmpty() ? (root, query, cb) -> cb.conjunction() : matching(text).or(idIn(holdersOfCarsMatching(text)));
+        if (only != null) {
+            spec = spec.and(idIn(only));
         }
-        drivers.findAll(working().and(matching(text)), PageRequest.of(0, limit, Sort.by("lastName", "firstName", "id")))
-                .forEach(driver -> found.putIfAbsent(driver.getId(), driver));
-        List<Driver> picked = found.values().stream().limit(limit).toList();
-        Map<UUID, HeldCar> cars = carsOf(picked.stream().map(Driver::getId).toList());
-        return picked.stream().map(driver -> {
+        if (excluded != null && !excluded.isEmpty()) {
+            spec = spec.and(Specification.not(idIn(excluded)));
+        }
+        Page<Driver> found = drivers.findAll(spec, PageRequest.of(page, size, Sort.by("lastName", "firstName", "id")));
+        Map<UUID, HeldCar> cars = carsOf(found.getContent().stream().map(Driver::getId).toList());
+        return found.map(driver -> {
             HeldCar car = cars.get(driver.getId());
             return new FoundDriver(DriverRef.from(driver), car == null ? null : car.fleetNumber(), car == null ? null : car.plate());
-        }).toList();
+        });
     }
 
     /** The car each of the given drivers holds now; a driver who holds none is absent from the map. */
@@ -71,8 +75,8 @@ public class DriverFinder {
                 assignment -> new HeldCar(byId.get(assignment.getVehicleId()).getFleetNumber(), byId.get(assignment.getVehicleId()).getPlate()), (first, second) -> first));
     }
 
-    private static Specification<Driver> working() {
-        return (root, query, cb) -> cb.not(root.get("status").in(DriverStatus.INACTIVE, DriverStatus.ARCHIVED));
+    private static Specification<Driver> idIn(Collection<UUID> ids) {
+        return (root, query, cb) -> ids.isEmpty() ? cb.disjunction() : root.get("id").in(ids);
     }
 
     private static Specification<Driver> matching(String text) {
@@ -111,14 +115,13 @@ public class DriverFinder {
         return "%" + value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
     }
 
-    private List<Driver> holdersOfCarsMatching(String text) {
+    private List<UUID> holdersOfCarsMatching(String text) {
         String pattern = like(text.toLowerCase(Locale.ROOT));
         Specification<Vehicle> spec = (root, query, cb) -> cb.or(cb.like(cb.lower(root.get("fleetNumber")), pattern, '\\'), cb.like(cb.lower(root.get("plate")), pattern, '\\'));
         List<UUID> carIds = vehicles.findAll(spec, PageRequest.of(0, VEHICLE_MATCHES, Sort.by("fleetNumber"))).stream().map(Vehicle::getId).toList();
         if (carIds.isEmpty()) {
             return List.of();
         }
-        List<UUID> holders = assignments.findAllByVehicleIdInAndEndedAtIsNull(carIds).stream().map(VehicleAssignment::getDriverId).toList();
-        return drivers.findAllById(holders).stream().filter(driver -> driver.getStatus() != DriverStatus.INACTIVE && driver.getStatus() != DriverStatus.ARCHIVED).toList();
+        return assignments.findAllByVehicleIdInAndEndedAtIsNull(carIds).stream().map(VehicleAssignment::getDriverId).toList();
     }
 }

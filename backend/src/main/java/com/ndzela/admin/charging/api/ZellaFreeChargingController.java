@@ -74,9 +74,10 @@ public class ZellaFreeChargingController {
     }
 
     @GetMapping("/free-charging/drivers")
-    public List<DriverOption> drivers(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "20") int size,
-                                      @RequestHeader(value = KEY, required = false) String key) {
-        return access.call("free-manage", key, () -> administration.drivers(q, size));
+    public PageResponse<DriverOption> drivers(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "ALL") String membership,
+                                              @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size,
+                                              @RequestHeader(value = KEY, required = false) String key) {
+        return access.call("free-manage", key, () -> administration.drivers(q, membership, page, size));
     }
 
     @GetMapping("/free-charging/window")

@@ -79,8 +79,8 @@ public class FreeChargingAdministration {
     }
 
     @Transactional(readOnly = true)
-    public List<DriverOption> drivers(String q, int size) {
-        return driverSearch.find(q, size);
+    public PageResponse<DriverOption> drivers(String q, String membership, int page, int size) {
+        return driverSearch.find(q, membership, page, size);
     }
 
     @Transactional(readOnly = true)

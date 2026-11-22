@@ -44,7 +44,11 @@ class FreeChargingDriverSearchTest extends AbstractFreeChargingTest {
     }
 
     private List<UUID> found(String q) {
-        return inGabon(() -> search.find(q, 20)).stream().map(DriverOption::driverId).toList();
+        return inGabon(() -> search.find(q, "ALL", 0, 20)).items().stream().map(DriverOption::driverId).toList();
+    }
+
+    private List<DriverOption> options(String q, String membership, int page, int size) {
+        return inGabon(() -> search.find(q, membership, page, size)).items();
     }
 
     @Test
@@ -94,32 +98,92 @@ class FreeChargingDriverSearchTest extends AbstractFreeChargingTest {
 
     @Test
     void anEmptySearchListsDriversByNameAndRespectsTheLimit() {
-        assertEquals(3, inGabon(() -> search.find("", 20)).stream().filter(option -> List.of(paul, awa, jean).contains(option.driverId())).count());
-        assertEquals(2, inGabon(() -> search.find(null, 2)).size());
+        assertEquals(List.of(jean, paul, awa), mine(options("", "ALL", 0, 20)));
+        assertEquals(2, options(null, "ALL", 0, 2).size());
     }
 
     @Test
-    void resignedAndPausedDriversAreNotOffered() {
+    void resignedAndPausedDriversAreListedWithTheirStatus() {
         jdbc.update("update drivers set status = 'ARCHIVED' where id = ?", paul);
         jdbc.update("update drivers set status = 'INACTIVE' where id = ?", awa);
 
-        assertTrue(found("nze").isEmpty());
-        assertTrue(found("awa").isEmpty());
+        assertEquals("ARCHIVED", options("nze", "ALL", 0, 5).get(0).status().name());
+        assertEquals("INACTIVE", options("awa", "ALL", 0, 5).get(0).status().name());
         assertEquals(List.of(jean), found("mba"));
+    }
+
+    private static final int BASE_DRIVERS = 2;
+
+    private List<UUID> mine(List<DriverOption> options) {
+        return options.stream().map(DriverOption::driverId).filter(id -> List.of(paul, awa, jean).contains(id)).toList();
+    }
+
+    @Test
+    void everyDriverCanBeListedPageByPageWithTheTotal() {
+        var first = inGabon(() -> search.find("", "ALL", 0, 2));
+        var second = inGabon(() -> search.find("", "ALL", 1, 2));
+        var third = inGabon(() -> search.find("", "ALL", 2, 2));
+
+        assertEquals(3 + BASE_DRIVERS, first.total());
+        assertEquals(2, first.items().size());
+        assertEquals(2, second.items().size());
+        assertEquals(1, third.items().size());
+        assertEquals(2, third.page());
+        assertEquals(List.of(jean, paul, awa), mine(java.util.stream.Stream.of(first, second, third).flatMap(page -> page.items().stream()).toList()));
+    }
+
+    @Test
+    void theMembershipFilterKeepsOnlyDriversInOrOutOfTheProgram() {
+        inGabon(() -> agreements.create(paul, LocalDate.of(2026, 1, 1), null, null));
+
+        assertEquals(List.of(paul), options("", "IN_PROGRAM", 0, 20).stream().map(DriverOption::driverId).toList());
+        assertEquals(List.of(jean, awa), mine(options("", "NOT_IN_PROGRAM", 0, 20)));
+        assertFalse(options("", "NOT_IN_PROGRAM", 0, 20).stream().anyMatch(option -> option.driverId().equals(paul)));
+        assertEquals(3 + BASE_DRIVERS, inGabon(() -> search.find("", "ALL", 0, 20)).total());
+        assertEquals(1, inGabon(() -> search.find("", "IN_PROGRAM", 0, 20)).total());
+        assertEquals(2 + BASE_DRIVERS, inGabon(() -> search.find("", "NOT_IN_PROGRAM", 0, 20)).total());
+    }
+
+    @Test
+    void aRevokedAgreementPutsTheDriverBackOutOfTheProgram() {
+        var agreement = inGabon(() -> agreements.create(paul, LocalDate.of(2026, 1, 1), null, null));
+        inGabon(() -> agreements.revoke(agreement.getId()));
+
+        assertTrue(options("", "IN_PROGRAM", 0, 20).isEmpty());
+        assertFalse(options("nze", "ALL", 0, 5).get(0).inProgram());
+    }
+
+    @Test
+    void theMembershipFilterWorksTogetherWithTheSearchText() {
+        inGabon(() -> agreements.create(paul, LocalDate.of(2026, 1, 1), null, null));
+
+        assertEquals(List.of(paul), options("V015", "IN_PROGRAM", 0, 20).stream().map(DriverOption::driverId).toList());
+        assertTrue(options("V015", "NOT_IN_PROGRAM", 0, 20).isEmpty());
+    }
+
+    @Test
+    void anOptionNamesItsAgreementSoStaffCanSuspendOrRemoveIt() {
+        var agreement = inGabon(() -> agreements.create(paul, LocalDate.of(2026, 1, 1), null, null));
+        inGabon(() -> agreements.suspend(agreement.getId()));
+
+        DriverOption option = options("nze", "ALL", 0, 5).get(0);
+        assertEquals(agreement.getId(), option.agreementId());
+        assertEquals("SUSPENDED", option.agreementStatus());
+        assertNull(options("awa", "ALL", 0, 5).get(0).agreementId());
     }
 
     @Test
     void anotherCountryNeverAppears() {
-        assertTrue(inMali(() -> search.find("nze", 20)).isEmpty());
-        assertTrue(inMali(() -> search.find("V015", 20)).isEmpty());
+        assertTrue(inMali(() -> search.find("nze", "ALL", 0, 20)).items().isEmpty());
+        assertTrue(inMali(() -> search.find("V015", "ALL", 0, 20)).items().isEmpty());
     }
 
     @Test
     void eachOptionShowsTheCarTheLinkAndWhetherTheDriverIsAlreadyInTheProgram() {
         inGabon(() -> agreements.create(paul, LocalDate.of(2026, 1, 1), null, null));
 
-        DriverOption inProgram = inGabon(() -> search.find("nze", 5)).get(0);
-        DriverOption free = inGabon(() -> search.find("awa", 5)).get(0);
+        DriverOption inProgram = options("nze", "ALL", 0, 5).get(0);
+        DriverOption free = options("awa", "ALL", 0, 5).get(0);
 
         assertEquals("V015", inProgram.fleetNumber());
         assertEquals("PL-0150", inProgram.plate());
@@ -136,7 +200,7 @@ class FreeChargingDriverSearchTest extends AbstractFreeChargingTest {
         UUID stranger = UUID.fromString(id(createDriver(manager, DriverJson.create(id(postJson("/api/v1/vehicles", VehicleApiTest.json("V099", "PL-0990"), manager)
                 .andExpect(status().isCreated())), newCenter(manager, "C-99")).personal("lastName", "LONELY")).andExpect(status().isCreated())));
 
-        DriverOption option = inGabon(() -> search.find("lonely", 5)).get(0);
+        DriverOption option = options("lonely", "ALL", 0, 5).get(0);
 
         assertEquals(stranger, option.driverId());
         assertFalse(option.linked());

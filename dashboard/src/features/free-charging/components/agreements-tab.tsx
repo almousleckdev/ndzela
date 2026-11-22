@@ -79,8 +79,8 @@ export function AgreementsTab({ windowText, adding, onAddingClose }: AgreementsT
     list.reload();
   };
 
-  const added = (count: number) => {
-    addToast({ title: "Succès", description: count === 1 ? "Chauffeur ajouté." : `${count} chauffeurs ajoutés.`, type: "success" });
+  const added = (addedCount: number, removedCount: number) => {
+    addToast({ title: "Succès", description: `${addedCount} ajouté(s), ${removedCount} retiré(s).`, type: "success" });
     onAddingClose();
     list.reload();
   };
