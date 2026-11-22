@@ -2,9 +2,11 @@ package com.ndzela.admin.freecharging;
 
 import com.ndzela.admin.charging.application.IdTagLinkService;
 import com.ndzela.admin.driver.application.DriverArrearsService;
+import com.ndzela.admin.driver.application.DriverFinder;
 import com.ndzela.admin.freecharging.application.AgreementView;
 import com.ndzela.admin.freecharging.application.FreeChargingAdministration;
 import com.ndzela.admin.freecharging.application.FreeChargingAgreementService;
+import com.ndzela.admin.freecharging.application.FreeChargingDriverSearch;
 import com.ndzela.admin.freecharging.application.FreeChargingEligibility;
 import com.ndzela.admin.freecharging.application.FreeChargingWindowService;
 import com.ndzela.admin.freecharging.application.FreeChargingUsageSource;
@@ -31,6 +33,8 @@ class FreeChargingAdministrationTest {
     @Mock private DriverArrearsService drivers;
     @Mock private IdTagLinkService links;
     @Mock private FreeChargingWindowService windows;
+    @Mock private FreeChargingDriverSearch search;
+    @Mock private DriverFinder finder;
 
     @Test
     void anAgreementWhoseDriverCannotBeFoundIsLeftOutOfTheList() {
@@ -39,7 +43,7 @@ class FreeChargingAdministrationTest {
         when(drivers.refs(any())).thenReturn(Map.of());
         when(usage.lastUseOf(any())).thenReturn(Map.of());
 
-        List<AgreementView> rows = new FreeChargingAdministration(agreements, eligibility, usage, drivers, links, windows).list();
+        List<AgreementView> rows = new FreeChargingAdministration(agreements, eligibility, usage, drivers, links, windows, search, finder).list();
 
         assertTrue(rows.isEmpty());
     }

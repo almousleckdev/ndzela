@@ -5,6 +5,8 @@ import com.ndzela.admin.common.exception.BusinessRuleViolationException;
 import com.ndzela.admin.common.exception.ResourceNotFoundException;
 import com.ndzela.admin.common.web.dto.PageResponse;
 import com.ndzela.admin.driver.application.DriverArrearsService;
+import com.ndzela.admin.driver.application.DriverFinder;
+import com.ndzela.admin.driver.application.model.HeldCar;
 import com.ndzela.admin.driver.application.model.DriverRef;
 import com.ndzela.admin.freecharging.domain.EligibilityReason;
 import com.ndzela.admin.freecharging.domain.FreeChargingAgreement;
@@ -36,6 +38,8 @@ public class FreeChargingAdministration {
     private final DriverArrearsService drivers;
     private final IdTagLinkService links;
     private final FreeChargingWindowService windows;
+    private final FreeChargingDriverSearch driverSearch;
+    private final DriverFinder finder;
 
     @Transactional(readOnly = true)
     public List<AgreementView> list() {
@@ -75,6 +79,11 @@ public class FreeChargingAdministration {
     }
 
     @Transactional(readOnly = true)
+    public List<DriverOption> drivers(String q, int size) {
+        return driverSearch.find(q, size);
+    }
+
+    @Transactional(readOnly = true)
     public WindowView window() {
         return WindowView.of(windows.current());
     }
@@ -99,10 +108,13 @@ public class FreeChargingAdministration {
         List<UUID> driverIds = found.stream().map(FreeChargingAgreement::getDriverId).distinct().toList();
         Map<UUID, DriverRef> people = drivers.refs(driverIds);
         Map<UUID, Instant> lastUses = usage.lastUseOf(driverIds);
+        Map<UUID, HeldCar> cars = finder.carsOf(driverIds);
         return found.stream().filter(agreement -> known(people, agreement)).map(agreement -> {
             DriverRef driver = people.get(agreement.getDriverId());
+            HeldCar car = cars.get(driver.id());
             return new AgreementView(agreement.getId(), agreement.getDriverId(), driver.fullName(), agreement.getStartsOn(), agreement.getEndsOn(),
-                    agreement.getStatus(), agreement.getConditions(), reasonOf(driver, now), eligibility.unpaidDays(driver, now), lastUses.get(driver.id()));
+                    agreement.getStatus(), agreement.getConditions(), reasonOf(driver, now), eligibility.unpaidDays(driver, now), lastUses.get(driver.id()),
+                    driver.phone(), driver.email(), car == null ? null : car.fleetNumber(), car == null ? null : car.plate());
         }).toList();
     }
 

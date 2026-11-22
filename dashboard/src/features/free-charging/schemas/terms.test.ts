@@ -1,20 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { agreementSchema } from "@/features/free-charging/schemas/agreement";
+import { termsSchema } from "@/features/free-charging/schemas/terms";
 
-const valid = { driverId: "d1", startsOn: "2026-11-01", endsOn: "2026-12-01", conditions: "" };
+const valid = { startsOn: "2026-11-01", endsOn: "2026-12-01", conditions: "" };
 const messages = (values: object) => {
-  const result = agreementSchema.safeParse(values);
+  const result = termsSchema.safeParse(values);
   return result.success ? [] : result.error.issues.map((issue) => issue.message);
 };
 
-describe("agreementSchema", () => {
-  it("accepts a complete agreement and one without an end date", () => {
+describe("termsSchema", () => {
+  it("accepts complete terms and terms without an end date", () => {
     expect(messages(valid)).toEqual([]);
     expect(messages({ ...valid, endsOn: "" })).toEqual([]);
   });
 
-  it("requires a driver and a start date", () => {
-    expect(messages({ ...valid, driverId: "" })).toContain("Choisissez un chauffeur");
+  it("requires a start date", () => {
     expect(messages({ ...valid, startsOn: "" })).toContain("Date de début obligatoire");
   });
 

@@ -54,7 +54,7 @@ abstract class AbstractFreeChargingTest extends AbstractDriverTest {
         return UUID.fromString(driver);
     }
 
-    private void link(UUID driver) {
+    protected void link(UUID driver) {
         jdbc.update("insert into id_tags (id, country_id, id_tag, customer_id, driver_id, status, matched_on, decided_by, zella_notified) "
                 + "select gen_random_uuid(), country_id, 'TAG-' || id, 'cust-' || id, id, 'LINKED', 'email+phone', 'system', true from drivers where id = ?", driver);
     }

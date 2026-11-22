@@ -51,7 +51,21 @@ class FreeChargingControllerTest extends AbstractFreeChargingTest {
                 .andExpect(jsonPath("$[0].conditions").value("Staff"))
                 .andExpect(jsonPath("$[0].eligibility").isNotEmpty())
                 .andExpect(jsonPath("$[0].unpaidDays").value(0))
-                .andExpect(jsonPath("$[0].lastFreeUse").value((Object) null));
+                .andExpect(jsonPath("$[0].lastFreeUse").value((Object) null))
+                .andExpect(jsonPath("$[0].phone").isNotEmpty())
+                .andExpect(jsonPath("$[0].email").isNotEmpty())
+                .andExpect(jsonPath("$[0].fleetNumber").value(org.hamcrest.Matchers.startsWith("V-")))
+                .andExpect(jsonPath("$[0].plate").value(org.hamcrest.Matchers.startsWith("PL-")));
+    }
+
+    @Test
+    void aDriverWhoHoldsNoCarShowsNoCarInTheRow() throws Exception {
+        postJson(BASE, body(linkedDriver), admin).andExpect(status().isCreated());
+        postJson("/api/v1/drivers/" + linkedDriver + "/vehicle/remove", REASON, manager).andExpect(status().isOk());
+
+        send(get(BASE), viewer).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].fleetNumber").value((Object) null))
+                .andExpect(jsonPath("$[0].plate").value((Object) null));
     }
 
     @Test

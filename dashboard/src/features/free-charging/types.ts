@@ -22,6 +22,10 @@ export interface Agreement {
   eligibility: EligibilityReason;
   unpaidDays: number;
   lastFreeUse: string | null;
+  phone?: string | null;
+  email?: string | null;
+  fleetNumber?: string | null;
+  plate?: string | null;
 }
 
 export interface AgreementInput {
@@ -53,4 +57,17 @@ export interface FreeWindowInput {
   from: string;
   until: string | null;
   endOfDay: boolean;
+}
+
+export interface DriverOption {
+  driverId: string;
+  customerId: string | null;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  fleetNumber: string | null;
+  plate: string | null;
+  status: string;
+  linked: boolean;
+  inProgram: boolean;
 }

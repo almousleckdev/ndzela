@@ -1,21 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataTable } from "@/components/data-table/data-table";
+import { SearchField } from "@/components/data-table/search-field";
 import { Panel, Toolbar } from "@/components/layout/page";
 import { useAsync } from "@/hooks/use-async";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
-import { AgreementFormDialog } from "@/features/free-charging/components/agreement-form-dialog";
+import { AgreementCreateDialog } from "@/features/free-charging/components/agreement-create-dialog";
+import { AgreementEditDialog } from "@/features/free-charging/components/agreement-edit-dialog";
+import { AgreementStats } from "@/features/free-charging/components/agreement-stats";
 import { agreementColumns, type AgreementAction } from "@/features/free-charging/components/agreement-columns";
+import { filterAgreements } from "@/features/free-charging/lib/filter-agreements";
 import { freeChargingService } from "@/features/free-charging/services/free-charging.service";
-import type { Agreement } from "@/features/free-charging/types";
+import type { Agreement, AgreementInput } from "@/features/free-charging/types";
 
 const DONE: Record<"suspend" | "resume" | "revoke", string> = {
   suspend: "Accord suspendu.",
@@ -25,14 +27,16 @@ const DONE: Record<"suspend" | "resume" | "revoke", string> = {
 
 interface AgreementsTabProps {
   windowText?: string;
+  adding: boolean;
+  onAddingClose: () => void;
 }
 
-export function AgreementsTab({ windowText = "pendant le créneau gratuit" }: AgreementsTabProps) {
+export function AgreementsTab({ windowText, adding, onAddingClose }: AgreementsTabProps) {
   const { can } = usePermissions();
   const { addToast } = useToast();
   const canManage = can(PERMISSIONS.FREE_CHARGING_MANAGE);
   const list = useAsync(freeChargingService.list, []);
-  const [adding, setAdding] = useState(false);
+  const [text, setText] = useState("");
   const [editing, setEditing] = useState<Agreement | null>(null);
   const [revoking, setRevoking] = useState<Agreement | null>(null);
   const [revokePending, setRevokePending] = useState(false);
@@ -67,29 +71,44 @@ export function AgreementsTab({ windowText = "pendant le créneau gratuit" }: Ag
     if (done) setRevoking(null);
   };
 
-  const save = async (driverId: string, input: Parameters<typeof freeChargingService.create>[1]) => {
-    if (editing) await freeChargingService.update(editing.id, input);
-    else await freeChargingService.create(driverId, input);
-    addToast({ title: "Succès", description: editing ? "Accord modifié." : "Chauffeur ajouté.", type: "success" });
-    setAdding(false);
+  const saveEdit = async (input: AgreementInput) => {
+    if (!editing) return;
+    await freeChargingService.update(editing.id, input);
+    addToast({ title: "Succès", description: "Accord modifié.", type: "success" });
     setEditing(null);
     list.reload();
   };
 
+  const added = (count: number) => {
+    addToast({ title: "Succès", description: count === 1 ? "Chauffeur ajouté." : `${count} chauffeurs ajoutés.`, type: "success" });
+    onAddingClose();
+    list.reload();
+  };
+
+  const closeCreate = () => {
+    onAddingClose();
+    list.reload();
+  };
+
+  const rows = filterAgreements(list.data ?? [], text);
+
   const columns = useMemo(() => agreementColumns(canManage, onAction), [canManage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <Panel>
-      <Toolbar start={<p className="text-sm text-muted">{`Une recharge gratuite par jour de gratuité, ${windowText}, sans jour impayé.`}</p>}
-        end={canManage && <Button onClick={() => setAdding(true)}><Plus className="mr-2 h-4 w-4" /> Ajouter un chauffeur</Button>} />
-      <DataTable columns={columns} data={list.data} error={list.error} onRetry={list.reload} getRowId={(row) => row.id}
-        empty={<EmptyState title="Aucun chauffeur" description="Aucun accord de gratuité pour le moment." />} />
-      {(adding || editing) && <AgreementFormDialog agreement={editing ?? undefined} windowText={windowText} onClose={() => { setAdding(false); setEditing(null); }} onSubmit={save} />}
-      {revoking && (
-        <ConfirmDialog isOpen onClose={() => setRevoking(null)} onConfirm={confirmRevoke} isLoading={revokePending} destructive
-          title="Retirer cet accord ?" description={`${revoking.driverName} ne rechargera plus gratuitement le dimanche. L'historique est conservé.${revokeError ? ` ${revokeError}` : ""}`}
-          confirmText="Retirer l'accord" cancelText="Annuler" />
-      )}
-    </Panel>
+    <div className="space-y-4">
+      {list.data && list.data.length > 0 && <AgreementStats items={list.data} />}
+      <Panel>
+        <Toolbar start={<SearchField value={text} onChange={setText} label="Rechercher dans la liste" placeholder="Nom, téléphone, e-mail ou voiture" />} />
+        <DataTable columns={columns} data={list.data ? rows : null} error={list.error} onRetry={list.reload} getRowId={(row) => row.id}
+          empty={<EmptyState title={text ? "Aucun résultat" : "Aucun chauffeur dans le programme"} description={text ? "Aucun chauffeur ne correspond à cette recherche." : "Ajoutez un chauffeur pour lui offrir la recharge gratuite."} />} />
+        {adding && <AgreementCreateDialog windowText={windowText} onClose={closeCreate} onDone={added} />}
+        {editing && <AgreementEditDialog agreement={editing} onClose={() => setEditing(null)} onSubmit={saveEdit} />}
+        {revoking && (
+          <ConfirmDialog isOpen onClose={() => setRevoking(null)} onConfirm={confirmRevoke} isLoading={revokePending} destructive
+            title="Retirer ce chauffeur ?" description={`${revoking.driverName} ne bénéficiera plus de la recharge offerte. L'historique de l'accord est conservé.${revokeError ? ` ${revokeError}` : ""}`}
+            confirmText="Retirer" cancelText="Annuler" />
+        )}
+      </Panel>
+    </div>
   );
 }

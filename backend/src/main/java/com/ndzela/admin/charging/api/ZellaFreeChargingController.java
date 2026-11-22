@@ -5,6 +5,7 @@ import com.ndzela.admin.freecharging.api.dto.AgreementUpdateRequest;
 import com.ndzela.admin.freecharging.api.dto.WindowRequest;
 import com.ndzela.admin.freecharging.api.dto.ZellaAgreementCreateRequest;
 import com.ndzela.admin.freecharging.application.AgreementView;
+import com.ndzela.admin.freecharging.application.DriverOption;
 import com.ndzela.admin.freecharging.application.Eligibility;
 import com.ndzela.admin.freecharging.application.FreeChargingAdministration;
 import com.ndzela.admin.freecharging.application.FreeChargingEligibility;
@@ -70,6 +71,12 @@ public class ZellaFreeChargingController {
     @PostMapping("/free-charging/agreements/{id}/revoke")
     public AgreementView revoke(@PathVariable UUID id, @RequestHeader(value = KEY, required = false) String key, @RequestHeader(value = ACTOR, required = false) String actor) {
         return manage(key, actor, () -> administration.revoke(id));
+    }
+
+    @GetMapping("/free-charging/drivers")
+    public List<DriverOption> drivers(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "20") int size,
+                                      @RequestHeader(value = KEY, required = false) String key) {
+        return access.call("free-manage", key, () -> administration.drivers(q, size));
     }
 
     @GetMapping("/free-charging/window")

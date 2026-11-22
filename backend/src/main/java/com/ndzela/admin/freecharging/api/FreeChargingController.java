@@ -5,6 +5,7 @@ import com.ndzela.admin.freecharging.api.dto.AgreementCreateRequest;
 import com.ndzela.admin.freecharging.api.dto.AgreementUpdateRequest;
 import com.ndzela.admin.freecharging.api.dto.WindowRequest;
 import com.ndzela.admin.freecharging.application.AgreementView;
+import com.ndzela.admin.freecharging.application.DriverOption;
 import com.ndzela.admin.freecharging.application.FreeChargingAdministration;
 import com.ndzela.admin.freecharging.application.FreeChargingUse;
 import com.ndzela.admin.freecharging.application.WindowView;
@@ -60,6 +61,12 @@ public class FreeChargingController {
     @PreAuthorize("hasAuthority('free_charging:manage')")
     public AgreementView revoke(@PathVariable UUID id) {
         return administration.revoke(id);
+    }
+
+    @GetMapping("/drivers")
+    @PreAuthorize("hasAuthority('free_charging:manage')")
+    public List<DriverOption> drivers(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "20") int size) {
+        return administration.drivers(q, size);
     }
 
     @GetMapping("/window")

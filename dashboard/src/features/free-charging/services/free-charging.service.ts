@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/api/api-client";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import type { Agreement, AgreementInput, FreeChargingUse, FreeWindow, FreeWindowInput } from "@/features/free-charging/types";
+import type { Agreement, AgreementInput, DriverOption, FreeChargingUse, FreeWindow, FreeWindowInput } from "@/features/free-charging/types";
 
 export const freeChargingService = {
   list: () => apiClient<Agreement[]>("/free-charging/agreements"),
@@ -15,6 +15,8 @@ export const freeChargingService = {
   resume: (id: string) => apiClient<Agreement>(`/free-charging/agreements/${id}/resume`, { method: "POST" }),
 
   revoke: (id: string) => apiClient<Agreement>(`/free-charging/agreements/${id}/revoke`, { method: "POST" }),
+
+  drivers: (q: string) => apiClient<DriverOption[]>(`/free-charging/drivers?${queryString({ q, size: 20 })}`),
 
   window: () => apiClient<FreeWindow>("/free-charging/window"),
 

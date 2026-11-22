@@ -5,13 +5,11 @@ import { ApiException } from "@/lib/api/api-error";
 import { AgreementsTab } from "@/features/free-charging/components/agreements-tab";
 import type { Agreement } from "@/features/free-charging/types";
 
-const service = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), update: vi.fn(), suspend: vi.fn(), resume: vi.fn(), revoke: vi.fn() }));
+const service = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), update: vi.fn(), suspend: vi.fn(), resume: vi.fn(), revoke: vi.fn(), drivers: vi.fn() }));
 const toast = vi.hoisted(() => vi.fn());
 const granted = vi.hoisted(() => ({ manage: true }));
 
 vi.mock("@/features/free-charging/services/free-charging.service", () => ({ freeChargingService: service }));
-const driversList = vi.hoisted(() => vi.fn());
-vi.mock("@/features/drivers/services/drivers.service", () => ({ driversService: { list: driversList } }));
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ addToast: toast }) }));
 vi.mock("@/features/access/hooks/use-permissions", () => ({ usePermissions: () => ({ can: (permission: string) => permission === "free_charging:read" || (granted.manage && permission === "free_charging:manage") }) }));
 
@@ -19,18 +17,24 @@ const agreement = (overrides: Partial<Agreement>): Agreement => ({
   id: "a1", driverId: "d1", driverName: "Paul Aba", startsOn: "2026-11-01", endsOn: "2026-12-31", status: "ACTIVE", conditions: "Taxi de nuit",
   eligibility: "UNPAID_DAYS", unpaidDays: 3, lastFreeUse: null, ...overrides,
 });
+const DRIVERS = [
+  { driverId: "d-jean", customerId: "c-jean", fullName: "MBA Jean", phone: "+24177000001", email: "jean@example.com", fleetNumber: "V015", plate: "PL-0150", status: "ACTIVE", linked: true, inProgram: false },
+  { driverId: "d-paul", customerId: "c-paul", fullName: "NDONG Paul", phone: "+24166000002", email: null, fleetNumber: "V030", plate: "PL-0300", status: "ACTIVE", linked: true, inProgram: false },
+  { driverId: "d-awa", customerId: "c-awa", fullName: "OBIANG Awa", phone: null, email: null, fleetNumber: null, plate: null, status: "ACTIVE", linked: true, inProgram: true },
+  { driverId: "d-luc", customerId: null, fullName: "ONDO Luc", phone: "+24162000004", email: null, fleetNumber: "V041", plate: "PL-0410", status: "ACTIVE", linked: false, inProgram: false },
+];
 const rows = [agreement({}), agreement({ id: "a2", driverName: "Awa Nze", status: "SUSPENDED", eligibility: "OUTSIDE_WINDOW", unpaidDays: 0 })];
 
 beforeEach(() => {
   vi.clearAllMocks();
   granted.manage = true;
   service.list.mockResolvedValue(rows);
-  driversList.mockImplementation(({ q }: { q: string }) => Promise.resolve({ items: q === "zzz" ? [] : [{ id: "d9", personal: { lastName: "Nze", firstName: "Awa" } }], page: 0, size: 20, total: 1 }));
+  service.drivers.mockImplementation((q: string) => Promise.resolve(q === "zzz" ? [] : DRIVERS));
 });
 
 describe("AgreementsTab table", () => {
   it("shows the status, the eligibility label and the unpaid days from the API", async () => {
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
 
     const first = (await screen.findByText("Paul Aba")).closest("tr") as HTMLElement;
     expect(within(first).getByText("Actif")).toBeInTheDocument();
@@ -43,18 +47,16 @@ describe("AgreementsTab table", () => {
 
   it("hides every management button without free_charging:manage", async () => {
     granted.manage = false;
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
     await screen.findByText("Paul Aba");
 
-    expect(screen.queryByRole("button", { name: "Ajouter un chauffeur" })).not.toBeInTheDocument();
     for (const name of [/^Modifier/, /^Suspendre/, /^Reprendre/, /^Retirer/]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
   });
 
   it("shows the management buttons with free_charging:manage", async () => {
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
     await screen.findByText("Paul Aba");
 
-    expect(screen.getByRole("button", { name: "Ajouter un chauffeur" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Modifier/ })).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Suspendre Paul Aba" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reprendre Awa Nze" })).toBeInTheDocument();
@@ -63,9 +65,9 @@ describe("AgreementsTab table", () => {
 
   it("shows the empty state", async () => {
     service.list.mockResolvedValue([]);
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
 
-    expect(await screen.findByText("Aucun chauffeur")).toBeInTheDocument();
+    expect(await screen.findByText("Aucun chauffeur dans le programme")).toBeInTheDocument();
   });
 });
 
@@ -73,7 +75,7 @@ describe("AgreementsTab actions", () => {
   it("suspends and resumes through the service", async () => {
     service.suspend.mockResolvedValue({});
     service.resume.mockResolvedValue({});
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
     await screen.findByText("Paul Aba");
 
     fireEvent.click(screen.getByRole("button", { name: "Suspendre Paul Aba" }));
@@ -84,19 +86,19 @@ describe("AgreementsTab actions", () => {
 
   it("asks for confirmation before revoking and says the history is kept", async () => {
     service.revoke.mockResolvedValue({});
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
     await screen.findByText("Paul Aba");
 
     fireEvent.click(screen.getByRole("button", { name: "Retirer Paul Aba" }));
     expect(service.revoke).not.toHaveBeenCalled();
-    expect(screen.getByText(/L'historique est conservé/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Retirer l'accord" }));
+    expect(screen.getByText(/L'historique de l'accord est conservé/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Retirer$/ }));
 
     await waitFor(() => expect(service.revoke).toHaveBeenCalledWith("a1"));
   });
 
   it("does not revoke when the confirmation is cancelled", async () => {
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
     await screen.findByText("Paul Aba");
 
     fireEvent.click(screen.getByRole("button", { name: "Retirer Paul Aba" }));
@@ -107,79 +109,161 @@ describe("AgreementsTab actions", () => {
 
   it("keeps the revoke dialog open with the mapped message when revoking fails", async () => {
     service.revoke.mockRejectedValue(new ApiException({ timestamp: "", status: 422, code: "FREE_AGREEMENT_REVOKED", message: "english", path: "/x" }));
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
     await screen.findByText("Paul Aba");
 
     fireEvent.click(screen.getByRole("button", { name: "Retirer Paul Aba" }));
-    fireEvent.click(screen.getByRole("button", { name: "Retirer l'accord" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Retirer$/ }));
 
     expect(await screen.findByText(/Cet accord est retiré et ne peut plus être modifié/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Retirer l'accord" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Retirer$/ })).toBeInTheDocument();
   });
 
   it("edits the dates and conditions through the service", async () => {
     service.update.mockResolvedValue({});
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
     await screen.findByText("Paul Aba");
 
     fireEvent.click(screen.getByRole("button", { name: "Modifier Paul Aba" }));
-    fireEvent.change(screen.getByLabelText("Date de fin"), { target: { value: "2027-01-31" } });
+    fireEvent.change(screen.getByLabelText("Fin (facultatif)"), { target: { value: "2027-01-31" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
 
     await waitFor(() => expect(service.update).toHaveBeenCalledWith("a1", { startsOn: "2026-11-01", endsOn: "2027-01-31", conditions: "Taxi de nuit" }));
   });
 });
 
+const created = () => service.create.mock.calls.map(([driverId]) => driverId);
+
 describe("Add form", () => {
   const open = async () => {
-    render(<AgreementsTab />);
+    render(<AgreementsTab adding onAddingClose={() => {}} />);
     await screen.findByText("Paul Aba");
-    fireEvent.click(screen.getByRole("button", { name: "Ajouter un chauffeur" }));
+    return screen.getByRole("dialog");
   };
+  const pick = async (dialog: HTMLElement, name: RegExp) => userEvent.click(await within(dialog).findByRole("checkbox", { name }));
 
   it("requires a driver and refuses an end before the start", async () => {
-    await open();
-    fireEvent.change(screen.getByLabelText("Date de début *"), { target: { value: "2026-11-10" } });
-    fireEvent.change(screen.getByLabelText("Date de fin"), { target: { value: "2026-11-01" } });
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    const dialog = await open();
+    fireEvent.change(within(dialog).getByLabelText("Début"), { target: { value: "2026-11-10" } });
+    fireEvent.change(within(dialog).getByLabelText("Fin (facultatif)"), { target: { value: "2026-11-01" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ajouter" }));
 
-    expect(await screen.findByText("Choisissez un chauffeur")).toBeInTheDocument();
-    expect(screen.getByText("La date de fin ne peut pas précéder la date de début")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Choisissez au moins un chauffeur.")).toBeInTheDocument();
+    expect(within(dialog).getByText("La date de fin ne peut pas précéder la date de début")).toBeInTheDocument();
     expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it("explains what an empty end date means", async () => {
+    const dialog = await open();
+
+    expect(within(dialog).getByText("Sans date de fin, l'accord reste actif jusqu'à ce que vous le suspendiez ou le retiriez.")).toBeInTheDocument();
   });
 
   it("creates the agreement for the chosen driver", async () => {
     service.create.mockResolvedValue({});
-    await open();
-    await userEvent.selectOptions(await screen.findByLabelText("Chauffeur *"), "d9");
-    fireEvent.change(screen.getByLabelText("Date de début *"), { target: { value: "2026-11-10" } });
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    const dialog = await open();
+    await pick(dialog, /MBA Jean/);
+    fireEvent.change(within(dialog).getByLabelText("Début"), { target: { value: "2026-11-10" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ajouter" }));
 
-    await waitFor(() => expect(service.create).toHaveBeenCalledWith("d9", { startsOn: "2026-11-10", endsOn: null, conditions: null }));
+    await waitFor(() => expect(service.create).toHaveBeenCalledWith("d-jean", { startsOn: "2026-11-10", endsOn: null, conditions: null }));
   });
 
-  it("keeps the chosen driver shown and submitted after the search changes", async () => {
+  it("adds several drivers, one agreement each", async () => {
     service.create.mockResolvedValue({});
-    await open();
-    await userEvent.selectOptions(await screen.findByLabelText("Chauffeur *"), "d9");
-    fireEvent.change(screen.getByLabelText("Rechercher un chauffeur"), { target: { value: "zzz" } });
-    await waitFor(() => expect(driversList).toHaveBeenCalledWith(expect.objectContaining({ q: "zzz" })));
+    const dialog = await open();
+    await pick(dialog, /MBA Jean/);
+    await pick(dialog, /NDONG Paul/);
+    fireEvent.change(within(dialog).getByLabelText("Début"), { target: { value: "2026-11-10" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ajouter 2 chauffeurs" }));
 
-    expect(await screen.findByRole("option", { name: "Nze Awa" })).toBeInTheDocument();
-    expect((screen.getByLabelText("Chauffeur *") as HTMLSelectElement).value).toBe("d9");
-    fireEvent.change(screen.getByLabelText("Date de début *"), { target: { value: "2026-11-10" } });
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
-
-    await waitFor(() => expect(service.create).toHaveBeenCalledWith("d9", expect.anything()));
+    await waitFor(() => expect(created()).toEqual(["d-jean", "d-paul"]));
   });
 
-  it("shows the French message of FREE_AGREEMENT_EXISTS", async () => {
-    service.create.mockRejectedValue(new ApiException({ timestamp: "", status: 422, code: "FREE_AGREEMENT_EXISTS", message: "english", path: "/x" }));
-    await open();
-    await userEvent.selectOptions(await screen.findByLabelText("Chauffeur *"), "d9");
-    fireEvent.change(screen.getByLabelText("Date de début *"), { target: { value: "2026-11-10" } });
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+  it("selects everyone who can be added with one click, never the blocked ones", async () => {
+    service.create.mockResolvedValue({});
+    const dialog = await open();
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Tout sélectionner" }));
+    expect(within(dialog).getByText("2 chauffeurs choisis")).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Début"), { target: { value: "2026-11-10" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ajouter 2 chauffeurs" }));
 
-    expect(await screen.findByText("Ce chauffeur a déjà un accord de gratuité. Retirez-le d'abord.")).toBeInTheDocument();
+    await waitFor(() => expect(created()).toEqual(["d-jean", "d-paul"]));
+  });
+
+  it("shows who is already in the program or has no Zella account and cannot be chosen", async () => {
+    const dialog = await open();
+
+    expect(await within(dialog).findByRole("checkbox", { name: /OBIANG Awa/ })).toBeDisabled();
+    expect(within(dialog).getByText("Déjà dans le programme")).toBeInTheDocument();
+    expect(within(dialog).getByRole("checkbox", { name: /ONDO Luc/ })).toBeDisabled();
+    expect(within(dialog).getByText("Compte Zella non lié")).toBeInTheDocument();
+    expect(within(dialog).getByText("V015 · PL-0150")).toBeInTheDocument();
+  });
+
+  it("searches the drivers on the typed text, a car number included", async () => {
+    const dialog = await open();
+    await within(dialog).findByRole("checkbox", { name: /MBA Jean/ });
+
+    fireEvent.change(within(dialog).getByRole("searchbox"), { target: { value: "V015" } });
+
+    await waitFor(() => expect(service.drivers).toHaveBeenCalledWith("V015"));
+  });
+
+  it("keeps a chosen driver in the selection when the search changes", async () => {
+    service.create.mockResolvedValue({});
+    const dialog = await open();
+    await pick(dialog, /MBA Jean/);
+    fireEvent.change(within(dialog).getByRole("searchbox"), { target: { value: "zzz" } });
+    await waitFor(() => expect(service.drivers).toHaveBeenCalledWith("zzz"));
+
+    expect(await within(dialog).findByText("1 chauffeur choisi")).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Début"), { target: { value: "2026-11-10" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ajouter" }));
+    await waitFor(() => expect(service.create).toHaveBeenCalledWith("d-jean", expect.anything()));
+  });
+
+  it("lists the drivers that could not be added and retries only those", async () => {
+    let paulFails = true;
+    service.create.mockImplementation((driverId: string) => (driverId === "d-paul" && paulFails
+      ? Promise.reject(new ApiException({ timestamp: "", status: 422, code: "FREE_AGREEMENT_EXISTS", message: "english", path: "/x" })) : Promise.resolve({})));
+    const dialog = await open();
+    await pick(dialog, /MBA Jean/);
+    await pick(dialog, /NDONG Paul/);
+    fireEvent.change(within(dialog).getByLabelText("Début"), { target: { value: "2026-11-10" } });
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ajouter 2 chauffeurs" }));
+
+    expect(await within(dialog).findByText("1 chauffeur ajouté.")).toBeInTheDocument();
+    expect(within(dialog).getByText("NDONG Paul : Ce chauffeur a déjà un accord de gratuité. Retirez-le d'abord.")).toBeInTheDocument();
+    paulFails = false;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Réessayer" }));
+    await waitFor(() => expect(created()).toEqual(["d-jean", "d-paul", "d-paul"]));
+  });
+});
+
+describe("List search and figures", () => {
+  it("counts the drivers in the program and filters the list by name, phone, e-mail or car", async () => {
+    service.list.mockResolvedValue([
+      agreement({ fleetNumber: "V015", plate: "PL-0150", phone: "+24177001122", eligibility: "ELIGIBLE" }),
+      agreement({ id: "a2", driverName: "Awa Nze", fleetNumber: "V030", plate: "PL-0300", phone: "+24166002233", eligibility: "UNPAID_DAYS" }),
+      agreement({ id: "a3", driverName: "Luc Ondo", status: "REVOKED", eligibility: "NO_AGREEMENT" }),
+    ]);
+    render(<AgreementsTab adding={false} onAddingClose={() => {}} />);
+    await screen.findByText("Paul Aba");
+
+    expect(screen.getByText("Dans le programme").parentElement).toHaveTextContent("2");
+    expect(screen.getByText("Éligibles maintenant").parentElement).toHaveTextContent("1");
+    expect(screen.getByText("À régulariser").parentElement).toHaveTextContent("1");
+    expect(screen.getByText("V015 · PL-0150")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "V030" } });
+    await waitFor(() => expect(screen.queryByText("Paul Aba")).not.toBeInTheDocument());
+    expect(screen.getByText("Awa Nze")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "077 00 11 22" } });
+    await waitFor(() => expect(screen.queryByText("Awa Nze")).not.toBeInTheDocument());
+    expect(screen.getByText("Paul Aba")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "zzzz" } });
+    expect(await screen.findByText("Aucun chauffeur ne correspond à cette recherche.")).toBeInTheDocument();
   });
 });

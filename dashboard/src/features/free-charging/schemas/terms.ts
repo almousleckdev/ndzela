@@ -2,9 +2,8 @@ import { z } from "zod";
 
 export const CONDITIONS_MAX = 1000;
 
-export const agreementSchema = z
+export const termsSchema = z
   .object({
-    driverId: z.string().min(1, "Choisissez un chauffeur"),
     startsOn: z.string().min(1, "Date de début obligatoire"),
     endsOn: z.string(),
     conditions: z.string().max(CONDITIONS_MAX, `${CONDITIONS_MAX} caractères maximum`),
@@ -14,4 +13,4 @@ export const agreementSchema = z
     message: "La date de fin ne peut pas précéder la date de début",
   });
 
-export type AgreementValues = z.infer<typeof agreementSchema>;
+export type TermsValues = z.infer<typeof termsSchema>;

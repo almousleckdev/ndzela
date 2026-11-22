@@ -33,12 +33,14 @@ export function agreementColumns(canManage: boolean, onAction: (action: Agreemen
 
   return col.columns([
     col.accessor("driverName", { id: "driver", header: "Chauffeur", cell: (c) => <span className="font-medium text-ink">{c.getValue()}</span> }),
+    col.display({ id: "car", header: "Voiture", cell: (c) => (c.row.original.fleetNumber ? `${c.row.original.fleetNumber}${c.row.original.plate ? ` · ${c.row.original.plate}` : ""}` : <None />) }),
+    col.display({ id: "phone", header: "Téléphone", cell: (c) => c.row.original.phone ?? <None /> }),
     col.accessor("startsOn", { id: "startsOn", header: "Début", cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatDay(c.getValue())}</span> }),
     col.accessor("endsOn", { id: "endsOn", header: "Fin", cell: (c) => (c.getValue() ? <span className="whitespace-nowrap tabular-nums">{formatDay(c.getValue())}</span> : <None />) }),
     col.accessor("status", { id: "status", header: "Statut", cell: (c) => <Badge variant={STATUS_VARIANTS[c.getValue()]}>{STATUS_LABELS[c.getValue()]}</Badge> }),
     col.accessor("eligibility", { id: "eligibility", header: "Éligibilité", enableSorting: false, cell: (c) => eligibilityLabel(c.getValue()) }),
     col.accessor("unpaidDays", { id: "unpaidDays", header: "Jours impayés", cell: (c) => <span className="tabular-nums">{c.getValue()}</span> }),
-    col.accessor("lastFreeUse", { id: "lastFreeUse", header: "Dernière gratuité", cell: (c) => (c.getValue() ? <span className="whitespace-nowrap tabular-nums">{formatDateTime(c.getValue() as string)}</span> : <None />) }),
+    col.accessor("lastFreeUse", { id: "lastFreeUse", header: "Dernière recharge offerte", cell: (c) => (c.getValue() ? <span className="whitespace-nowrap tabular-nums">{formatDateTime(c.getValue() as string)}</span> : <None />) }),
     col.accessor("conditions", { id: "conditions", header: "Conditions", enableSorting: false, cell: (c) => (c.getValue() ? <span className="block max-w-[16rem] truncate" title={c.getValue() as string}>{c.getValue()}</span> : <None />) }),
     ...(canManage ? actions : []),
   ]);
