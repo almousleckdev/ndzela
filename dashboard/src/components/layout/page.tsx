@@ -58,7 +58,7 @@ export interface Kpi {
 export function KpiBand({ items, className }: { items: Kpi[]; className?: string }) {
   return (
     <div className={cn("overflow-hidden rounded-lg border border-line bg-white", className)}>
-      <dl className={cn("-mb-px -mr-px grid grid-cols-2 sm:grid-cols-3", items.length >= 4 && "lg:grid-cols-4", items.length >= 5 && items.length !== 7 && "xl:grid-cols-5", items.length === 6 && "xl:grid-cols-6")}>
+      <dl className={cn("-mb-px -mr-px grid grid-cols-2 sm:grid-cols-3", items.length >= 4 && "lg:grid-cols-4", items.length >= 5 && items.length !== 7 && items.length !== 8 && "xl:grid-cols-5", items.length === 6 && "xl:grid-cols-6")}>
         {items.map((item) => {
           const body = (
             <div className={cn("h-full border-b border-r border-line px-4 py-3.5", (item.href || item.onSelect) && "transition-colors hover:bg-slate-50", item.active && "bg-slate-50")}>
@@ -68,9 +68,9 @@ export function KpiBand({ items, className }: { items: Kpi[]; className?: string
             </div>
           );
           if (item.onSelect) {
-            return <button key={item.label} type="button" onClick={item.onSelect} aria-pressed={item.active} className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">{body}</button>;
+            return <button key={item.label} type="button" onClick={item.onSelect} aria-pressed={item.active} className="block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">{body}</button>;
           }
-          return item.href ? <Link key={item.label} href={item.href} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">{body}</Link> : <div key={item.label}>{body}</div>;
+          return item.href ? <Link key={item.label} href={item.href} className="block cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">{body}</Link> : <div key={item.label}>{body}</div>;
         })}
       </dl>
     </div>
