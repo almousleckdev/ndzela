@@ -11,6 +11,8 @@ export type EligibilityReason =
   | "DRIVER_SUSPENDED"
   | "NOT_LINKED";
 
+export type Membership = "ALL" | "IN_PROGRAM" | "NOT_IN_PROGRAM";
+
 export interface Agreement {
   id: string;
   driverId: string;

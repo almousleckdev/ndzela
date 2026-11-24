@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FreeChargingPage } from "@/features/free-charging/components/free-charging-page";
 
@@ -21,28 +20,18 @@ beforeEach(() => {
 });
 
 describe("FreeChargingPage", () => {
-  it("shows the window card, and the add button in the header for people who manage", async () => {
+  it("shows the window card and no add modal button", async () => {
     render(<FreeChargingPage />);
 
     expect(await screen.findByText("Recharge gratuite le dimanche, de 00h00 à 23h59 (heure du Gabon).")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Ajouter un chauffeur" })).toBeInTheDocument();
-  });
-
-  it("hides the add button without free_charging:manage", async () => {
-    granted.manage = false;
-    render(<FreeChargingPage />);
-
-    await screen.findByText(/Recharge gratuite le dimanche/);
     expect(screen.queryByRole("button", { name: "Ajouter un chauffeur" })).not.toBeInTheDocument();
   });
 
-  it("opens the add dialog from the header and describes the window in it", async () => {
+  it("asks only for the active drivers", async () => {
     render(<FreeChargingPage />);
-    await userEvent.click(await screen.findByRole("button", { name: "Ajouter un chauffeur" }));
+    await screen.findByText(/Recharge gratuite le dimanche/);
 
-    const dialog = await screen.findByRole("dialog");
-    await waitFor(() => expect(dialog).toHaveTextContent("le dimanche, de 00h00 à 23h59 (heure du Gabon)"));
-    expect(dialog).toHaveTextContent("Cochez un chauffeur pour lui offrir la recharge gratuite");
+    await waitFor(() => expect(service.drivers).toHaveBeenCalled());
   });
 
   it("never writes the old 12h-22h window anywhere", async () => {

@@ -1,8 +1,7 @@
 import { apiClient } from "@/lib/api/api-client";
 import type { Page } from "@/lib/api/page";
 import { queryString } from "@/lib/api/query";
-import { DRIVER_PAGE_SIZE, type Membership } from "@/features/free-charging/lib/selection";
-import type { Agreement, AgreementInput, DriverOption, FreeChargingUse, FreeWindow, FreeWindowInput } from "@/features/free-charging/types";
+import type { Agreement, Membership, AgreementInput, DriverOption, FreeChargingUse, FreeWindow, FreeWindowInput } from "@/features/free-charging/types";
 
 export const freeChargingService = {
   list: () => apiClient<Agreement[]>("/free-charging/agreements"),
@@ -17,8 +16,9 @@ export const freeChargingService = {
 
   revoke: (id: string) => apiClient<Agreement>(`/free-charging/agreements/${id}/revoke`, { method: "POST" }),
 
-  drivers: (q: string, membership: Membership, page: number) =>
-    apiClient<Page<DriverOption>>(`/free-charging/drivers?${queryString({ q, membership, page, size: DRIVER_PAGE_SIZE })}`),
+  // The drivers who are active now, in the program or not.
+  drivers: (q: string, membership: Membership, page: number, size: number) =>
+    apiClient<Page<DriverOption>>(`/free-charging/drivers?${queryString({ q, membership, activeOnly: true, page, size })}`),
 
   window: () => apiClient<FreeWindow>("/free-charging/window"),
 

@@ -5,6 +5,7 @@ import com.ndzela.admin.driver.application.model.FoundDriver;
 import com.ndzela.admin.driver.application.model.HeldCar;
 import com.ndzela.admin.driver.domain.Driver;
 import com.ndzela.admin.driver.domain.DriverRepository;
+import com.ndzela.admin.driver.domain.DriverStatus;
 import com.ndzela.admin.driver.domain.VehicleAssignment;
 import com.ndzela.admin.driver.domain.VehicleAssignmentRepository;
 import com.ndzela.admin.vehicle.domain.Vehicle;
@@ -47,6 +48,12 @@ public class DriverFinder {
      */
     @Transactional(readOnly = true)
     public Page<FoundDriver> page(String q, Collection<UUID> only, Collection<UUID> excluded, int page, int size) {
+        return page(q, only, excluded, false, page, size);
+    }
+
+    /** Same, and `activeOnly` keeps just the drivers whose status is ACTIVE now. */
+    @Transactional(readOnly = true)
+    public Page<FoundDriver> page(String q, Collection<UUID> only, Collection<UUID> excluded, boolean activeOnly, int page, int size) {
         String text = q == null ? "" : q.trim();
         Specification<Driver> spec = text.isEmpty() ? (root, query, cb) -> cb.conjunction() : matching(text).or(idIn(holdersOfCarsMatching(text)));
         if (only != null) {
@@ -54,6 +61,9 @@ public class DriverFinder {
         }
         if (excluded != null && !excluded.isEmpty()) {
             spec = spec.and(Specification.not(idIn(excluded)));
+        }
+        if (activeOnly) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), DriverStatus.ACTIVE));
         }
         Page<Driver> found = drivers.findAll(spec, PageRequest.of(page, size, Sort.by("lastName", "firstName", "id")));
         Map<UUID, HeldCar> cars = carsOf(found.getContent().stream().map(Driver::getId).toList());

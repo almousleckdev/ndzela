@@ -145,6 +145,18 @@ class FreeChargingDriverSearchTest extends AbstractFreeChargingTest {
     }
 
     @Test
+    void activeOnlyLeavesOutDriversWhoAreNotActiveNow() {
+        jdbc.update("update drivers set status = 'ARCHIVED' where id = ?", paul);
+        jdbc.update("update drivers set status = 'SUSPENDED' where id = ?", awa);
+
+        var ids = inGabon(() -> search.find("", "ALL", true, 0, 50)).items().stream().map(DriverOption::driverId).toList();
+        assertTrue(ids.contains(jean));
+        assertFalse(ids.contains(paul));
+        assertFalse(ids.contains(awa));
+        assertTrue(inGabon(() -> search.find("", "ALL", false, 0, 50)).items().stream().anyMatch(option -> option.driverId().equals(paul)));
+    }
+
+    @Test
     void aRevokedAgreementPutsTheDriverBackOutOfTheProgram() {
         var agreement = inGabon(() -> agreements.create(paul, LocalDate.of(2026, 1, 1), null, null));
         inGabon(() -> agreements.revoke(agreement.getId()));

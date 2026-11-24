@@ -84,6 +84,11 @@ public class FreeChargingAdministration {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<DriverOption> drivers(String q, String membership, boolean activeOnly, int page, int size) {
+        return driverSearch.find(q, membership, activeOnly, page, size);
+    }
+
+    @Transactional(readOnly = true)
     public WindowView window() {
         return WindowView.of(windows.current());
     }

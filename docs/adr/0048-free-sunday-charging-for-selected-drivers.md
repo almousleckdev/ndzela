@@ -34,3 +34,5 @@ The company wants to reward some fully paid-up drivers with one free charge ever
 - Production must check `select distinct free_category from session_payments` before V73 adds the check constraint.
 
 Alternatives rejected: Zella owning the program with NDZela pushing unpaid days (stale copies, contract rules moved into Zella); each dashboard keeping its own list (duplicated data, certain disagreement).
+
+**Addendum (2026-11-24): the NDZela Gratuité page lists the active drivers, no modal.** The page shows the drivers whose status is `ACTIVE` now in its normal table (`GET /api/v1/free-charging/drivers?activeOnly=true`, default `false`, so the Zella dashboard's list is unchanged). A row has one-click buttons: "Ajouter" creates an agreement starting today with no end date and no conditions, "Retirer" revokes it, with "Modifier", "Suspendre" and "Reprendre" for drivers in the program. A driver who stops being active disappears from this list; their agreement stays and the eligibility rule still answers `DRIVER_SUSPENDED`.
