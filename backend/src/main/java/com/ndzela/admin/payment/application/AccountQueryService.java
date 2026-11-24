@@ -70,7 +70,7 @@ public class AccountQueryService {
             case "UP_TO_DATE" -> ArrearsLevel.NONE;
             default -> null;
         };
-        var result = driverArrears.page(level, "LATE".equals(filter), q, lateFrom, lateTo, sort, page, size);
+        var result = driverArrears.page(level, "LATE".equals(filter), "AWAITING".equals(filter), q, lateFrom, lateTo, sort, page, size);
         List<UUID> ids = result.getContent().stream().map(DriverRef::id).toList();
         Map<UUID, ContractResponse> contracts = contractService.activeOf(ids);
         Map<UUID, VehicleResponse> vehicles = vehicleService.responsesByIds(contracts.values().stream().map(ContractResponse::vehicleId).filter(java.util.Objects::nonNull).toList());
@@ -150,7 +150,7 @@ public class AccountQueryService {
         ZoneId zone = period.zone();
         BigDecimal range = from == null && to == null ? null : whole(ledger.collectedBetween(period.startOf(from, zone), period.endOf(to, zone)));
         long late = counts.get(ArrearsLevel.LATE) + counts.get(ArrearsLevel.YELLOW) + counts.get(ArrearsLevel.DARK_YELLOW) + counts.get(ArrearsLevel.RED);
-        return new PaymentSummary(collectedToday(), range, whole(driverArrears.totalOverdue()), whole(driverArrears.totalAwaiting()), driverArrears.countAtRisk(),
+        return new PaymentSummary(collectedToday(), range, whole(driverArrears.totalOverdue()), whole(driverArrears.totalAwaiting()), driverArrears.countAtRisk(), driverArrears.countAwaiting(),
                 counts.get(ArrearsLevel.NONE), late, counts.get(ArrearsLevel.YELLOW), counts.get(ArrearsLevel.DARK_YELLOW), counts.get(ArrearsLevel.RED));
     }
 

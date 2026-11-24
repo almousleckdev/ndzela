@@ -107,6 +107,9 @@ class ArrearsJobTest extends AbstractArrearsTest {
         send(get("/api/v1/drivers/stats"), manager).andExpect(jsonPath("$.late").value(1));
         send(get("/api/v1/payments/accounts?filter=YELLOW"), manager).andExpect(jsonPath("$.total").value(1));
         send(get("/api/v1/payments/accounts?filter=LATE"), manager).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].overdueAmount").value(org.hamcrest.Matchers.greaterThanOrEqualTo(23000)));
+        // A rider already late is not "awaiting": that filter is for riders with no unpaid day yet
+        send(get("/api/v1/payments/accounts?filter=AWAITING"), manager).andExpect(jsonPath("$.total").value(0));
+        send(get("/api/v1/payments/summary"), manager).andExpect(jsonPath("$.awaiting").value(0));
         send(get("/api/v1/payments/summary"), manager).andExpect(jsonPath("$.yellow").value(1)).andExpect(jsonPath("$.late").value(1)).andExpect(jsonPath("$.totalOverdue").value(org.hamcrest.Matchers.greaterThanOrEqualTo(23000)));
     }
 

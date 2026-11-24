@@ -18,7 +18,7 @@ import { formatFcfa } from "@/lib/money";
 import { RequirePermission } from "@/features/access/components/require-permission";
 import { usePermissions } from "@/features/access/hooks/use-permissions";
 import { PERMISSIONS } from "@/features/access/lib/permissions";
-import { LEVEL_MARKER, useAccountColumns } from "@/features/payments/components/account-columns";
+import { LEVEL_MARKER, LEVEL_TONE_BG, useAccountColumns } from "@/features/payments/components/account-columns";
 import { IncidentDialog } from "@/features/payments/components/incident-dialog";
 import { PatternCasesPanel } from "@/features/payments/components/pattern-cases-panel";
 import { SuspensionCasesPanel } from "@/features/payments/components/suspension-cases-panel";
@@ -28,6 +28,7 @@ import { paymentsService } from "@/features/payments/services/payments.service";
 import type { AccountFilter, AccountRow, IncidentKind } from "@/features/payments/types";
 
 const LEVELS = [
+  { value: "AWAITING", label: "En attente · 1 jour à venir" },
   { value: "YELLOW", label: "Rappel · 1 jour" },
   { value: "DARK_YELLOW", label: "Urgent · 2 jours" },
   { value: "RED", label: "Suspendu · 3 jours et +" },
@@ -48,6 +49,8 @@ function ArrearsContent() {
   const refresh = () => { list.reload(); summary.reload(); };
   usePolling(refresh, 15000);
   const s = summary.data;
+  // A card filters the table on its level; a second click clears it.
+  const select = (level: string) => ({ active: filters.level === level, onSelect: () => query.setFilter("level", filters.level === level ? "" : level) });
 
   const active: ActiveFilter[] = [
     ...(filters.level ? [{ key: "level", label: LEVELS.find((l) => l.value === filters.level)?.label ?? filters.level, onRemove: () => query.setFilter("level", "") }] : []),
@@ -65,10 +68,10 @@ function ArrearsContent() {
         { label: "Total impayé", value: s ? formatFcfa(s.totalOverdue) : "-", tone: s && s.totalOverdue > 0 ? "bad" : undefined },
         { label: "À régler avant midi", value: s ? formatFcfa(s.totalAwaiting) : "-" },
         { label: "À recouvrer (hier inclus)", value: s ? formatFcfa(s.totalOverdue + s.totalAwaiting) : "-" },
-        { label: "Chauffeurs en retard", value: s?.late ?? "-" },
-        { label: "Rappel · 1 jour", value: s?.yellow ?? "-" },
-        { label: "Urgent · 2 jours", value: s?.darkYellow ?? "-", tone: s && s.darkYellow > 0 ? "bad" : undefined },
-        { label: "Suspendu · 3 jours et +", value: s?.red ?? "-", tone: s && s.red > 0 ? "bad" : undefined },
+        { label: "En attente · 1 jour à venir", value: s?.awaiting ?? "-", ...select("AWAITING") },
+        { label: "Rappel · 1 jour", value: s?.yellow ?? "-", ...select("YELLOW") },
+        { label: "Urgent · 2 jours", value: s?.darkYellow ?? "-", tone: s && s.darkYellow > 0 ? "bad" : undefined, ...select("DARK_YELLOW") },
+        { label: "Suspendu · 3 jours et +", value: s?.red ?? "-", tone: s && s.red > 0 ? "bad" : undefined, ...select("RED") },
       ]} />
 
       {s && s.red > 0 && (
@@ -94,7 +97,7 @@ function ArrearsContent() {
           </>
         )} />
         <ActiveFilters filters={active} onClear={query.reset} />
-        <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.driverId} numeric={["dailyRent", "overdueAmount"]} initiallyHidden={["dailyRent"]} rowMarker={(row) => LEVEL_MARKER[row.level]}
+        <DataTable columns={columns} data={list.data?.items ?? null} error={list.error} onRetry={list.reload} getRowId={(row) => row.driverId} numeric={["dailyRent", "overdueAmount"]} initiallyHidden={["dailyRent"]} rowMarker={(row) => LEVEL_MARKER[row.level]} rowTone={(row) => LEVEL_TONE_BG[row.level]}
           server={{ total: list.data?.total ?? 0, page: query.page, size: query.size, onPageChange: query.setPage, onSizeChange: query.setSize, sorting: query.sorting, onSortingChange: query.setSorting }}
           empty={<EmptyState title="Aucun impayé" description="Tous les chauffeurs de cette sélection sont à jour." />} />
       </Panel>

@@ -32,6 +32,8 @@ interface DataTableProps<T extends RowData> {
   getRowId?: (row: T) => string;
   // A Tailwind background class for the 3 px marker on the row's left edge (arrears level
   rowMarker?: (row: T) => string | undefined;
+  // A Tailwind background class tinting the whole row (arrears level).
+  rowTone?: (row: T) => string | undefined;
   // Ids of columns whose header and cells are right-aligned (amounts).
   numeric?: string[];
   empty: React.ReactNode;
@@ -44,7 +46,7 @@ interface DataTableProps<T extends RowData> {
 }
 
 // The one table of the console
-export function DataTable<T extends RowData>({ columns, data, server, error, onRetry, getRowId, rowMarker, numeric = [], empty, initialSorting = [], initiallyHidden = [], className, selection }: DataTableProps<T>) {
+export function DataTable<T extends RowData>({ columns, data, server, error, onRetry, getRowId, rowMarker, rowTone, numeric = [], empty, initialSorting = [], initiallyHidden = [], className, selection }: DataTableProps<T>) {
   const [localSorting, setLocalSorting] = useState<SortingState>(initialSorting);
   const [localPagination, setLocalPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [visibility, setVisibility] = useState<ColumnVisibilityState>(() => Object.fromEntries(initiallyHidden.map((id) => [id, false])));
@@ -141,8 +143,9 @@ export function DataTable<T extends RowData>({ columns, data, server, error, onR
                   ))
                 ) : rows.map((row) => {
                   const marker = rowMarker?.(row.original as T);
+                  const tone = rowTone?.(row.original as T);
                   return (
-                    <tr key={row.id} className={cn("group relative border-b border-line/70 transition-colors last:border-b-0 hover:bg-slate-50/80", selection?.selected.has(row.id) && "bg-orange-50/60")}>
+                    <tr key={row.id} className={cn("group relative border-b border-line/70 transition-colors last:border-b-0 hover:bg-slate-50/80", tone, selection?.selected.has(row.id) && "bg-orange-50/60")}>
                       {selection && (
                         <td className="relative w-10 py-3 pl-4 pr-1 align-middle">
                           {marker && <span aria-hidden className={cn("absolute inset-y-0 left-0 w-[3px]", marker)} />}

@@ -46,6 +46,10 @@ public interface DriverRepository extends JpaRepository<Driver, UUID>, JpaSpecif
     @Query("select count(d) from Driver d where d.status not in (com.ndzela.admin.driver.domain.DriverStatus.INACTIVE, com.ndzela.admin.driver.domain.DriverStatus.ARCHIVED) and d.unpaidDays < 3 and d.unpaidDays + d.awaitingDays >= 3")
     long countAtRisk();
 
+    // Drivers with no unpaid day whose rent of yesterday awaits its deadline: they pass to 1 unpaid day at noon
+    @Query("select count(d) from Driver d where d.status not in (com.ndzela.admin.driver.domain.DriverStatus.INACTIVE, com.ndzela.admin.driver.domain.DriverStatus.ARCHIVED) and d.unpaidDays = 0 and d.awaitingDays > 0")
+    long countAwaiting();
+
     @Query("select d.arrearsLevel, count(d) from Driver d where d.status not in (com.ndzela.admin.driver.domain.DriverStatus.INACTIVE, com.ndzela.admin.driver.domain.DriverStatus.ARCHIVED) group by d.arrearsLevel")
     List<Object[]> countByArrearsLevel();
 

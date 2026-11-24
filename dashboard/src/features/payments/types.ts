@@ -144,6 +144,8 @@ export interface PaymentSummary {
   totalAwaiting: number;
   // Riders who reach 3 unpaid days at noon if yesterday's rent is not paid.
   atRisk: number;
+  // Riders with no unpaid day whose rent awaits its deadline (1 unpaid day next).
+  awaiting: number;
   upToDate: number;
   late: number;
   yellow: number;
@@ -206,7 +208,7 @@ export interface TransactionQuery {
   to?: string;
 }
 
-export type AccountFilter = "ALL" | "UP_TO_DATE" | "LATE" | "YELLOW" | "DARK_YELLOW" | "RED";
+export type AccountFilter = "ALL" | "UP_TO_DATE" | "AWAITING" | "LATE" | "YELLOW" | "DARK_YELLOW" | "RED";
 
 export interface HistoryQuery {
   driverId?: string;

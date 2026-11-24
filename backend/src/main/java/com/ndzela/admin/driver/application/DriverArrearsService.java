@@ -105,13 +105,15 @@ public class DriverArrearsService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DriverRef> page(ArrearsLevel level, boolean lateOnly, String q, java.time.LocalDate lateFrom, java.time.LocalDate lateTo, String sort, int page, int size) {
+    public Page<DriverRef> page(ArrearsLevel level, boolean lateOnly, boolean awaitingOnly, String q, java.time.LocalDate lateFrom, java.time.LocalDate lateTo, String sort, int page, int size) {
         Specification<Driver> spec = filters.spec(null, null, null, q).and(dayRanges.within("overdueSince", lateFrom, lateTo))
                 .and((root, query, cb) -> cb.not(root.get("status").in(DriverStatus.INACTIVE, DriverStatus.ARCHIVED)));
         if (level != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("arrearsLevel"), level));
         } else if (lateOnly) {
             spec = spec.and((root, query, cb) -> cb.notEqual(root.get("arrearsLevel"), ArrearsLevel.NONE));
+        } else if (awaitingOnly) {
+            spec = spec.and((root, query, cb) -> cb.and(cb.equal(root.get("unpaidDays"), 0), cb.greaterThan(root.get("awaitingDays"), 0)));
         }
         Sort order = SortParam.parse(sort, SORTS, Sort.by(Sort.Order.desc("unpaidDays"), Sort.Order.asc("overdueSince").nullsLast(), Sort.Order.asc("lastName"), Sort.Order.asc("firstName"), Sort.Order.asc("id")));
         return drivers.findAll(spec, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE), order)).map(DriverRef::from);
@@ -141,6 +143,11 @@ public class DriverArrearsService {
     @Transactional(readOnly = true)
     public long countAtRisk() {
         return drivers.countAtRisk();
+    }
+
+    @Transactional(readOnly = true)
+    public long countAwaiting() {
+        return drivers.countAwaiting();
     }
 
     @Transactional(readOnly = true)

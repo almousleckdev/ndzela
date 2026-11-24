@@ -17,6 +17,8 @@ const col = columnsFor<AccountRow>();
 export const LEVEL_TONE: Record<ArrearsLevel, Tone> = { NONE: "good", LATE: "neutral", YELLOW: "watch", DARK_YELLOW: "bad", RED: "critical" };
 // The 3 px marker on a row's left edge.
 export const LEVEL_MARKER: Record<ArrearsLevel, string | undefined> = { NONE: undefined, LATE: "bg-slate-400", YELLOW: "bg-yellow-400", DARK_YELLOW: "bg-red-500", RED: "bg-red-900" };
+// The row background: 1 day yellow, 2 days red, 3 days and more deep red.
+export const LEVEL_TONE_BG: Record<ArrearsLevel, string | undefined> = { NONE: undefined, LATE: undefined, YELLOW: "bg-yellow-100/70", DARK_YELLOW: "bg-red-100/60", RED: "bg-red-200/70" };
 const STATE = { SUSPENDED: "Suspendu", BLOCKED: "Bloqué", INACTIVE: "Inactif" } as Record<string, string>;
 
 interface Options {

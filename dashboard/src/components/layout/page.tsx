@@ -47,6 +47,9 @@ export interface Kpi {
   value: React.ReactNode;
   hint?: React.ReactNode;
   href?: string;
+  // Makes the card a button (filters the page); `active` marks the selected one.
+  onSelect?: () => void;
+  active?: boolean;
   // "bad" colours the figure red
   tone?: "bad";
 }
@@ -58,12 +61,15 @@ export function KpiBand({ items, className }: { items: Kpi[]; className?: string
       <dl className={cn("-mb-px -mr-px grid grid-cols-2 sm:grid-cols-3", items.length >= 4 && "lg:grid-cols-4", items.length >= 5 && items.length !== 7 && "xl:grid-cols-5", items.length === 6 && "xl:grid-cols-6")}>
         {items.map((item) => {
           const body = (
-            <div className={cn("h-full border-b border-r border-line px-4 py-3.5", item.href && "transition-colors hover:bg-slate-50")}>
+            <div className={cn("h-full border-b border-r border-line px-4 py-3.5", (item.href || item.onSelect) && "transition-colors hover:bg-slate-50", item.active && "bg-slate-50")}>
               <dt className="text-[13px] text-muted">{item.label}</dt>
               <dd className={cn("mt-1 break-words font-display font-semibold leading-none tabular-nums tracking-tight", typeof item.value === "string" && item.value.length > 9 ? "text-xl" : "text-[1.65rem]", item.tone === "bad" ? "text-red-700" : "text-ink")}>{item.value}</dd>
               {item.hint && <p className="mt-1.5 text-xs text-muted">{item.hint}</p>}
             </div>
           );
+          if (item.onSelect) {
+            return <button key={item.label} type="button" onClick={item.onSelect} aria-pressed={item.active} className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">{body}</button>;
+          }
           return item.href ? <Link key={item.label} href={item.href} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">{body}</Link> : <div key={item.label}>{body}</div>;
         })}
       </dl>
