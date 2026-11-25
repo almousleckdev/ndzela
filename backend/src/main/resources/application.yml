@@ -138,7 +138,7 @@ app:
     country-code: ${ZELLA_COUNTRY:GA}                # the country the key and its drivers belong to
     lookup-enabled: ${ZELLA_LOOKUP_ENABLED:true}
     lookup-interval: ${ZELLA_LOOKUP_INTERVAL:PT15M}  # between two lookups of the drivers not matched yet
-    # app.zella.feed-interval and command-interval (PT30S each) and the *-initial-delay settings can be overridden; tests push the schedules out so the jobs never run by themselves
+    # app.zella.feed-interval (PT5S), command-interval (PT30S) and the *-initial-delay settings can be overridden; tests push the schedules out so the jobs never run by themselves
     request-timeout: 10s
   free-charging:
     day: ${FREE_CHARGING_DAY:SUNDAY}                 # the one weekday on which agreement drivers charge free

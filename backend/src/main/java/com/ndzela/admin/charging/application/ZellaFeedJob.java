@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-// Reads what drivers paid, every 30 seconds (60 to 120 requests a minute is the Zella limit; a run is a few)
+// Reads what changed on the network every 5 seconds so the charging pages follow Zella: a run is about 3 requests (about 36 a minute) and Zella allows 120; a 429 pauses the feed
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -21,7 +21,7 @@ public class ZellaFeedJob {
     private final CountryService countries;
     private final AppProperties props;
 
-    @Scheduled(fixedDelayString = "${app.zella.feed-interval:PT30S}", initialDelayString = "${app.zella.feed-initial-delay:PT45S}")
+    @Scheduled(fixedDelayString = "${app.zella.feed-interval:PT5S}", initialDelayString = "${app.zella.feed-initial-delay:PT45S}")
     public void run() {
         var country = countries.list().stream().filter(c -> c.code().equals(props.zella().countryCode())).findFirst().orElse(null);
         if (country == null) {
